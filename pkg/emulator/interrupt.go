@@ -130,6 +130,9 @@ func (cpu *CPU) timer(cycle float64) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
+	// スキャンライン
+	cpu.cycleLine += cycle
+
 	// DIVレジスタ
 	cpu.cycleDIV += cycle
 	if cpu.cycleDIV >= 64 {
@@ -228,21 +231,24 @@ func (cpu *CPU) clearJoypadFlag() {
 func (cpu *CPU) triggerInterrupt() {
 	opcode := cpu.FetchMemory8(cpu.Reg.PC)
 	instruction := instructions[opcode][0]
-	if instruction == "HALT" {
+	if instruction == "HALT" || instruction == "STOP" {
 		cpu.interruptTrigger = true
 	}
 }
 
 func (cpu *CPU) triggerVBlank() {
-	cpu.mutex.Lock()
-	cpu.triggerInterrupt()
+	LCDActive := (cpu.FetchMemory8(LCDCIO) >> 7) == 1
+	if LCDActive {
+		cpu.mutex.Lock()
+		cpu.triggerInterrupt()
 
-	cpu.pushPC()
-	cpu.clearVBlankFlag()
-	cpu.Reg.IME = false
-	cpu.Reg.PC = 0x0040
+		cpu.pushPC()
+		cpu.clearVBlankFlag()
+		cpu.Reg.IME = false
+		cpu.Reg.PC = 0x0040
 
-	cpu.mutex.Unlock()
+		cpu.mutex.Unlock()
+	}
 }
 
 func (cpu *CPU) triggerLCDC() {
@@ -298,6 +304,6 @@ func (cpu *CPU) handleInterrupt() {
 	}
 
 	if cpu.Reg.IME && cpu.getJoypadEnable() && cpu.getJoypadFlag() {
-		cpu.triggerLCDC()
+		cpu.triggerJoypad()
 	}
 }

@@ -1,6 +1,7 @@
 *.nes
 *.exe
 *.sav
+*.ini
 game/
 dump/
-gbc-emulator
+gbc

@@ -604,6 +604,29 @@ func (cpu *CPU) HALT(operand1, operand2 string) {
 	}
 }
 
+// STOP stop CPU
+func (cpu *CPU) STOP(operand1, operand2 string) {
+	if operand1 == "0" && operand2 == "*" {
+		if cpu.interruptTrigger {
+			cpu.Reg.PC += 2
+			// 速度切り替え
+			KEY1 := cpu.FetchMemory8(KEY1IO)
+			if KEY1&0x01 == 1 {
+				if KEY1>>7 == 1 {
+					KEY1 = 0x00
+				} else {
+					KEY1 = 0x80
+				}
+				cpu.SetMemory8(KEY1IO, KEY1)
+			}
+			cpu.interruptTrigger = false
+		}
+	} else {
+		errMsg := fmt.Sprintf("Error: STOP %s %s", operand1, operand2)
+		panic(errMsg)
+	}
+}
+
 // XOR xor
 func (cpu *CPU) XOR(operand1, operand2 string) {
 	var value byte
@@ -1103,7 +1126,7 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 string) {
 		opcode := cpu.FetchMemory8(cpu.Reg.PC)
 		instruction, operand1, operand2 := prefixCB[opcode][0], prefixCB[opcode][1], prefixCB[opcode][2]
 
-		cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
+		// cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
 
 		switch instruction {
 		case "RLC":
@@ -2363,14 +2386,4 @@ func (cpu *CPU) CCF(operand1, operand2 string) {
 		cpu.setCFlag()
 	}
 	cpu.Reg.PC++
-}
-
-// STOP stop CPU
-func (cpu *CPU) STOP(operand1, operand2 string) {
-	if operand1 == "0" && operand2 == "*" {
-		cpu.Reg.PC += 2
-	} else {
-		errMsg := fmt.Sprintf("Error: STOP %s %s", operand1, operand2)
-		panic(errMsg)
-	}
 }

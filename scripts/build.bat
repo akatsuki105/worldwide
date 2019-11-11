@@ -1,0 +1,1 @@
+@go build -o gbc.exe -ldflags -H=windowsgui ../cmd/main.go

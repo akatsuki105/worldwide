@@ -8,7 +8,13 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/faiface/pixel"
+	"gopkg.in/ini.v1"
+
+	"gbc/pkg/apu"
+	"gbc/pkg/cartridge"
+	"gbc/pkg/config"
+	"gbc/pkg/gpu"
+	"gbc/pkg/rtc"
 )
 
 var (
@@ -19,54 +25,33 @@ var (
 type CPU struct {
 	Reg              Register
 	RAM              [0x10000]byte
-	Header           ROMHeader
+	Cartridge        cartridge.Cartridge
 	mutex            sync.Mutex
 	history          []string
 	joypad           Joypad
 	interruptTrigger bool
+	config           *ini.File
 	// timer関連
-	cycle    float64
-	cycleDIV float64
-	// MBC関連
+	cycle     float64 // タイマー用
+	cycleDIV  float64 // DIVタイマー用
+	cycleLine float64 // スキャンライン用
+	// ROM bank
 	ROMBankPtr uint8
-	ROMBank    [128][0x4000]byte
+	ROMBank    [128][0x4000]byte // 0x4000-0x7fff
+	// RAM bank
 	RAMBankPtr uint8
-	RAMBank    [4][0x2000]byte
-	bankMode   uint
-	// 画面関連
-	tileCache       *pixel.PictureData // タイルデータのキャッシュ
-	newTileCache    *pixel.PictureData
-	tileModified    bool
-	mapCache        *image.RGBA
-	VRAMCache       [0x2000]byte    // VRAMデータのキャッシュ
-	VRAMModified    bool            // VRAMを変更したか(キャッシュを更新する必要があるか)
-	PalleteModified PalleteModified // Palleteを変更したか
+	RAMBank    [16][0x2000]byte // 0xa000-0xbfff
+	// WRAM bank
+	WRAMBankPtr uint8
+	WRAMBank    [8][0x1000]byte // 0xd000-0xdfff ゲームボーイカラーのみ
+	bankMode    uint
 	// サウンド
-	Sound APU
-}
-
-// ROMHeader ROMヘッダから得られたカードリッジ情報
-type ROMHeader struct {
-	Title         string
-	CartridgeType uint8
-	ROMSize       uint8
-	RAMSize       uint8
-}
-
-// ParseROMHeader ROM情報をヘッダ構造体に読み込む
-func (cpu *CPU) ParseROMHeader(rom []byte) {
-	var titleBuf []byte
-	for i := 0x0134; i < 0x0143; i++ {
-		if rom[i] == 0 {
-			break
-		}
-		titleBuf = append(titleBuf, rom[i])
-	}
-	cpu.Header.Title = string(titleBuf)
-
-	cpu.Header.CartridgeType = uint8(rom[0x0147])
-	cpu.Header.ROMSize = uint8(rom[0x0148])
-	cpu.Header.RAMSize = uint8(rom[0x0149])
+	Sound apu.APU
+	// 画面
+	GPU    gpu.GPU
+	expand uint
+	// RTC
+	RTC rtc.RTC
 }
 
 // LoadROM ROM情報をメモリに読み込む
@@ -76,13 +61,15 @@ func (cpu *CPU) LoadROM(rom []byte) {
 	}
 
 	// カードリッジタイプで場合分け
-	switch cpu.Header.CartridgeType {
-	case 0:
-		// CartridgeType : 0
+	switch cpu.Cartridge.Type {
+	case 0x00:
+		// Type : 0
+		cpu.Cartridge.MBC = "ROM"
 		cpu.transferROM(2, &rom)
-	case 1:
-		// CartridgeType : 1
-		switch cpu.Header.ROMSize {
+	case 0x01:
+		// Type : 1 => MBC1
+		cpu.Cartridge.MBC = "MBC1"
+		switch cpu.Cartridge.ROMSize {
 		case 0:
 			cpu.transferROM(2, &rom)
 		case 1:
@@ -98,14 +85,15 @@ func (cpu *CPU) LoadROM(rom []byte) {
 		case 6:
 			cpu.transferROM(128, &rom)
 		default:
-			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Header.CartridgeType, cpu.Header.ROMSize, cpu.Header.RAMSize)
+			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 2, 3:
-		// CartridgeType : 2, 3
-		switch cpu.Header.RAMSize {
+	case 0x02, 0x03:
+		// Type : 2, 3 => MBC1+RAM
+		cpu.Cartridge.MBC = "MBC1"
+		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
-			switch cpu.Header.ROMSize {
+			switch cpu.Cartridge.ROMSize {
 			case 0:
 				cpu.transferROM(2, &rom)
 			case 1:
@@ -121,12 +109,12 @@ func (cpu *CPU) LoadROM(rom []byte) {
 			case 6:
 				cpu.transferROM(128, &rom)
 			default:
-				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Header.CartridgeType, cpu.Header.ROMSize, cpu.Header.RAMSize)
+				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
 			}
 		case 3:
 			cpu.bankMode = 1
-			switch cpu.Header.ROMSize {
+			switch cpu.Cartridge.ROMSize {
 			case 0:
 			case 1:
 				cpu.transferROM(4, &rom)
@@ -137,15 +125,74 @@ func (cpu *CPU) LoadROM(rom []byte) {
 			case 4:
 				cpu.transferROM(32, &rom)
 			default:
-				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Header.CartridgeType, cpu.Header.ROMSize, cpu.Header.RAMSize)
+				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
 			}
 		default:
-			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Header.CartridgeType, cpu.Header.ROMSize, cpu.Header.RAMSize)
+			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
+			panic(errorMsg)
+		}
+	case 0x05, 0x06:
+		// Type : 5, 6 => MBC2
+		cpu.Cartridge.MBC = "MBC2"
+		switch cpu.Cartridge.RAMSize {
+		case 0, 1, 2:
+			switch cpu.Cartridge.ROMSize {
+			case 0:
+				cpu.transferROM(2, &rom)
+			case 1:
+				cpu.transferROM(4, &rom)
+			case 2:
+				cpu.transferROM(8, &rom)
+			case 3:
+				cpu.transferROM(16, &rom)
+			default:
+				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
+				panic(errorMsg)
+			}
+		case 3:
+			cpu.bankMode = 1
+			switch cpu.Cartridge.ROMSize {
+			case 0:
+			case 1:
+				cpu.transferROM(4, &rom)
+			case 2:
+				cpu.transferROM(8, &rom)
+			case 3:
+				cpu.transferROM(16, &rom)
+			default:
+				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
+				panic(errorMsg)
+			}
+		default:
+			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
+			panic(errorMsg)
+		}
+	case 0x0f, 0x10, 0x11, 0x12, 0x13:
+		// Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
+		cpu.Cartridge.MBC = "MBC3"
+		go cpu.RTC.Init()
+		switch cpu.Cartridge.ROMSize {
+		case 0:
+			cpu.transferROM(2, &rom)
+		case 1:
+			cpu.transferROM(4, &rom)
+		case 2:
+			cpu.transferROM(8, &rom)
+		case 3:
+			cpu.transferROM(16, &rom)
+		case 4:
+			cpu.transferROM(32, &rom)
+		case 5:
+			cpu.transferROM(64, &rom)
+		case 6:
+			cpu.transferROM(128, &rom)
+		default:
+			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
 	default:
-		errorMsg := fmt.Sprintf("CartridgeType is invalid => type:%x rom:%x ram:%x\n", cpu.Header.CartridgeType, cpu.Header.ROMSize, cpu.Header.RAMSize)
+		errorMsg := fmt.Sprintf("Type is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 		panic(errorMsg)
 	}
 }
@@ -160,7 +207,7 @@ func (cpu *CPU) transferROM(bankNum int, rom *[]byte) {
 
 // InitCPU CPU・メモリの初期化
 func (cpu *CPU) InitCPU() {
-	cpu.Reg.AF = 0x01b0
+	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
 	cpu.Reg.BC = 0x0013
 	cpu.Reg.DE = 0x00d8
 	cpu.Reg.HL = 0x014d
@@ -185,14 +232,23 @@ func (cpu *CPU) InitCPU() {
 	cpu.RAM[0xff24] = 0x77
 	cpu.RAM[0xff25] = 0xf3
 	cpu.RAM[0xff26] = 0xf1
-	cpu.RAM[LCDCIO] = 0x91
+	cpu.SetMemory8(LCDCIO, 0x91)
 	cpu.RAM[BGPIO] = 0xfc
 	cpu.RAM[OBP0IO] = 0xff
 	cpu.RAM[OBP1IO] = 0xff
 
 	cpu.ROMBankPtr = 1
+	cpu.WRAMBankPtr = 1
 
-	cpu.mapCache = image.NewRGBA(image.Rect(0, 0, 8*256, 8*10)) // BGタイル1=256 BGタイル2=256 SPRタイル(OBP0)=256*4 SPRタイル(OBP1)=256*4 => 10行分のタイル (8*10)
+	cpu.GPU.Display = image.NewRGBA(image.Rect(0, 0, 160, 144))
+	cpu.config = config.Init()
+
+	expand, err := cpu.config.Section("display").Key("expand").Uint()
+	if err != nil {
+		cpu.expand = 1
+	} else {
+		cpu.expand = expand
+	}
 }
 
 // InitAPU init apu
@@ -319,7 +375,6 @@ func (cpu *CPU) Debug() {
 	signal.Notify(quit, os.Interrupt)
 
 	<-quit
-	cpu.dumpVRAM("VRAM")
 	println("\n ============== Debug mode ==============\n")
 	cpu.writeHistory()
 	os.Exit(1)

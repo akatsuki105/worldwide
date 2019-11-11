@@ -1,22 +1,34 @@
 package emulator
 
 var (
-	JOYPADIO   uint16 = 0xff00
-	DIVIO      uint16 = 0xff04
-	TIMAIO     uint16 = 0xff05
-	TMAIO      uint16 = 0xff06
-	TACIO      uint16 = 0xff07
-	IFIO       uint16 = 0xff0f
-	LCDCIO     uint16 = 0xff40
-	LCDCSTATIO uint16 = 0xff41
-	LYIO       uint16 = 0xff44
-	DMAIO      uint16 = 0xff46
-	BGPIO      uint16 = 0xff47
-	OBP0IO     uint16 = 0xff48
-	OBP1IO     uint16 = 0xff49
-	WYIO       uint16 = 0xff4a
-	WXIO       uint16 = 0xff4b
-	IEIO       uint16 = 0xffff
+	JOYPADIO  uint16 = 0xff00
+	DIVIO     uint16 = 0xff04
+	TIMAIO    uint16 = 0xff05
+	TMAIO     uint16 = 0xff06
+	TACIO     uint16 = 0xff07
+	IFIO      uint16 = 0xff0f
+	LCDCIO    uint16 = 0xff40
+	LCDSTATIO uint16 = 0xff41
+	LYIO      uint16 = 0xff44
+	DMAIO     uint16 = 0xff46
+	BGPIO     uint16 = 0xff47
+	OBP0IO    uint16 = 0xff48
+	OBP1IO    uint16 = 0xff49
+	WYIO      uint16 = 0xff4a
+	WXIO      uint16 = 0xff4b
+	KEY1IO    uint16 = 0xff4d
+	VBKIO     uint16 = 0xff4f
+	HDMA1IO   uint16 = 0xff51
+	HDMA2IO   uint16 = 0xff52
+	HDMA3IO   uint16 = 0xff53
+	HDMA4IO   uint16 = 0xff54
+	HDMA5IO   uint16 = 0xff55
+	BCPSIO    uint16 = 0xff68
+	BCPDIO    uint16 = 0xff69
+	OCPSIO    uint16 = 0xff6a
+	OCPDIO    uint16 = 0xff6b
+	SVBKIO    uint16 = 0xff70
+	IEIO      uint16 = 0xffff
 
 	instructions [256][4]string = [256][4]string{
 		/* 0x0x */ {"NOP", "*", "*", "1"}, {"LD", "BC", "d16", "3"}, {"LD", "(BC)", "A", "2"}, {"INC", "BC", "*", "2"}, {"INC", "B", "*", "1"}, {"DEC", "B", "*", "1"}, {"LD", "B", "d8", "2"}, {"RLCA", "*", "*", "1"}, {"LD", "(a16)", "SP", "5"}, {"ADD", "HL", "BC", "2"}, {"LD", "A", "(BC)", "2"}, {"DEC", "BC", "*", "2"}, {"INC", "C", "*", "1"}, {"DEC", "C", "*", "1"}, {"LD", "C", "d8", "2"}, {"RRCA", "*", "*", "1"},
