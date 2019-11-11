@@ -1,0 +1,6 @@
+*.nes
+*.exe
+*.sav
+game/
+dump/
+gbc-emulator
