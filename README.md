@@ -1,19 +1,22 @@
-# GameBoy
-[![Build Status](https://travis-ci.com/Akatsuki-py/gameboy.svg?branch=master)](https://travis-ci.com/Akatsuki-py/gameboy)
+# Worldwide
+[![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/gameboy)
 
-GameBoy emulator written in golang.
+GameBoyColor emulator written in golang.
 
-<img src="https://imgur.com/1wzyYLx.gif" width="176" height="158"> <img src="https://imgur.com/IxVW33Z.gif" width="176" height="158">
+<img src="https://imgur.com/cFugCTA.gif" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/8YR987D.png" width="320" height="288">
+
+
+<img src="https://imgur.com/8eDP0un.png" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/2zwsb84.png" width="320" height="288">
 
 ## Features
 
 - 60fps
-- cpu_instrs in retrio/gb-test-roms is all clear (STOP instruction doesn't work...)
+- cpu_instrs in retrio/gb-test-roms is all clear
 - APU is implemented (thank to goboy)
-- CGB software is OK
+- CGB ROM is OK
 - Multi-platform (Win10 and Ubuntu18.04 is checked.)
-- Joystick is OK (Xbox 360 Controller and Logitech Gamepad F310)
-- ROM-only and MBC1, MBC2, MBC3 is OK
+- Joystick is OK (Xbox 360 Controller)
+- ROM-only and MBC1, MBC2, MBC3, MBC5 is OK
 - coredump is enabled
 - window expansion is enabled (E or R)
 
@@ -22,14 +25,7 @@ GameBoy emulator written in golang.
 - go 1.13
 
 ```
-go run gb.go "xxx.gb"
-```
-
-or 
-
-```
-go build
-./gameboy "xxx.gb"
+go run ./cmd/main.go "xxx.gb"
 ```
 
 ## Command 
@@ -48,3 +44,11 @@ go build
 | <kbd>R</kbd>         | Collapse display |
 | <kbd>D + S</kbd>     | Memory Dump  |
 | <kbd>L</kbd>         | Memory Load |
+
+## web version
+
+You can play [my emulator on website](https://akatsuki-py.github.io/Worldwide/).
+
+This uses webAssembly and javascript.
+
+<img src="https://imgur.com/7ZJxQIu.png">

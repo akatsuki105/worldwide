@@ -22,7 +22,7 @@ func main() {
 	cpu.InitCPU()
 	cpu.InitAPU()
 
-	go cpu.Debug()
+	// go cpu.Debug()
 
 	pixelgl.Run(cpu.Render)
 }

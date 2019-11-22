@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/nes.css@2.2.1/css/nes.min.css" rel="stylesheet" />
+    <link href="./index.css" rel="stylesheet" />
+    <link href="./gameboy.css" rel="stylesheet" />
+
+    <!-- twitter ogp -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@akatsuki-py" />
+    <meta property="og:url" content="https://akatsuki-py.github.io/Worldwide/" />
+    <meta property="og:title" content="Worldwide" />
+    <meta property="og:description" content="GameBoyColor Emulator written in golang." />
+    <meta property="og:image" content="https://akatsuki-py.github.io/Worldwide/gbc.jpg" />
+</head>
+
+<body>
+    <div id="nescss">
+        <header :class="{ sticky: scrollPos > 50 }">
+            <div class="container">
+                <div class="nav-brand">
+                    <a href="./index.html">
+                        <h1>Worldwide</h1>
+                    </a>
+                    <p>GameBoy Emulator written in golang.</p>
+                </div>
+        
+                <div class="social-buttons">
+                    <p>Share on SNS</p>
+                    <div class="share">
+                        <a href="https://twitter.com/share?text=Worldwide%0d%0aGameBoyColor Emulator written in golang.&url=https://github.com/Akatsuki-py/Worldwide"
+                            target="_blank"><i class="nes-icon twitter"></i></a>
+                        <a href="https://github.com/Akatsuki-py/Worldwide" target="_blank"><i class="nes-icon github"></i></a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="container">
+            <main class="main-content">
+        
+                <section class="badge">
+                    <a href="https://travis-ci.com/Akatsuki-py/Worldwide" class="nes-badge is-splited">
+                        <span class="is-dark travis-ci">build</span>
+                        <span class="is-success travis-ci">passing</span>
+                    </a>
+                </section>
+
+                <section class="topic">
+                    <div class="gameboy">
+                        <div class="screen-cont">
+                            <div class="power power-on"></div>
+                            <div class="screen">
+                                <img src="https://imgur.com/cFugCTA.gif" width="225" height="205" />
+                            </div>
+                        </div>
+                    
+                        <div class="controls-cont">
+                            <div class="btn-direction">
+                                <div class="vertical"></div>
+                                <div class="horizontal"></div>
+                            </div>
+                            <div class="btn-AB"></div>
+                            <div class="btn-start-select"></div>
+                        </div>
+                    
+                        <div class="speakers"></div>
+                    
+                        <div class="on-off">
+                            < off-on>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="topic">
+                    <h2 id="about"><a href="#about">#</a>About</h2>
+                    <p>Worldwide is GameBoy Emulator that can play almost any ROM.</p>
+                </section>
+
+                <section class="topic">
+                    <h2 id="features"><a href="#features">#</a>Features</h2>
+                    <p>Worldwide has the following features:</p>
+                    <ul>
+                        <li>60fps</li>
+                        <li>Written in golang, this emu works on Multi-platform.</li>
+                        <li>GameBoyColor ROM can be played.</li>
+                        <li>APU is implemented.</li>
+                        <li>Low CPU consumption.</li>
+                    </ul>
+                </section>
+
+                <section class="topic">
+                    <h2 id="download"><a href="#download">#</a>Download</h2>
+                    <p>You can download my emulator at this link.</p>
+                    <p><a href="https://github.com/Akatsuki-py/Worldwide/releases/download/v0.2.0/gbc.zip">Windows download</a></p>
+                    <p><a href="https://github.com/Akatsuki-py/Worldwide/releases/download/v0.2.0/gbc-linux.zip">Linux download</a></p>
+                    <p><a href="https://github.com/Akatsuki-py/Worldwide" target="_blank" rel="noopener noreferrer">Source code</a></p>
+                </section>
+
+                <section class="topic">
+                    <h2 id="usage"><a href="#usage">#</a>Usage</h2>
+                    <p>Windows</p>
+                    <div class="nes-container is-rounded is-dark">
+                        <p>./gbc.exe "***.gb"</p>
+                    </div>
+
+                    <br />
+
+                    <p>Linux</p>
+                    <div class="nes-container is-rounded is-dark">
+                        <p>./gbc "***.gb"</p>
+                    </div>
+
+                    <br />
+
+                    <p>Source code</p>
+                    <div class="nes-container is-rounded is-dark">
+                        <p>go run ./cmd/main.go "***.gb" // go 1.13</p>
+                    </div>
+                </section>
+
+                <section class="topic">
+                    <h2 id="webversion"><a href="./wasm.html">#</a>Web version</h2>
+                    <p>You can try web version at <a href="./wasm.html">this link</a>.</p>
+                    <p>Web version is made by Javascript and WebAssembly that is translated from golang.</p>
+                </section>
+
+            </main>
+        </div>
+    </div>
+</body>
+
+</html>

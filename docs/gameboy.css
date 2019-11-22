@@ -1,0 +1,324 @@
+input.btn-on,
+input.btn-off {
+  display: block;
+  margin: 0 auto;
+  font-family: sans-serif;
+  text-align: center;
+}
+input.btn-hide {
+  display: none;
+}
+.gameboy {
+  position: relative;
+  display: block;
+  margin: 20px auto;
+  width: 422px;
+  height: 697px;
+  background: #eee;
+  border-radius: 10px 10px 60px 10px;
+  box-shadow: 5px 5px rgba(0,0,0,0.1);
+}
+.gameboy:before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 31px;
+  border-bottom: 4px solid #e0e0e0;
+}
+.gameboy:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 334px;
+  height: 31px;
+  border-left: 4px solid #e0e0e0;
+  border-right: 4px solid #e0e0e0;
+  margin-left: 40px;
+  margin-right: 40px;
+}
+.gameboy .screen-cont {
+  position: relative;
+  top: 60px;
+  left: 40px;
+  width: 342px;
+  height: 272px;
+  margin-bottom: 58px;
+  background-color: #777;
+  border-radius: 13px 13px 50px 13px;
+}
+.gameboy .screen-cont .screen {
+  position: relative;
+  top: 30px;
+  margin-left: auto;
+  margin-right: auto;
+  background: #bdae58;
+  width: 225px;
+  height: 205px;
+  box-shadow: inset 3px 3px rgba(0,0,0,0.15);
+}
+.gameboy .screen-cont .screen .header {
+  position: relative;
+  top: -30px;
+  width: 100%;
+  height: 30px;
+  padding-top: 10px;
+  box-sizing: border-box;
+  text-align: right;
+  font-size: 10px;
+  font-family: sans-serif;
+  color: #b3b3b3;
+}
+.gameboy .screen-cont .screen .header:before {
+  content: "";
+  position: absolute;
+  left: -43px;
+  top: 12px;
+  width: 90px;
+  height: 3px;
+  background-color: #8b1d90;
+  box-shadow: 0 6px 0 #283593;
+}
+.gameboy .screen-cont .screen .header:after {
+  content: "";
+  position: absolute;
+  right: -46px;
+  top: 12px;
+  width: 38px;
+  height: 3px;
+  background-color: #8b1d90;
+  box-shadow: 0 6px 0 #283593;
+}
+.gameboy .screen-cont .screen .animated-text {
+  opacity: 0;
+  display: inline;
+  position: relative;
+  top: -26px;
+  left: 30%;
+  color: #8a891f;
+  font-size: 17px;
+  font-family: "Pretendo";
+  z-index: 10;
+}
+.gameboy .screen-cont .screen .animated-text.end {
+  opacity: 1;
+  top: 50px;
+  -webkit-transition: top 3s linear;
+  -moz-transition: top 3s linear;
+  -ms-transition: top 3s linear;
+  -o-transition: top 3s linear;
+  transition: top 3s linear;
+}
+.gameboy .screen-cont .screen .animated-text .copy {
+  position: relative;
+  display: inline;
+  top: -2px;
+  margin-left: 2px;
+  font-size: 15px;
+  font-family: monospace;
+}
+.gameboy .screen-cont .power {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  top: 100px;
+  left: 20px;
+  border-radius: 100%;
+  background-color: #b98181;
+  -webkit-transition: background-color 300ms linear;
+  -moz-transition: background-color 300ms linear;
+  -ms-transition: background-color 300ms linear;
+  -o-transition: background-color 300ms linear;
+  transition: background-color 300ms linear;
+}
+.gameboy .screen-cont .power:before {
+  content: "BATTERY";
+  position: relative;
+  top: 18px;
+  left: -10px;
+  font-size: 8px;
+  font-family: sans-serif;
+  color: #b3b3b3;
+}
+.gameboy .screen-cont .power.power-on {
+  background-color: #f00;
+  box-shadow: 0 0 3px 1px #ef5350;
+}
+.gameboy .controls-cont {
+  display: block;
+  position: relative;
+  margin-top: 90px;
+}
+.gameboy .controls-cont .btn-direction {
+  position: relative;
+  margin-left: 40px;
+  top: 60px;
+}
+.gameboy .controls-cont .btn-direction:before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 30px;
+  left: 30px;
+  width: 30px;
+  height: 30px;
+  background-color: #353535;
+  border-radius: 100%;
+}
+.gameboy .controls-cont .btn-direction .vertical,
+.gameboy .controls-cont .btn-direction .horizontal {
+  position: absolute;
+  left: 30px;
+  width: 30px;
+  height: 90px;
+  background: #444;
+  border-radius: 5px;
+}
+.gameboy .controls-cont .btn-direction .vertical:before,
+.gameboy .controls-cont .btn-direction .horizontal:before {
+  content: "";
+  position: relative;
+  top: 99px;
+  left: 8px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 7px solid #dedede;
+}
+.gameboy .controls-cont .btn-direction .vertical:after,
+.gameboy .controls-cont .btn-direction .horizontal:after {
+  content: "";
+  position: relative;
+  top: -27px;
+  left: -5.6px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid #dedede;
+}
+.gameboy .controls-cont .btn-direction .horizontal {
+  -webkit-transform: rotate(90deg);
+  -moz-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  transform: rotate(90deg);
+}
+.gameboy .controls-cont .btn-AB {
+  position: absolute;
+  top: 72px;
+  left: 252px;
+  width: 130px;
+  height: 60px;
+  background: #dfdfdf;
+  border-radius: 30px;
+  -webkit-transform: rotate(-25deg);
+}
+.gameboy .controls-cont .btn-AB:after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 44px;
+  height: 44px;
+  background: #a93671;
+  box-shadow: 68px 0 #a93671;
+  border-radius: 100%;
+  -webkit-transform: rotate(180deg);
+}
+.gameboy .controls-cont .btn-start-select {
+  position: absolute;
+  top: 205px;
+  left: 140px;
+  height: 12px;
+  width: 60px;
+  background: #999;
+  border-radius: 10px;
+  -webkit-transform: rotate(-25deg);
+  box-shadow: 57px 27px #999, 0 0 0 5px #dfdfdf, 57px 27px 0 5px #dfdfdf;
+}
+.gameboy .speakers {
+  content: "";
+  position: relative;
+  height: 70px;
+  width: 8px;
+  top: 260px;
+  left: 300px;
+  background: #ddd;
+  border-radius: 4px;
+  -webkit-transform: rotate(-25deg);
+  box-shadow: 20px 0 #ddd, 40px 0 #ddd, 60px 0 #ddd, 80px 0 #ddd, 100px 0 #ddd;
+}
+.phones {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  padding: 3px 5px;
+  transform: translateX(-50%);
+  color: #dadada;
+  background-color: #e8e8e8;
+  font-size: 8px;
+  font-family: sans-serif;
+  text-transform: uppercase;
+  border-radius: 30px;
+}
+.phones:before {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 5px;
+  bottom: -4px;
+  background-color: #e8e8e8;
+  left: 9px;
+}
+.phones:after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 5px;
+  bottom: -4px;
+  left: 12px;
+  background-color: #ddd;
+  box-shadow: 5px 0 #ddd;
+  border-radius: 4px 4px 0 0;
+}
+.on-off {
+  position: absolute;
+  top: 2px;
+  left: 20%;
+  padding: 3px 5px;
+  transform: translateX(-50%);
+  color: #dadada;
+  background-color: #e8e8e8;
+  font-size: 8px;
+  font-family: sans-serif;
+  text-transform: uppercase;
+  border-radius: 30px;
+}
+.on-off:before {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 5px;
+  top: -2px;
+  background-color: #e8e8e8;
+  left: 6px;
+}
+.on-off:after {
+  content: "";
+  position: absolute;
+  width: 3px;
+  height: 5px;
+  top: -2px;
+  left: 9px;
+  background-color: #ddd;
+  box-shadow: 5px 0 #ddd;
+  border-radius: 0 0 3px 3px;
+}
+.gh-img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 0;
+}

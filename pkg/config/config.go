@@ -16,6 +16,7 @@ func Init() *ini.File {
 	cfg := ini.Empty()
 	// display
 	cfg.Section("display").Key("expand").SetValue("2")
+	cfg.Section("display").Key("saving").SetValue("yes")
 
 	// Xbox 360 Controller
 	cfg.Section("Xbox 360 Controller").Key("A").SetValue("1")

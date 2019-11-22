@@ -10,6 +10,7 @@ import (
 
 // Joypad Joypadの入力を管理する
 type Joypad struct {
+	P1        byte
 	Button    [4]bool // 0bスタートセレクトBA
 	Direction [4]bool // 0b下上左右
 }
@@ -22,18 +23,19 @@ const (
 	player0 = 0
 )
 
-func (cpu *CPU) formatJoypad() byte {
+// FormatJoypad Joypadの状態をbyteにして返す
+func (pad *Joypad) FormatJoypad() byte {
 	joypad := byte(0x00)
-	if cpu.getP15() {
+	if pad.getP15() {
 		for i := 0; i < 4; i++ {
-			if cpu.joypad.Button[i] {
+			if pad.Button[i] {
 				joypad |= (1 << uint(i))
 			}
 		}
 	}
-	if cpu.getP14() {
+	if pad.getP14() {
 		for i := 0; i < 4; i++ {
-			if cpu.joypad.Direction[i] {
+			if pad.Direction[i] {
 				joypad |= (1 << uint(i))
 			}
 		}
@@ -41,16 +43,16 @@ func (cpu *CPU) formatJoypad() byte {
 	return ^joypad
 }
 
-func (cpu *CPU) getP14() bool {
-	JOYPAD := cpu.FetchMemory8(0xff00)
+func (pad *Joypad) getP14() bool {
+	JOYPAD := pad.P1
 	if JOYPAD&0x10 == 0 {
 		return true
 	}
 	return false
 }
 
-func (cpu *CPU) getP15() bool {
-	JOYPAD := cpu.FetchMemory8(0xff00)
+func (pad *Joypad) getP15() bool {
+	JOYPAD := pad.P1
 	if JOYPAD&0x20 == 0 {
 		return true
 	}
@@ -235,9 +237,8 @@ func keyUp(win *pixelgl.Window, joystickName string, config *ini.File) bool {
 	negative := keyMap.Key("VerticalNegative").MustInt()
 	if negative == 0 {
 		return win.JoystickAxis(player0, keyMap.Key("Vertical").MustInt()) >= 1
-	} else {
-		return win.JoystickAxis(player0, keyMap.Key("Vertical").MustInt()) <= -1
 	}
+	return win.JoystickAxis(player0, keyMap.Key("Vertical").MustInt()) <= -1
 }
 
 func keyDown(win *pixelgl.Window, joystickName string, config *ini.File) bool {
@@ -255,9 +256,8 @@ func keyDown(win *pixelgl.Window, joystickName string, config *ini.File) bool {
 	negative := keyMap.Key("VerticalNegative").MustInt()
 	if negative == 0 {
 		return win.JoystickAxis(player0, keyMap.Key("Vertical").MustInt()) <= -1
-	} else {
-		return win.JoystickAxis(player0, keyMap.Key("Vertical").MustInt()) >= 1
 	}
+	return win.JoystickAxis(player0, keyMap.Key("Vertical").MustInt()) >= 1
 }
 
 func keyRight(win *pixelgl.Window, joystickName string, config *ini.File) bool {

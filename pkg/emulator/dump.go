@@ -73,6 +73,9 @@ func (cpu *CPU) gobEncode() ([]byte, error) {
 	if err := encoder.Encode(cpu.bankMode); err != nil {
 		return nil, err
 	}
+	if err := encoder.Encode(cpu.GPU); err != nil {
+		return nil, err
+	}
 	return w.Bytes(), nil
 }
 
@@ -133,6 +136,9 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 		return err
 	}
 	if err := decoder.Decode(&cpu.bankMode); err != nil {
+		return err
+	}
+	if err := decoder.Decode(&cpu.GPU); err != nil {
 		return err
 	}
 	return nil

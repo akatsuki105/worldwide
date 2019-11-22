@@ -2,24 +2,26 @@ package gpu
 
 import (
 	"fmt"
-	"image"
 	"image/color"
+
+	"github.com/faiface/pixel"
 )
 
 // GPU Graphic Processor Unit
 type GPU struct {
-	Display       *image.RGBA    // 160*144のイメージデータ
-	LCDC          byte           // LCD Control
-	LCDSTAT       byte           // LCD Status
-	displayColor  [144][160]byte // 160*144の色番号(背景色を記録)
-	DMGPallte     [3]byte        // DMGのパレットデータ {BGP, OGP0, OGP1}
-	CGBPallte     [2]byte        // CGBのパレットデータ {BCPSIO, OCPSIO}
+	Display       *pixel.PictureData // 160*144のイメージデータ
+	LCDC          byte               // LCD Control
+	LCDSTAT       byte               // LCD Status
+	displayColor  [144][160]byte     // 160*144の色番号(背景色を記録)
+	DMGPallte     [3]byte            // DMGのパレットデータ {BGP, OGP0, OGP1}
+	CGBPallte     [2]byte            // CGBのパレットデータ {BCPSIO, OCPSIO}
 	BGPallete     [64]byte
 	SPRPallete    [64]byte
 	BGPriorPixels [][5]byte
 	// VRAM bank
-	VRAMBankPtr uint8
-	VRAMBank    [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
+	VRAMBankPtr     uint8
+	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
+	HBlankDMALength int
 }
 
 var (
@@ -27,7 +29,7 @@ var (
 	colors [64][3]uint8 = [64][3]uint8{
 		// https://forums.nesdev.com/viewtopic.php?f=20&t=12533
 		// {0xff, 0xff, 0xff}, {0x7b, 0xff, 0x31}, {0x0c, 0x5c, 0xc5}, {0x00, 0x00, 0x00},
-		{0xff, 0xff, 0xff}, {0x33, 0xff, 0xff}, {0x00, 0x33, 0xff}, {0x00, 0x00, 0x00},
+		{0xff, 0xff, 0xff}, {0x00, 0xff, 0x7f}, {0x00, 0x33, 0xff}, {0x00, 0x00, 0x00},
 	}
 )
 
@@ -98,7 +100,9 @@ func (gpu *GPU) SetBGPriorPixels() {
 		x, y := int(pixel[0]), int(pixel[1])
 		R, G, B := pixel[2], pixel[3], pixel[4]
 		c := color.RGBA{R, G, B, 0xff}
-		gpu.Display.Set(x, y, c)
+		if x < 160 && y < 144 {
+			gpu.Display.Pix[160*144-(y*160+(160-x))] = c
+		}
 	}
 	gpu.BGPriorPixels = [][5]byte{}
 }
@@ -151,14 +155,9 @@ func (gpu *GPU) fetchSPRYSize() int {
 func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType string, attr byte, spriteYSize int, isCGB bool) {
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	var lowerByte, upperByte byte
-	VRAMBankPtr := (attr >> 3) % 2
-	if VRAMBankPtr == 1 {
-		lowerByte = gpu.VRAMBank[1][addr-0x8000]
-		upperByte = gpu.VRAMBank[1][addr-0x8000+1]
-	} else {
-		lowerByte = gpu.VRAMBank[0][addr-0x8000]
-		upperByte = gpu.VRAMBank[0][addr-0x8000+1]
-	}
+	VRAMBankPtr := (attr >> 3) & 0x01
+	lowerByte = gpu.VRAMBank[VRAMBankPtr][addr-0x8000]
+	upperByte = gpu.VRAMBank[VRAMBankPtr][addr-0x8000+1]
 
 	for j := 0; j < 8; j++ {
 		bitCtr := (7 - uint(j)) // 上位何ビット目を取り出すか
@@ -167,7 +166,7 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 		colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
 
 		var x, y int
-		var c color.Color
+		var c color.RGBA
 		var RGB, R, G, B byte
 		var isTransparent bool
 		switch tileType {
@@ -199,15 +198,15 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 
 		if !isTransparent {
 			// 反転を考慮してpixelをセット
-			if (attr>>6)%2 == 1 && (attr>>5)%2 == 1 {
+			if (attr>>6)&0x01 == 1 && (attr>>5)&0x01 == 1 {
 				// 上下左右
 				x = int(entryX + (7 - j))
 				y = int(entryY + ((spriteYSize - 1) - int(lineIndex)))
-			} else if (attr>>6)%2 == 1 {
+			} else if (attr>>6)&0x01 == 1 {
 				// 上下
 				x = int(entryX + j)
 				y = int(entryY + ((spriteYSize - 1) - int(lineIndex)))
-			} else if (attr>>5)%2 == 1 {
+			} else if (attr>>5)&0x01 == 1 {
 				// 左右
 				x = int(entryX + (7 - j))
 				y = int(entryY + int(lineIndex))
@@ -221,19 +220,19 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 				if tileType == "BGP" {
 					gpu.displayColor[y][x] = colorNumber
 
-					if (attr>>7)%2 == 1 {
+					if (attr>>7)&0x01 == 1 {
 						gpu.BGPriorPixels = append(gpu.BGPriorPixels, [5]byte{byte(x), byte(y), R, G, B})
 					} else {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.Display.Set(x, y, c)
+						gpu.Display.Pix[160*144-(y*160+(160-x))] = c
 					}
 				} else {
-					if (attr>>7)%2 == 0 && gpu.displayColor[y][x] != 0 {
+					if (attr>>7)&0x01 == 0 && gpu.displayColor[y][x] != 0 {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.Display.Set(x, y, c)
+						gpu.Display.Pix[160*144-(y*160+(160-x))] = c
 					} else if gpu.displayColor[y][x] == 0 {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.Display.Set(x, y, c)
+						gpu.Display.Pix[160*144-(y*160+(160-x))] = c
 					}
 				}
 			}

@@ -50,7 +50,11 @@ func (cpu *CPU) LD(operand1, operand2 string) {
 			cpu.Reg.PC++
 		case "d8":
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			cpu.Reg.PC += 2
+			if cpu.Cartridge.Title == "PM_CRYSTAL" && cpu.Reg.PC == 0x658c {
+				cpu.Reg.PC = 0x6385
+			} else {
+				cpu.Reg.PC += 2
+			}
 		case "(C)":
 			addr := 0xff00 + uint16(cpu.getCReg())
 			cpu.setAReg(cpu.FetchMemory8(addr))
@@ -402,7 +406,7 @@ func (cpu *CPU) LDH(operand1, operand2 string) {
 
 		if addr == JOYPADIO {
 			// Joypad読み込み
-			value = cpu.formatJoypad()
+			value = cpu.joypad.FormatJoypad()
 		}
 
 		cpu.setAReg(value)
@@ -421,12 +425,7 @@ func (cpu *CPU) LDH(operand1, operand2 string) {
 
 // NOP No operation
 func (cpu *CPU) NOP(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
-		cpu.Reg.PC++
-	} else {
-		errMsg := fmt.Sprintf("Error: NOP %s %s", operand1, operand2)
-		panic(errMsg)
-	}
+	cpu.Reg.PC++
 }
 
 // INC Increment
@@ -593,33 +592,27 @@ func (cpu *CPU) JR(operand1, operand2 string) {
 
 // HALT Halt
 func (cpu *CPU) HALT(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
-		if cpu.interruptTrigger {
-			cpu.Reg.PC++
-			cpu.interruptTrigger = false
-		}
-	} else {
-		errMsg := fmt.Sprintf("Error: HALT %s %s", operand1, operand2)
-		panic(errMsg)
+	if cpu.interruptTrigger {
+		cpu.Reg.PC++
+		cpu.interruptTrigger = false
 	}
 }
 
 // STOP stop CPU
 func (cpu *CPU) STOP(operand1, operand2 string) {
 	if operand1 == "0" && operand2 == "*" {
-		if cpu.interruptTrigger {
-			cpu.Reg.PC += 2
-			// 速度切り替え
-			KEY1 := cpu.FetchMemory8(KEY1IO)
-			if KEY1&0x01 == 1 {
-				if KEY1>>7 == 1 {
-					KEY1 = 0x00
-				} else {
-					KEY1 = 0x80
-				}
-				cpu.SetMemory8(KEY1IO, KEY1)
+		cpu.Reg.PC += 2
+		// 速度切り替え
+		KEY1 := cpu.FetchMemory8(KEY1IO)
+		if KEY1&0x01 == 1 {
+			if KEY1>>7 == 1 {
+				KEY1 = 0x00
+				cpu.isBoosted = false
+			} else {
+				KEY1 = 0x80
+				cpu.isBoosted = true
 			}
-			cpu.interruptTrigger = false
+			cpu.SetMemory8(KEY1IO, KEY1)
 		}
 	} else {
 		errMsg := fmt.Sprintf("Error: STOP %s %s", operand1, operand2)
@@ -744,13 +737,8 @@ func (cpu *CPU) RET(operand1, operand2 string) {
 
 // RETI Return Interrupt
 func (cpu *CPU) RETI(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
-		cpu.popPC()
-		cpu.Reg.IME = true
-	} else {
-		errMsg := fmt.Sprintf("Error: RETI %s %s", operand1, operand2)
-		panic(errMsg)
-	}
+	cpu.popPC()
+	cpu.Reg.IME = true
 }
 
 // CALL Call subroutine
@@ -1107,16 +1095,11 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 
 // CPL Complement A Register(Aレジスタのbitをすべて反転)
 func (cpu *CPU) CPL(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
-		A := ^cpu.getAReg()
-		cpu.setAReg(A)
-		cpu.flagN(true)
-		cpu.setHFlag()
-		cpu.Reg.PC++
-	} else {
-		errMsg := fmt.Sprintf("Error: CPL %s %s", operand1, operand2)
-		panic(errMsg)
-	}
+	A := ^cpu.getAReg()
+	cpu.setAReg(A)
+	cpu.flagN(true)
+	cpu.setHFlag()
+	cpu.Reg.PC++
 }
 
 // PREFIXCB 拡張命令

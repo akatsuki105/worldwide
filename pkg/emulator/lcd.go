@@ -4,6 +4,17 @@ func (cpu *CPU) setHBlankMode() {
 	STAT := cpu.FetchMemory8(LCDSTATIO)
 	STAT &= 0xfc // bit0-1を00にする
 	cpu.SetMemory8(LCDSTATIO, STAT)
+
+	if cpu.GPU.HBlankDMALength > 0 {
+		cpu.doVRAMDMATransfer(0x10)
+		if cpu.GPU.HBlankDMALength == 1 {
+			cpu.RAM[HDMA5IO] = 0xff
+		} else {
+			cpu.GPU.HBlankDMALength--
+			cpu.RAM[HDMA5IO] = byte(cpu.GPU.HBlankDMALength)
+		}
+	}
+
 	if (STAT & 0x08) != 0 {
 		cpu.setLCDSTATFlag()
 	}
@@ -52,7 +63,7 @@ func (cpu *CPU) incrementLY() {
 	if LY > 153 {
 		LY = 0
 	}
-	cpu.SetMemory8(LYIO, byte(LY))
+	cpu.RAM[LYIO] = byte(LY)
 	cpu.compareLYC(LY)
 }
 
@@ -64,7 +75,7 @@ func (cpu *CPU) compareLYC(LY uint8) {
 		cpu.SetMemory8(LCDSTATIO, STAT)
 
 		enable := cpu.getLCDSTATEnable()
-		if enable {
+		if enable && (STAT>>6)&0x01 == 1 {
 			cpu.triggerLCDC()
 		}
 	}

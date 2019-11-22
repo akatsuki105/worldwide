@@ -2,12 +2,12 @@ package emulator
 
 import (
 	"fmt"
-	"image"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 
+	"github.com/faiface/pixel"
 	"gopkg.in/ini.v1"
 
 	"gbc/pkg/apu"
@@ -37,7 +37,7 @@ type CPU struct {
 	cycleLine float64 // スキャンライン用
 	// ROM bank
 	ROMBankPtr uint8
-	ROMBank    [128][0x4000]byte // 0x4000-0x7fff
+	ROMBank    [256][0x4000]byte // 0x4000-0x7fff
 	// RAM bank
 	RAMBankPtr uint8
 	RAMBank    [16][0x2000]byte // 0xa000-0xbfff
@@ -50,8 +50,10 @@ type CPU struct {
 	// 画面
 	GPU    gpu.GPU
 	expand uint
+	saving bool // trueだとリフレッシュレートが30に落ちるがCPU使用率は下がる
 	// RTC
-	RTC rtc.RTC
+	RTC       rtc.RTC
+	isBoosted bool // 倍速か
 }
 
 // LoadROM ROM情報をメモリに読み込む
@@ -191,6 +193,30 @@ func (cpu *CPU) LoadROM(rom []byte) {
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
+	case 0x19, 0x1a, 0x1b:
+		// Type : 0x19, 0x1a, 0x1b => MBC5
+		cpu.Cartridge.MBC = "MBC5"
+		switch cpu.Cartridge.ROMSize {
+		case 0:
+			cpu.transferROM(2, &rom)
+		case 1:
+			cpu.transferROM(4, &rom)
+		case 2:
+			cpu.transferROM(8, &rom)
+		case 3:
+			cpu.transferROM(16, &rom)
+		case 4:
+			cpu.transferROM(32, &rom)
+		case 5:
+			cpu.transferROM(64, &rom)
+		case 6:
+			cpu.transferROM(128, &rom)
+		case 7:
+			cpu.transferROM(256, &rom)
+		default:
+			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
+			panic(errorMsg)
+		}
 	default:
 		errorMsg := fmt.Sprintf("Type is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 		panic(errorMsg)
@@ -240,7 +266,7 @@ func (cpu *CPU) InitCPU() {
 	cpu.ROMBankPtr = 1
 	cpu.WRAMBankPtr = 1
 
-	cpu.GPU.Display = image.NewRGBA(image.Rect(0, 0, 160, 144))
+	cpu.GPU.Display = pixel.MakePictureData(pixel.R(0, 0, 160, 144))
 	cpu.config = config.Init()
 
 	expand, err := cpu.config.Section("display").Key("expand").Uint()
@@ -248,6 +274,12 @@ func (cpu *CPU) InitCPU() {
 		cpu.expand = 1
 	} else {
 		cpu.expand = expand
+	}
+	saving := cpu.config.Section("display").Key("saving").String()
+	if saving == "yes" {
+		cpu.saving = true
+	} else {
+		cpu.saving = false
 	}
 }
 
@@ -346,7 +378,7 @@ func (cpu *CPU) exec() {
 
 	cpu.mutex.Unlock()
 
-	cpu.timer(cycle)
+	cpu.timer(instruction, cycle)
 
 	cpu.handleInterrupt()
 }
@@ -394,7 +426,10 @@ func (cpu *CPU) exit(message string, breakPoint uint16) {
 	}
 }
 
-func (cpu *CPU) debugPC() {
+func (cpu *CPU) debugPC(delta int) {
 	fmt.Printf("PC: 0x%04x\n", cpu.Reg.PC)
-	fmt.Printf("next: %02x %02x %02x %02x\n", cpu.RAM[cpu.Reg.PC+1], cpu.RAM[cpu.Reg.PC+2], cpu.RAM[cpu.Reg.PC+3], cpu.RAM[cpu.Reg.PC+4])
+	for i := 1; i < delta; i++ {
+		fmt.Printf("%02x ", cpu.RAM[cpu.Reg.PC+uint16(i)])
+	}
+	fmt.Println()
 }

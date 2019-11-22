@@ -60,11 +60,22 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				newROMBankPtr := (upper2 << 5) | lower5
 				cpu.switchROMBank(newROMBankPtr)
 			case "MBC3":
-				newROMBankPtr := value & 0x7f
-				if newROMBankPtr == 0 {
-					newROMBankPtr = 1
+				if cpu.GPU.HBlankDMALength == 0 {
+					newROMBankPtr := value & 0x7f
+					if newROMBankPtr == 0 {
+						newROMBankPtr = 1
+					}
+					cpu.switchROMBank(newROMBankPtr)
 				}
-				cpu.switchROMBank(newROMBankPtr)
+			case "MBC5":
+				if addr < 0x3000 {
+					// 下位8bit
+					newROMBankPtr := value
+					cpu.switchROMBank(newROMBankPtr)
+				} else {
+					// 上位1bit
+					// fmt.Println(value)
+				}
 			}
 		} else if (addr >= 0x4000) && (addr <= 0x5fff) {
 			switch cpu.Cartridge.MBC {
@@ -83,12 +94,15 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				}
 			case "MBC3":
 				switch {
-				case value <= 0x07:
+				case value <= 0x07 && cpu.GPU.HBlankDMALength == 0:
 					cpu.RTC.Mapped = 0
 					cpu.RAMBankPtr = value
 				case value >= 0x08 && value <= 0x0c:
 					cpu.RTC.Mapped = uint(value)
 				}
+			case "MBC5":
+				// fmt.Println(value)
+				cpu.RAMBankPtr = value & 0x0f
 			}
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch cpu.Cartridge.MBC {
@@ -99,7 +113,10 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				}
 			case "MBC3":
 				if value == 1 {
-					// fmt.Println("Latch")
+					cpu.RTC.Latched = false
+				} else if value == 0 {
+					cpu.RTC.Latched = true
+					cpu.RTC.Latch()
 				}
 			}
 		}
@@ -120,6 +137,10 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 			cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000] = value
 		} else {
 			cpu.RAM[addr] = value
+		}
+
+		if addr == JOYPADIO {
+			cpu.joypad.P1 = value
 		}
 
 		// DMA転送
@@ -156,38 +177,31 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 
 		if cpu.Cartridge.IsCGB {
 			// VRAMバンク切り替え
-			if addr == VBKIO {
+			if addr == VBKIO && cpu.GPU.HBlankDMALength == 0 {
 				newVRAMBankPtr := value & 0x01
 				cpu.GPU.VRAMBankPtr = newVRAMBankPtr
 			}
 
 			// VRAM DMA転送
 			if addr == HDMA5IO {
-				fromUpper := uint16(cpu.FetchMemory8(HDMA1IO))
-				fromLower := uint16(cpu.FetchMemory8(HDMA2IO) & 0xf0)
-				from := (fromUpper << 8) | fromLower
-				toUpper := uint16((cpu.FetchMemory8(HDMA3IO) | (1 << 7)) & 0x9f) // 上位3bitは100固定
-				toLower := uint16(cpu.FetchMemory8(HDMA4IO) & 0xf0)
-				to := (toUpper << 8) | toLower
+				HDMA5 := value
+				mode := HDMA5 >> 7 // 転送モード
+				if cpu.GPU.HBlankDMALength > 0 && mode == 0 {
+					cpu.GPU.HBlankDMALength = 0
+					cpu.RAM[HDMA5IO] |= 0x80
+				} else {
+					length := (int(HDMA5&0x7f) + 1) * 16 // 転送するデータ長
 
-				HDMA5 := cpu.FetchMemory8(HDMA5IO)
-				length := (int((HDMA5 & 0x7f)) + 1) * 16 // 転送するデータ長
-				mode := HDMA5 >> 7                       // 転送モード
-
-				switch mode {
-				case 0:
-					// 汎用DMA
-					for i := 0; i < length; i++ {
-						value := cpu.FetchMemory8(from + uint16(i))
-						cpu.SetMemory8(to+uint16(i), value)
+					switch mode {
+					case 0:
+						// 汎用DMA
+						cpu.doVRAMDMATransfer(length)
+						cpu.RAM[HDMA5IO] = 0xff // 完了
+					case 1:
+						// H-Blank DMA
+						cpu.GPU.HBlankDMALength = int(HDMA5 & 0x7f)
+						cpu.RAM[HDMA5IO] &= 0x7f
 					}
-				case 1:
-					// H-Blank DMA
-					for i := 0; i < length; i++ {
-						value := cpu.FetchMemory8(from + uint16(i))
-						cpu.SetMemory8(to+uint16(i), value)
-					}
-					cpu.RAM[HDMA5] = 0xff // 完了
 				}
 			}
 
@@ -241,6 +255,8 @@ func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
 		switchFlag = (newROMBankPtr < 64)
 	case 6:
 		switchFlag = (newROMBankPtr < 128)
+	case 7:
+		switchFlag = (newROMBankPtr <= 255)
 	default:
 		errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 		panic(errorMsg)
@@ -249,4 +265,21 @@ func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
 	if switchFlag {
 		cpu.ROMBankPtr = newROMBankPtr
 	}
+}
+
+func (cpu *CPU) doVRAMDMATransfer(length int) {
+	from := (uint16(cpu.FetchMemory8(HDMA1IO))<<8 | uint16(cpu.FetchMemory8(HDMA2IO))) & 0xfff0
+	to := ((uint16(cpu.FetchMemory8(HDMA3IO))<<8 | uint16(cpu.FetchMemory8(HDMA4IO))) & 0x1ff0) + 0x8000
+
+	for i := 0; i < length; i++ {
+		value := cpu.FetchMemory8(from)
+		cpu.SetMemory8(to, value)
+		from++
+		to++
+	}
+
+	cpu.RAM[HDMA1IO] = byte(from >> 8)
+	cpu.RAM[HDMA2IO] = byte((from & 0xff))
+	cpu.RAM[HDMA3IO] = byte(to >> 8)
+	cpu.RAM[HDMA4IO] = byte(to & 0xf0)
 }

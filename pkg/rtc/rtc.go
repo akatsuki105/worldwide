@@ -4,12 +4,23 @@ import "time"
 
 // RTC Real Time Clock
 type RTC struct {
-	Mapped uint
-	S      byte
-	M      byte
-	H      byte
-	DL     byte
-	DH     byte
+	Mapped     uint
+	S          byte
+	M          byte
+	H          byte
+	DL         byte
+	DH         byte
+	Latched    bool
+	LatchedRTC LatchedRTC
+}
+
+// LatchedRTC Latched RTC
+type LatchedRTC struct {
+	S  byte
+	M  byte
+	H  byte
+	DL byte
+	DH byte
 }
 
 // Init クロックを開始する
@@ -23,19 +34,43 @@ func (rtc *RTC) Init() {
 
 // Read fetch clock register
 func (rtc *RTC) Read(target byte) byte {
-	switch target {
-	case 0x08:
-		return rtc.S
-	case 0x09:
-		return rtc.M
-	case 0x0a:
-		return rtc.H
-	case 0x0b:
-		return rtc.DL
-	case 0x0c:
-		return rtc.DH
+	if rtc.Latched {
+		switch target {
+		case 0x08:
+			return rtc.LatchedRTC.S
+		case 0x09:
+			return rtc.LatchedRTC.M
+		case 0x0a:
+			return rtc.LatchedRTC.H
+		case 0x0b:
+			return rtc.LatchedRTC.DL
+		case 0x0c:
+			return rtc.LatchedRTC.DH
+		}
+	} else {
+		switch target {
+		case 0x08:
+			return rtc.S
+		case 0x09:
+			return rtc.M
+		case 0x0a:
+			return rtc.H
+		case 0x0b:
+			return rtc.DL
+		case 0x0c:
+			return rtc.DH
+		}
 	}
 	return 0
+}
+
+// Latch ラッチする
+func (rtc *RTC) Latch() {
+	rtc.LatchedRTC.S = rtc.S
+	rtc.LatchedRTC.M = rtc.M
+	rtc.LatchedRTC.H = rtc.H
+	rtc.LatchedRTC.DL = rtc.DL
+	rtc.LatchedRTC.DH = rtc.DH
 }
 
 // Write set clock register

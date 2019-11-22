@@ -126,9 +126,14 @@ func (cpu *CPU) clearTimerFlag() {
 	cpu.SetMemory8(IFIO, IF)
 }
 
-func (cpu *CPU) timer(cycle float64) {
+func (cpu *CPU) timer(instruction string, cycle float64) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
+
+	// CPU使用率削減のため
+	if instruction == "HALT" {
+		cycle += 10
+	}
 
 	// スキャンライン
 	cpu.cycleLine += cycle
@@ -291,19 +296,21 @@ func (cpu *CPU) triggerJoypad() {
 
 // 能動的な割り込みに対処する
 func (cpu *CPU) handleInterrupt() {
-	if cpu.Reg.IME && cpu.getVBlankEnable() && cpu.getVBlankFlag() {
-		cpu.triggerVBlank()
-	}
+	if cpu.Reg.IME {
+		if cpu.getVBlankEnable() && cpu.getVBlankFlag() {
+			cpu.triggerVBlank()
+		}
 
-	if cpu.Reg.IME && cpu.getLCDSTATEnable() && cpu.getLCDSTATFlag() {
-		cpu.triggerLCDC()
-	}
+		if cpu.getLCDSTATEnable() && cpu.getLCDSTATFlag() {
+			cpu.triggerLCDC()
+		}
 
-	if cpu.Reg.IME && cpu.getTimerEnable() && cpu.getTimerFlag() {
-		cpu.triggerTimer()
-	}
+		if cpu.getTimerEnable() && cpu.getTimerFlag() {
+			cpu.triggerTimer()
+		}
 
-	if cpu.Reg.IME && cpu.getJoypadEnable() && cpu.getJoypadFlag() {
-		cpu.triggerJoypad()
+		if cpu.getJoypadEnable() && cpu.getJoypadFlag() {
+			cpu.triggerJoypad()
+		}
 	}
 }
