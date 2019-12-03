@@ -1,5 +1,5 @@
 # Worldwide
-[![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/gameboy)
+[![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/Worldwide)
 
 GameBoyColor emulator written in golang.
 

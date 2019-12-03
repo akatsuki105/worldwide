@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"gbc/pkg/emulator"
+	"github.com/akatsuki-py/tfd"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/sqweek/dialog"
 )
@@ -31,12 +32,23 @@ func selectROM() string {
 	var filepath string
 	flag.Parse()
 	filepath = flag.Arg(0)
-	if filepath == "" && runtime.GOOS == "windows" {
-		tmp, err := dialog.File().Filter("GameBoy ROM File", "gb*").Load()
-		if err != nil {
+	if filepath == "" {
+		switch runtime.GOOS {
+		case "windows":
+			tmp, err := dialog.File().Filter("GameBoy ROM File", "gb*").Load()
+			if err != nil {
+				os.Exit(0)
+			}
+			filepath = tmp
+		case "linux":
+			tmp, err := tfd.CreateSelectDialog([]string{"gb", "gbc"}, false)
+			if err != nil {
+				os.Exit(0)
+			}
+			filepath = tmp
+		default:
 			os.Exit(0)
 		}
-		filepath = tmp
 	}
 	return filepath
 }

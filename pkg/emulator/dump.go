@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/akatsuki-py/tfd"
 	"github.com/sqweek/dialog"
 )
 
@@ -199,13 +200,20 @@ func (cpu *CPU) loadData() {
 
 func (cpu *CPU) selectData() string {
 	var filepath string
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		tmp, err := dialog.File().Filter("GameBoy Dump File", "dmp").Load()
 		if err != nil {
 			return ""
 		}
 		filepath = tmp
-	} else {
+	case "linux":
+		tmp, err := tfd.CreateSelectDialog([]string{"dmp"}, false)
+		if err != nil {
+			return ""
+		}
+		filepath = tmp
+	default:
 		filepath = fmt.Sprintf("./dump/%s.dmp", cpu.Cartridge.Title)
 	}
 	return filepath

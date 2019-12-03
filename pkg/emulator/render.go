@@ -52,11 +52,6 @@ func (cpu *CPU) Render() {
 	)
 
 	var boost float64
-	if cpu.isBoosted {
-		boost = 2
-	} else {
-		boost = 1
-	}
 	var salt float64
 	if cpu.Cartridge.IsCGB {
 		salt = 80
@@ -65,6 +60,11 @@ func (cpu *CPU) Render() {
 	}
 
 	for !win.Closed() {
+		if cpu.isBoosted {
+			boost = 2
+		} else {
+			boost = 1
+		}
 
 		scrollX := uint(cpu.FetchMemory8(0xff43))
 		scrollY := uint(cpu.FetchMemory8(0xff42))

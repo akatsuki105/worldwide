@@ -404,11 +404,6 @@ func (cpu *CPU) LDH(operand1, operand2 string) {
 		addr := 0xff00 + uint16(cpu.FetchMemory8(cpu.Reg.PC+1))
 		value := cpu.FetchMemory8(addr)
 
-		if addr == JOYPADIO {
-			// Joypad読み込み
-			value = cpu.joypad.FormatJoypad()
-		}
-
 		cpu.setAReg(value)
 		cpu.Reg.PC += 2
 	} else if operand1 == "(a8)" && operand2 == "A" {
