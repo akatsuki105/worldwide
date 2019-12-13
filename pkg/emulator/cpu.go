@@ -2,23 +2,17 @@ package emulator
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"strconv"
 	"sync"
 
-	"github.com/faiface/pixel"
 	"gopkg.in/ini.v1"
 
 	"gbc/pkg/apu"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
 	"gbc/pkg/gpu"
+	"gbc/pkg/joypad"
 	"gbc/pkg/rtc"
-)
-
-var (
-	maxHistory = 256
 )
 
 // CPU Central Processing Unit
@@ -28,7 +22,7 @@ type CPU struct {
 	Cartridge        cartridge.Cartridge
 	mutex            sync.Mutex
 	history          []string
-	joypad           Joypad
+	joypad           joypad.Joypad
 	interruptTrigger bool
 	config           *ini.File
 	// timer関連
@@ -51,15 +45,16 @@ type CPU struct {
 	GPU    gpu.GPU
 	expand uint
 	saving bool // trueだとリフレッシュレートが30に落ちるがCPU使用率は下がる
+	smooth bool // pixelglのsmoothモードの有無
 	// RTC
 	RTC       rtc.RTC
 	isBoosted bool // 倍速か
 }
 
-// LoadROM ROM情報をメモリに読み込む
-func (cpu *CPU) LoadROM(rom []byte) {
+// TransferROM Transfer ROM from cartridge to Memory
+func (cpu *CPU) TransferROM(rom *[]byte) {
 	for i := 0x0000; i <= 0x7fff; i++ {
-		cpu.RAM[i] = rom[i]
+		cpu.RAM[i] = (*rom)[i]
 	}
 
 	// カードリッジタイプで場合分け
@@ -67,25 +62,25 @@ func (cpu *CPU) LoadROM(rom []byte) {
 	case 0x00:
 		// Type : 0
 		cpu.Cartridge.MBC = "ROM"
-		cpu.transferROM(2, &rom)
+		cpu.transferROM(2, rom)
 	case 0x01:
 		// Type : 1 => MBC1
 		cpu.Cartridge.MBC = "MBC1"
 		switch cpu.Cartridge.ROMSize {
 		case 0:
-			cpu.transferROM(2, &rom)
+			cpu.transferROM(2, rom)
 		case 1:
-			cpu.transferROM(4, &rom)
+			cpu.transferROM(4, rom)
 		case 2:
-			cpu.transferROM(8, &rom)
+			cpu.transferROM(8, rom)
 		case 3:
-			cpu.transferROM(16, &rom)
+			cpu.transferROM(16, rom)
 		case 4:
-			cpu.transferROM(32, &rom)
+			cpu.transferROM(32, rom)
 		case 5:
-			cpu.transferROM(64, &rom)
+			cpu.transferROM(64, rom)
 		case 6:
-			cpu.transferROM(128, &rom)
+			cpu.transferROM(128, rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -97,19 +92,19 @@ func (cpu *CPU) LoadROM(rom []byte) {
 		case 0, 1, 2:
 			switch cpu.Cartridge.ROMSize {
 			case 0:
-				cpu.transferROM(2, &rom)
+				cpu.transferROM(2, rom)
 			case 1:
-				cpu.transferROM(4, &rom)
+				cpu.transferROM(4, rom)
 			case 2:
-				cpu.transferROM(8, &rom)
+				cpu.transferROM(8, rom)
 			case 3:
-				cpu.transferROM(16, &rom)
+				cpu.transferROM(16, rom)
 			case 4:
-				cpu.transferROM(32, &rom)
+				cpu.transferROM(32, rom)
 			case 5:
-				cpu.transferROM(64, &rom)
+				cpu.transferROM(64, rom)
 			case 6:
-				cpu.transferROM(128, &rom)
+				cpu.transferROM(128, rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -119,13 +114,13 @@ func (cpu *CPU) LoadROM(rom []byte) {
 			switch cpu.Cartridge.ROMSize {
 			case 0:
 			case 1:
-				cpu.transferROM(4, &rom)
+				cpu.transferROM(4, rom)
 			case 2:
-				cpu.transferROM(8, &rom)
+				cpu.transferROM(8, rom)
 			case 3:
-				cpu.transferROM(16, &rom)
+				cpu.transferROM(16, rom)
 			case 4:
-				cpu.transferROM(32, &rom)
+				cpu.transferROM(32, rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -141,13 +136,13 @@ func (cpu *CPU) LoadROM(rom []byte) {
 		case 0, 1, 2:
 			switch cpu.Cartridge.ROMSize {
 			case 0:
-				cpu.transferROM(2, &rom)
+				cpu.transferROM(2, rom)
 			case 1:
-				cpu.transferROM(4, &rom)
+				cpu.transferROM(4, rom)
 			case 2:
-				cpu.transferROM(8, &rom)
+				cpu.transferROM(8, rom)
 			case 3:
-				cpu.transferROM(16, &rom)
+				cpu.transferROM(16, rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -157,11 +152,11 @@ func (cpu *CPU) LoadROM(rom []byte) {
 			switch cpu.Cartridge.ROMSize {
 			case 0:
 			case 1:
-				cpu.transferROM(4, &rom)
+				cpu.transferROM(4, rom)
 			case 2:
-				cpu.transferROM(8, &rom)
+				cpu.transferROM(8, rom)
 			case 3:
-				cpu.transferROM(16, &rom)
+				cpu.transferROM(16, rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -176,19 +171,19 @@ func (cpu *CPU) LoadROM(rom []byte) {
 		go cpu.RTC.Init()
 		switch cpu.Cartridge.ROMSize {
 		case 0:
-			cpu.transferROM(2, &rom)
+			cpu.transferROM(2, rom)
 		case 1:
-			cpu.transferROM(4, &rom)
+			cpu.transferROM(4, rom)
 		case 2:
-			cpu.transferROM(8, &rom)
+			cpu.transferROM(8, rom)
 		case 3:
-			cpu.transferROM(16, &rom)
+			cpu.transferROM(16, rom)
 		case 4:
-			cpu.transferROM(32, &rom)
+			cpu.transferROM(32, rom)
 		case 5:
-			cpu.transferROM(64, &rom)
+			cpu.transferROM(64, rom)
 		case 6:
-			cpu.transferROM(128, &rom)
+			cpu.transferROM(128, rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -198,21 +193,21 @@ func (cpu *CPU) LoadROM(rom []byte) {
 		cpu.Cartridge.MBC = "MBC5"
 		switch cpu.Cartridge.ROMSize {
 		case 0:
-			cpu.transferROM(2, &rom)
+			cpu.transferROM(2, rom)
 		case 1:
-			cpu.transferROM(4, &rom)
+			cpu.transferROM(4, rom)
 		case 2:
-			cpu.transferROM(8, &rom)
+			cpu.transferROM(8, rom)
 		case 3:
-			cpu.transferROM(16, &rom)
+			cpu.transferROM(16, rom)
 		case 4:
-			cpu.transferROM(32, &rom)
+			cpu.transferROM(32, rom)
 		case 5:
-			cpu.transferROM(64, &rom)
+			cpu.transferROM(64, rom)
 		case 6:
-			cpu.transferROM(128, &rom)
+			cpu.transferROM(128, rom)
 		case 7:
-			cpu.transferROM(256, &rom)
+			cpu.transferROM(256, rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -231,8 +226,8 @@ func (cpu *CPU) transferROM(bankNum int, rom *[]byte) {
 	}
 }
 
-// InitCPU CPU・メモリの初期化
-func (cpu *CPU) InitCPU() {
+// Init CPU・メモリの初期化
+func (cpu *CPU) Init() {
 	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
 	cpu.Reg.BC = 0x0013
 	cpu.Reg.DE = 0x00d8
@@ -272,7 +267,7 @@ func (cpu *CPU) InitCPU() {
 	cpu.ROMBankPtr = 1
 	cpu.WRAMBankPtr = 1
 
-	cpu.GPU.Display = pixel.MakePictureData(pixel.R(0, 0, 160, 144))
+	cpu.GPU.Init()
 	cpu.config = config.Init()
 
 	expand, err := cpu.config.Section("display").Key("expand").Uint()
@@ -281,16 +276,28 @@ func (cpu *CPU) InitCPU() {
 	} else {
 		cpu.expand = expand
 	}
-	saving := cpu.config.Section("display").Key("saving").String()
-	if saving == "yes" {
-		cpu.saving = true
-	} else {
-		cpu.saving = false
-	}
-}
 
-// InitAPU init apu
-func (cpu *CPU) InitAPU() {
+	saving, err := cpu.config.Section("display").Key("saving").Bool()
+	if err != nil {
+		saving = false
+	}
+	cpu.saving = saving
+
+	smooth, err := cpu.config.Section("display").Key("smooth").Bool()
+	if err != nil {
+		smooth = false
+	}
+	cpu.smooth = smooth
+
+	if !cpu.Cartridge.IsCGB {
+		color0 := cpu.config.Section("pallete").Key("color0").Ints(",")
+		color1 := cpu.config.Section("pallete").Key("color1").Ints(",")
+		color2 := cpu.config.Section("pallete").Key("color2").Ints(",")
+		color3 := cpu.config.Section("pallete").Key("color3").Ints(",")
+		cpu.GPU.InitPallete(color0, color1, color2, color3)
+	}
+
+	// Init APU
 	cpu.Sound.Init()
 }
 
@@ -387,55 +394,4 @@ func (cpu *CPU) exec() {
 	cpu.timer(instruction, cycle)
 
 	cpu.handleInterrupt()
-}
-
-// pushHistory CPUのログを追加する
-func (cpu *CPU) pushHistory(eip uint16, opcode byte, instruction, operand1, operand2 string) {
-	log := fmt.Sprintf("eip:0x%04x   opcode:%02x   %s %s,%s", eip, opcode, instruction, operand1, operand2)
-
-	cpu.history = append(cpu.history, log)
-
-	if len(cpu.history) > maxHistory {
-		cpu.history = cpu.history[1:]
-	}
-}
-
-// writeHistory CPUのログを書き出す
-func (cpu *CPU) writeHistory() {
-	for i, log := range cpu.history {
-		fmt.Printf("%d: %s\n", i, log)
-	}
-}
-
-// Debug Ctrl + C handler
-func (cpu *CPU) Debug() {
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
-
-	<-quit
-	println("\n ============== Debug mode ==============\n")
-	cpu.writeHistory()
-	os.Exit(1)
-}
-
-func hexPrintf(label string, hex int) {
-	fmt.Printf("%s: 0x%x\n", label, hex)
-}
-
-func (cpu *CPU) exit(message string, breakPoint uint16) {
-	if breakPoint == 0 {
-		cpu.writeHistory()
-		panic(message)
-	} else if cpu.Reg.PC == breakPoint {
-		cpu.writeHistory()
-		panic(message)
-	}
-}
-
-func (cpu *CPU) debugPC(delta int) {
-	fmt.Printf("PC: 0x%04x\n", cpu.Reg.PC)
-	for i := 1; i < delta; i++ {
-		fmt.Printf("%02x ", cpu.RAM[cpu.Reg.PC+uint16(i)])
-	}
-	fmt.Println()
 }

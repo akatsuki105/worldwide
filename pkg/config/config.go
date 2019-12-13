@@ -8,47 +8,33 @@ import "gopkg.in/ini.v1"
 func Init() *ini.File {
 	exist := checkConfigFileExist()
 	if exist {
-		cfg, _ := ini.Load("gb.ini")
+		cfg, _ := ini.Load("gbc.ini")
 		return cfg
 	}
 
-	// 設定ファイルが存在しないとき
+	// create new config file
 	cfg := ini.Empty()
-	// display
+
+	// display config
 	cfg.Section("display").Key("expand").SetValue("2")
-	cfg.Section("display").Key("saving").SetValue("yes")
+	cfg.Section("display").Key("saving").SetValue("true")
+	cfg.Section("display").Key("smooth").SetValue("true")
 
-	// Xbox 360 Controller
-	cfg.Section("Xbox 360 Controller").Key("A").SetValue("1")
-	cfg.Section("Xbox 360 Controller").Key("B").SetValue("0")
-	cfg.Section("Xbox 360 Controller").Key("Start").SetValue("7")
-	cfg.Section("Xbox 360 Controller").Key("Select").SetValue("6")
-	cfg.Section("Xbox 360 Controller").Key("Horizontal").SetValue("0")
-	cfg.Section("Xbox 360 Controller").Key("Vertical").SetValue("1")
-	cfg.Section("Xbox 360 Controller").Key("VerticalNegative").SetValue("0")
-	cfg.Section("Xbox 360 Controller").Key("Expand").SetValue("9")
-	cfg.Section("Xbox 360 Controller").Key("Collapse").SetValue("8")
-
-	// HORI CO.,LTD HORIPAD S
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("A").SetValue("2")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("B").SetValue("1")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("Start").SetValue("3")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("Select").SetValue("0")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("Horizontal").SetValue("0")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("Vertical").SetValue("1")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("VerticalNegative").SetValue("1")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("Expand").SetValue("9")
-	cfg.Section("HORI CO.,LTD HORIPAD S").Key("Collapse").SetValue("8")
+	// DMG pallete color
+	cfg.Section("pallete").Key("color0").SetValue("175,197,160")
+	cfg.Section("pallete").Key("color1").SetValue("93,147,66")
+	cfg.Section("pallete").Key("color2").SetValue("22,63,48")
+	cfg.Section("pallete").Key("color3").SetValue("0,40,0")
 
 	// save config
-	cfg.SaveTo("gb.ini")
+	cfg.SaveTo("gbc.ini")
 
 	return cfg
 }
 
-// 設定ファイルが存在するか確認 あるならtrue
+// check ini file exists
 func checkConfigFileExist() bool {
-	filename := "gb.ini"
+	filename := "gbc.ini"
 	_, err := os.Stat(filename)
 	if err != nil {
 		return false

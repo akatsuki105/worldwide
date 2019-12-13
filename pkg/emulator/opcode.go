@@ -51,6 +51,7 @@ func (cpu *CPU) LD(operand1, operand2 string) {
 		case "d8":
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			if cpu.Cartridge.Title == "PM_CRYSTAL" && cpu.Reg.PC == 0x658c {
+				// クリスタルはMobileGBの関係で起動できないので強引に起動する
 				cpu.Reg.PC = 0x6385
 			} else {
 				cpu.Reg.PC += 2

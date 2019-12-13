@@ -27,6 +27,8 @@ type APU struct {
 
 	// TODO: waveform RAM
 	WaveformRAM []byte
+
+	enabled bool
 }
 
 // Init the sound emulation for a Gameboy.
@@ -53,7 +55,16 @@ func (a *APU) Init() {
 	if err != nil {
 		log.Fatalf("Failed to start audio: %v", err)
 	}
+	a.enabled = true
 	go a.play(player)
+}
+
+func (a *APU) On() {
+	a.enabled = true
+}
+
+func (a *APU) Off() {
+	a.enabled = false
 }
 
 // Time in seconds which to buffer ahead of the emulation.
@@ -62,7 +73,7 @@ const bufferTime = 0.05
 func (a *APU) play(player *oto.Player) {
 	start := time.Now()
 	var totalSamples int64 = 0
-	for c := range time.Tick(time.Second / 60) {
+	for c := range time.Tick(time.Second / 30) {
 		// Calculate the expected samples since the start adding on the buffer
 		expectedSamples := int64(math.Ceil((c.Sub(start).Seconds() + bufferTime) * sampleRate))
 		newSamples := expectedSamples - totalSamples
@@ -80,8 +91,10 @@ func (a *APU) play(player *oto.Player) {
 			buffer[i] = byte(float64(val) * vol)
 		}
 
-		// TODO: handle error
-		player.Write(buffer)
+		if a.enabled {
+			// TODO: handle error
+			player.Write(buffer)
+		}
 	}
 }
 

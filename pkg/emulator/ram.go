@@ -3,9 +3,7 @@ package emulator
 import "fmt"
 
 // FetchMemory8 引数で指定したアドレスから値を取得する
-func (cpu *CPU) FetchMemory8(addr uint16) byte {
-	var value byte
-
+func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 	switch {
 	case addr >= 0x4000 && addr < 0x8000:
 		// ROMバンク
@@ -23,8 +21,18 @@ func (cpu *CPU) FetchMemory8(addr uint16) byte {
 	case cpu.WRAMBankPtr > 1 && addr >= 0xd000 && addr < 0xe000:
 		// WRAMバンク
 		value = cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000]
+	case addr >= 0xff00:
+		value = cpu.fetchIO(addr)
+	default:
+		value = cpu.RAM[addr]
+	}
+	return value
+}
+
+func (cpu *CPU) fetchIO(addr uint16) (value byte) {
+	switch {
 	case addr == JOYPADIO:
-		value = cpu.joypad.FormatJoypad()
+		value = cpu.joypad.Output()
 	case (addr >= 0xff10 && addr <= 0xff26) || (addr >= 0xff30 && addr <= 0xff3f):
 		// サウンドアクセス
 		value = cpu.Sound.Read(addr)
@@ -137,101 +145,107 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 		case cpu.WRAMBankPtr > 1 && addr >= 0xd000 && addr < 0xe000:
 			// WRAM
 			cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000] = value
+		case addr >= 0xff00:
+			cpu.setIO(addr, value)
 		default:
 			cpu.RAM[addr] = value
+		}
+	}
+}
 
-			switch {
-			case addr == JOYPADIO:
-				cpu.joypad.P1 = value
+func (cpu *CPU) setIO(addr uint16, value byte) {
+	cpu.RAM[addr] = value
 
-			case addr == SCIO:
-				if value == 0x81 {
-					fmt.Println("TODO: transfer implementation")
-				}
+	switch {
+	case addr == JOYPADIO:
+		cpu.joypad.P1 = value
 
-			case addr == DMAIO:
-				// DMA転送
-				start := uint16(cpu.getAReg()) << 8
-				for i := 0; i <= 0x9f; i++ {
-					cpu.SetMemory8(0xfe00+uint16(i), cpu.FetchMemory8(start+uint16(i)))
-				}
-				cpu.cycleLine += 150
+	case addr == SCIO:
+		if value == 0x81 {
+			fmt.Println("TODO: transfer implementation")
+		}
 
-			case addr >= 0xff10 && addr <= 0xff26:
-				// サウンドアクセス
-				cpu.Sound.Write(addr, value)
-			case addr >= 0xff30 && addr <= 0xff3f:
-				// サウンドアクセス
-				cpu.Sound.WriteWaveform(addr, value)
+	case addr == DMAIO:
+		// DMA転送
+		start := uint16(cpu.getAReg()) << 8
+		for i := 0; i <= 0x9f; i++ {
+			cpu.SetMemory8(0xfe00+uint16(i), cpu.FetchMemory8(start+uint16(i)))
+		}
+		cpu.cycleLine += 150
 
-			case addr == LCDCIO:
-				cpu.GPU.LCDC = value
+	case addr >= 0xff10 && addr <= 0xff26:
+		// サウンドアクセス
+		cpu.Sound.Write(addr, value)
+	case addr >= 0xff30 && addr <= 0xff3f:
+		// サウンドアクセス
+		cpu.Sound.WriteWaveform(addr, value)
 
-			case addr == LCDSTATIO:
-				cpu.GPU.LCDSTAT = value
+	case addr == LCDCIO:
+		cpu.GPU.LCDC = value
 
-			case addr == BGPIO:
-				cpu.GPU.DMGPallte[0] = value
-			case addr == OBP0IO:
-				cpu.GPU.DMGPallte[1] = value
-			case addr == OBP1IO:
-				cpu.GPU.DMGPallte[2] = value
+	case addr == LCDSTATIO:
+		cpu.GPU.LCDSTAT = value
 
-			// 以降はゲームボーイカラーのみ
-			case addr == VBKIO && cpu.GPU.HBlankDMALength == 0:
-				// VRAMバンク切り替え
-				newVRAMBankPtr := value & 0x01
-				cpu.GPU.VRAMBankPtr = newVRAMBankPtr
+	case addr == BGPIO:
+		cpu.GPU.DMGPallte[0] = value
+	case addr == OBP0IO:
+		cpu.GPU.DMGPallte[1] = value
+	case addr == OBP1IO:
+		cpu.GPU.DMGPallte[2] = value
 
-			case addr == HDMA5IO:
-				HDMA5 := value
-				mode := HDMA5 >> 7 // 転送モード
-				if cpu.GPU.HBlankDMALength > 0 && mode == 0 {
-					cpu.GPU.HBlankDMALength = 0
-					cpu.RAM[HDMA5IO] |= 0x80
-				} else {
-					length := (int(HDMA5&0x7f) + 1) * 16 // 転送するデータ長
+	// 以降はゲームボーイカラーのみ
+	case addr == VBKIO && cpu.GPU.HBlankDMALength == 0:
+		// VRAMバンク切り替え
+		newVRAMBankPtr := value & 0x01
+		cpu.GPU.VRAMBankPtr = newVRAMBankPtr
 
-					switch mode {
-					case 0:
-						// 汎用DMA
-						cpu.doVRAMDMATransfer(length)
-						cpu.RAM[HDMA5IO] = 0xff // 完了
-					case 1:
-						// H-Blank DMA
-						cpu.GPU.HBlankDMALength = int(HDMA5 & 0x7f)
-						cpu.RAM[HDMA5IO] &= 0x7f
-					}
-				}
+	case addr == HDMA5IO:
+		HDMA5 := value
+		mode := HDMA5 >> 7 // 転送モード
+		if cpu.GPU.HBlankDMALength > 0 && mode == 0 {
+			cpu.GPU.HBlankDMALength = 0
+			cpu.RAM[HDMA5IO] |= 0x80
+		} else {
+			length := (int(HDMA5&0x7f) + 1) * 16 // 転送するデータ長
 
-			case addr == BCPSIO:
-				cpu.GPU.CGBPallte[0] = value
-			case addr == OCPSIO:
-				cpu.GPU.CGBPallte[1] = value
-			case addr == BCPDIO:
-				// 背景パレットデータ書き込み
-				index := cpu.GPU.FetchBGPalleteIndex()
-				cpu.GPU.BGPallete[index] = value
-				if cpu.GPU.FetchBGPalleteIncrement() {
-					cpu.GPU.CGBPallte[0]++
-				}
-			case addr == OCPDIO:
-				// スプライトパレットデータ書き込み
-				index := cpu.GPU.FetchSPRPalleteIndex()
-				cpu.GPU.SPRPallete[index] = value
-				if cpu.GPU.FetchSPRPalleteIncrement() {
-					cpu.GPU.CGBPallte[1]++
-				}
-
-			case addr == SVBKIO:
-				// WRAMバンク切り替え
-				newWRAMBankPtr := value & 0x07
-				if newWRAMBankPtr == 0 {
-					newWRAMBankPtr = 1
-				}
-				cpu.WRAMBankPtr = newWRAMBankPtr
+			switch mode {
+			case 0:
+				// 汎用DMA
+				cpu.doVRAMDMATransfer(length)
+				cpu.RAM[HDMA5IO] = 0xff // 完了
+			case 1:
+				// H-Blank DMA
+				cpu.GPU.HBlankDMALength = int(HDMA5 & 0x7f)
+				cpu.RAM[HDMA5IO] &= 0x7f
 			}
 		}
+
+	case addr == BCPSIO:
+		cpu.GPU.CGBPallte[0] = value
+	case addr == OCPSIO:
+		cpu.GPU.CGBPallte[1] = value
+	case addr == BCPDIO:
+		// 背景パレットデータ書き込み
+		index := cpu.GPU.FetchBGPalleteIndex()
+		cpu.GPU.BGPallete[index] = value
+		if cpu.GPU.FetchBGPalleteIncrement() {
+			cpu.GPU.CGBPallte[0]++
+		}
+	case addr == OCPDIO:
+		// スプライトパレットデータ書き込み
+		index := cpu.GPU.FetchSPRPalleteIndex()
+		cpu.GPU.SPRPallete[index] = value
+		if cpu.GPU.FetchSPRPalleteIncrement() {
+			cpu.GPU.CGBPallte[1]++
+		}
+
+	case addr == SVBKIO:
+		// WRAMバンク切り替え
+		newWRAMBankPtr := value & 0x07
+		if newWRAMBankPtr == 0 {
+			newWRAMBankPtr = 1
+		}
+		cpu.WRAMBankPtr = newWRAMBankPtr
 	}
 }
 

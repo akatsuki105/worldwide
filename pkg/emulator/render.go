@@ -59,13 +59,24 @@ func (cpu *CPU) Render() {
 		salt = 0
 	}
 
+	win.SetSmooth(cpu.smooth)
+
 	for !win.Closed() {
+		if !win.Focused() {
+			cpu.Sound.Off()
+			win.Update()
+			continue
+		}
+		cpu.Sound.On()
+
 		if cpu.isBoosted {
 			boost = 2
 		} else {
 			boost = 1
 		}
+		doRender := !cpu.saving || frames&0x01 == 0
 
+		LCDC := cpu.FetchMemory8(LCDCIO)
 		scrollX := uint(cpu.FetchMemory8(0xff43))
 		scrollY := uint(cpu.FetchMemory8(0xff42))
 		scrollTileX := scrollX / 8
@@ -73,102 +84,88 @@ func (cpu *CPU) Render() {
 		scrollTileY := scrollY / 8
 		scrollPixelY := scrollY % 8
 
-		iterX := width / 8
-		iterY := height / 8
+		iterX := width
+		iterY := height
 		if scrollPixelX > 0 {
-			iterX++
+			iterX += 8
 		}
 		if scrollPixelY > 0 {
-			iterY++
+			iterY += 8
 		}
 
 		// 背景描画 + CPU稼働
 		for y := 0; y < iterY; y++ {
-			if y < height/8 {
-				// CPU稼働
-				wait.Add(1)
-				go func() {
-					for i := 0; i < 8; i++ {
-						cpu.cycleLine = 0
-						// HBlank mode0
-						// OAM mode2
-						cpu.setOAMRAMMode()
-						for cpu.cycleLine < 17.25 {
-							cpu.exec()
-						}
-						// LCD Driver mode3
-						cpu.setLCDMode()
-						for cpu.cycleLine < 40.25 {
-							cpu.exec()
-						}
-						// HBlank mode0
-						cpu.setHBlankMode()
-						for cpu.cycleLine < 100.25*boost+salt {
-							cpu.exec()
-						}
-						cpu.incrementLY()
-					}
-					wait.Done()
-				}()
+
+			if y < height {
+				cpu.cycleLine = 0
+				// HBlank mode0
+				// OAM mode2
+				cpu.setOAMRAMMode()
+				for cpu.cycleLine < 17.25 {
+					cpu.exec()
+				}
+				// LCD Driver mode3
+				cpu.setLCDMode()
+				for cpu.cycleLine < 40.25 {
+					cpu.exec()
+				}
+				// HBlank mode0
+				cpu.setHBlankMode()
+				for cpu.cycleLine < 100.25*boost+salt {
+					cpu.exec()
+				}
+				cpu.incrementLY()
 			}
 
-			if !cpu.saving || frames&0x01 == 0 {
+			LCDC = cpu.FetchMemory8(LCDCIO)
+			WY := uint(cpu.FetchMemory8(WYIO))
+			WX := uint(cpu.FetchMemory8(WXIO)) - 7
+
+			if doRender {
 				// 背景(ウィンドウ)描画
-				wait.Add(iterX)
-				for x := 0; x < iterX; x++ {
-					go func(x int) {
-						var tileX, tileY uint
-						var useWindow bool
-						var entryX, entryY int
+				for x := 0; x < iterX; x += 8 {
+					blockX := x / 8
+					blockY := y / 8
 
-						LCDC := cpu.FetchMemory8(LCDCIO)
-						WY := uint(cpu.FetchMemory8(WYIO))
-						WX := uint(cpu.FetchMemory8(WXIO)) - 7
-						if (LCDC>>5)%2 == 1 && (WY <= uint(y*8)) && (WX <= uint(x*8)) {
-							tileX = (uint(x*8) - WX) / 8 % 32
-							tileY = ((uint(y*8) - WY) / 8) % 32
-							useWindow = true
+					var tileX, tileY uint
+					var useWindow bool
+					var entryX, entryY int
 
-							entryX = x * 8
-							entryY = y * 8
-						} else {
-							tileX = (scrollTileX + uint(x)) % 32
-							tileY = (scrollTileY + uint(y)) % 32
-							useWindow = false
+					if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
+						tileX = (uint(x) - WX) / 8 % 32
+						tileY = ((uint(y) - WY) / 8) % 32
+						useWindow = true
 
-							entryX = x*8 - int(scrollPixelX)
-							entryY = y*8 - int(scrollPixelY)
-						}
+						entryX = blockX * 8
+						entryY = blockY * 8
+					} else {
+						tileX = (scrollTileX + uint(x/8)) % 32
+						tileY = (scrollTileY + uint(y/8)) % 32
+						useWindow = false
 
-						if LCDC>>7%2 == 1 {
-							cpu.GPU.SetBGTile(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB)
-						}
-						wait.Done()
-					}(x)
+						entryX = blockX*8 - int(scrollPixelX)
+						entryY = blockY*8 - int(scrollPixelY)
+					}
+
+					if LCDC>>7%2 == 1 {
+						cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8)
+					}
 				}
 			}
-			wait.Wait()
 		}
 
-		if !cpu.saving || frames&0x01 == 0 {
+		if doRender {
 			// スプライト描画
-			var spriteWait sync.WaitGroup
-			spriteWait.Add(8)
-			for i := 0; i < 8; i++ {
-				for j := i * 5; j < (i+1)*5; j++ {
-					LCDC := cpu.FetchMemory8(LCDCIO)
-					Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(j)))
-					if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
-						Y -= 16
-						X := int(cpu.FetchMemory8(0xfe00+4*uint16(j)+1)) - 8
-						tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(j) + 2))
-						attr := cpu.FetchMemory8(0xfe00 + 4*uint16(j) + 3)
-						cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
-					}
+			for i := 0; i < 40; i++ {
+				Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
+				if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
+					Y -= 16
+					X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
+					tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
+					attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
+					cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
 				}
-				spriteWait.Done()
 			}
-			spriteWait.Wait()
 
 			// 背景優先のpixelを描画していく
 			cpu.GPU.SetBGPriorPixels()
@@ -178,7 +175,7 @@ func (cpu *CPU) Render() {
 		for {
 			cpu.cycleLine = 0
 
-			if !cpu.saving || frames&0x01 == 0 {
+			if doRender {
 				for cpu.cycleLine < 114*boost {
 					cpu.exec()
 				}
@@ -190,8 +187,8 @@ func (cpu *CPU) Render() {
 			}
 		}
 
-		if !cpu.saving || frames&0x01 == 0 {
-			pic := cpu.GPU.Display
+		if doRender {
+			pic := cpu.GPU.GetDisplay()
 			matrix := pixel.IM.Moved(win.Bounds().Center())
 			matrix = matrix.ScaledXY(win.Bounds().Center(), pixel.V(float64(cpu.expand), float64(cpu.expand)))
 			sprite := pixel.NewSprite(pic, pic.Bounds())
@@ -209,8 +206,35 @@ func (cpu *CPU) Render() {
 		default:
 		}
 
-		if frames&0x01 == 0 {
-			cpu.handleJoypad(win)
+		if frames%3 == 0 {
+			result := cpu.joypad.Input(win)
+			if result != "" {
+				switch result {
+				case "pressed":
+					// Joypad Interrupt
+					if cpu.Reg.IME && cpu.getJoypadEnable() {
+						cpu.triggerJoypad()
+					}
+				case "save":
+					cpu.Sound.Off()
+					cpu.dumpData()
+					cpu.Sound.On()
+				case "load":
+					cpu.Sound.Off()
+					cpu.loadData()
+					cpu.Sound.On()
+				case "expand":
+					cpu.expand *= 2
+					time.Sleep(time.Millisecond * 400)
+					win.SetBounds(pixel.R(0, 0, float64(width*cpu.expand), float64(height*cpu.expand)))
+				case "collapse":
+					if cpu.expand >= 2 {
+						cpu.expand /= 2
+						time.Sleep(time.Millisecond * 400)
+						win.SetBounds(pixel.R(0, 0, float64(width*cpu.expand), float64(height*cpu.expand)))
+					}
+				}
+			}
 		}
 	}
 }

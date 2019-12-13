@@ -18,10 +18,11 @@ func main() {
 	cpu := &emulator.CPU{}
 	romPath := selectROM()
 	romData := readROM(romPath)
+
 	cpu.Cartridge.ParseCartridge(&romData)
-	cpu.LoadROM(romData)
-	cpu.InitCPU()
-	cpu.InitAPU()
+	cpu.TransferROM(&romData)
+
+	cpu.Init()
 
 	// go cpu.Debug()
 
@@ -35,11 +36,13 @@ func selectROM() string {
 	if filepath == "" {
 		switch runtime.GOOS {
 		case "windows":
+			cd, _ := os.Getwd()
 			tmp, err := dialog.File().Filter("GameBoy ROM File", "gb*").Load()
 			if err != nil {
 				os.Exit(0)
 			}
 			filepath = tmp
+			os.Chdir(cd)
 		case "linux":
 			tmp, err := tfd.CreateSelectDialog([]string{"gb", "gbc"}, false)
 			if err != nil {

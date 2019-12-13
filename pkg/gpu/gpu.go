@@ -9,7 +9,7 @@ import (
 
 // GPU Graphic Processor Unit
 type GPU struct {
-	Display       *pixel.PictureData // 160*144のイメージデータ
+	display       *pixel.PictureData // 160*144のイメージデータ
 	LCDC          byte               // LCD Control
 	LCDSTAT       byte               // LCD Status
 	displayColor  [144][160]byte     // 160*144の色番号(背景色を記録)
@@ -26,17 +26,37 @@ type GPU struct {
 
 var (
 	// colors {R, G, B}
-	colors [64][3]uint8 = [64][3]uint8{
-		// https://forums.nesdev.com/viewtopic.php?f=20&t=12533
-		// {0xff, 0xff, 0xff}, {0x7b, 0xff, 0x31}, {0x0c, 0x5c, 0xc5}, {0x00, 0x00, 0x00},
-		{0xff, 0xff, 0xff}, {0x00, 0xff, 0x7f}, {0x00, 0x33, 0xff}, {0x00, 0x00, 0x00},
+	colors [4][3]uint8 = [4][3]uint8{
+		{175, 197, 160}, {93, 147, 66}, {22, 63, 48}, {0, 40, 0},
 	}
 )
 
+// Init GPU
+func (gpu *GPU) Init() {
+	gpu.display = pixel.MakePictureData(pixel.R(0, 0, 160, 144))
+}
+
+// InitPallete init gameboy pallete color
+func (gpu *GPU) InitPallete(color0, color1, color2, color3 []int) {
+	colors[0] = [3]uint8{uint8(color0[0]), uint8(color0[1]), uint8(color0[2])}
+	colors[1] = [3]uint8{uint8(color1[0]), uint8(color1[1]), uint8(color1[2])}
+	colors[2] = [3]uint8{uint8(color2[0]), uint8(color2[1]), uint8(color2[2])}
+	colors[3] = [3]uint8{uint8(color3[0]), uint8(color3[1]), uint8(color3[2])}
+}
+
+// GetDisplay getter for display data
+func (gpu *GPU) GetDisplay() *pixel.PictureData {
+	return gpu.display
+}
+
+func (gpu *GPU) set(x, y int, c color.RGBA) {
+	gpu.display.Pix[160*144-(y*160+(160-x))] = c
+}
+
 // --------------------------------------------- Render -----------------------------------------------------
 
-// SetBGTile x, yはスクリーンデータ全体(32*32) not 20*18
-func (gpu *GPU) SetBGTile(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool) {
+// SetBGLine 1タイルライン描画する
+func (gpu *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineIndex int) {
 	index := tileX + tileY*32 // マップの何タイル目か
 
 	// タイル番号からタイルデータのあるアドレス取得
@@ -69,11 +89,9 @@ func (gpu *GPU) SetBGTile(entryX, entryY int, tileX, tileY uint, useWindow, isCG
 		attr = 0
 	}
 
-	for lineIndex := 0; lineIndex < 8; lineIndex++ {
-		index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
-		addr := uint16(baseAddr + 2*index)
-		gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, "BGP", attr, 8, isCGB)
-	}
+	index16 := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
+	addr = uint16(baseAddr + 2*index16)
+	gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, "BGP", attr, 8, isCGB)
 }
 
 // SetSPRTile スプライトを出力する
@@ -101,7 +119,7 @@ func (gpu *GPU) SetBGPriorPixels() {
 		R, G, B := pixel[2], pixel[3], pixel[4]
 		c := color.RGBA{R, G, B, 0xff}
 		if x < 160 && y < 144 {
-			gpu.Display.Pix[160*144-(y*160+(160-x))] = c
+			gpu.set(x, y, c)
 		}
 	}
 	gpu.BGPriorPixels = [][5]byte{}
@@ -224,15 +242,15 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 						gpu.BGPriorPixels = append(gpu.BGPriorPixels, [5]byte{byte(x), byte(y), R, G, B})
 					} else {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.Display.Pix[160*144-(y*160+(160-x))] = c
+						gpu.set(x, y, c)
 					}
 				} else {
 					if (attr>>7)&0x01 == 0 && gpu.displayColor[y][x] != 0 {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.Display.Pix[160*144-(y*160+(160-x))] = c
+						gpu.set(x, y, c)
 					} else if gpu.displayColor[y][x] == 0 {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.Display.Pix[160*144-(y*160+(160-x))] = c
+						gpu.set(x, y, c)
 					}
 				}
 			}

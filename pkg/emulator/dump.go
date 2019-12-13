@@ -14,47 +14,9 @@ import (
 )
 
 func (cpu *CPU) gobEncode() ([]byte, error) {
-	if cpu.Cartridge.IsCGB {
-		// ゲームボーイカラー
-		w := new(bytes.Buffer)
-		encoder := gob.NewEncoder(w)
-
-		if err := encoder.Encode(cpu.Reg); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.RAM); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.ROMBankPtr); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.RAMBankPtr); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.RAMBank); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.bankMode); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.WRAMBankPtr); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.WRAMBank); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.GPU); err != nil {
-			return nil, err
-		}
-		if err := encoder.Encode(cpu.RTC); err != nil {
-			return nil, err
-		}
-		return w.Bytes(), nil
-	}
-
-	// ゲームボーイ
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
+	isCGB := cpu.Cartridge.IsCGB
 
 	if err := encoder.Encode(cpu.Reg); err != nil {
 		return nil, err
@@ -74,52 +36,34 @@ func (cpu *CPU) gobEncode() ([]byte, error) {
 	if err := encoder.Encode(cpu.bankMode); err != nil {
 		return nil, err
 	}
+
+	if isCGB {
+		// ゲームボーイカラー
+		if err := encoder.Encode(cpu.WRAMBankPtr); err != nil {
+			return nil, err
+		}
+		if err := encoder.Encode(cpu.WRAMBank); err != nil {
+			return nil, err
+		}
+	}
+
 	if err := encoder.Encode(cpu.GPU); err != nil {
 		return nil, err
 	}
+
+	if isCGB {
+		if err := encoder.Encode(cpu.RTC); err != nil {
+			return nil, err
+		}
+	}
+
 	return w.Bytes(), nil
 }
 
 func (cpu *CPU) gobDecode(buf []byte) error {
-	if cpu.Cartridge.IsCGB {
-		r := bytes.NewBuffer(buf)
-		decoder := gob.NewDecoder(r)
-
-		if err := decoder.Decode(&cpu.Reg); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.RAM); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.ROMBankPtr); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.RAMBankPtr); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.RAMBank); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.bankMode); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.WRAMBankPtr); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.WRAMBank); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.GPU); err != nil {
-			return err
-		}
-		if err := decoder.Decode(&cpu.RTC); err != nil {
-			return err
-		}
-		return nil
-	}
-
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
+	isCGB := cpu.Cartridge.IsCGB
 
 	if err := decoder.Decode(&cpu.Reg); err != nil {
 		return err
@@ -139,9 +83,26 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 	if err := decoder.Decode(&cpu.bankMode); err != nil {
 		return err
 	}
+
+	if isCGB {
+		if err := decoder.Decode(&cpu.WRAMBankPtr); err != nil {
+			return err
+		}
+		if err := decoder.Decode(&cpu.WRAMBank); err != nil {
+			return err
+		}
+	}
+
 	if err := decoder.Decode(&cpu.GPU); err != nil {
 		return err
 	}
+
+	if isCGB {
+		if err := decoder.Decode(&cpu.RTC); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -8,17 +8,29 @@ GameBoyColor emulator written in golang.
 
 <img src="https://imgur.com/8eDP0un.png" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/2zwsb84.png" width="320" height="288">
 
-## Features
-
-- 60fps
-- cpu_instrs in retrio/gb-test-roms is all clear
-- APU is implemented (thank to goboy)
-- CGB ROM is OK
-- Multi-platform (Win10 and Ubuntu18.04 is checked.)
-- Joystick is OK (Xbox 360 Controller)
-- ROM-only and MBC1, MBC2, MBC3, MBC5 is OK
-- coredump is enabled
-- window expansion is enabled (E or R)
+## Features & TODO list
+- [x] 60fps
+- [x] [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) is clear
+- [x] Low CPU consumption
+- [x] Sound(thank to goboy)
+- [x] GameBoy Color ROM support
+- [x] Multi-platform support
+- [x] Xbox 360 Controller support
+- [x] [WebAssembly partial support](https://akatsuki-py.github.io/Worldwide/wasm.html)
+- [x] MBC1
+- [x] MBC2
+- [x] MBC3
+- [x] MBC5
+- [x] RTC
+- [x] Coredump
+- [x] Resizable window
+- [x] Pallete color change
+- [x] Pokemon Crystal JPN version
+- [ ] Serial communication
+- [ ] GUI Menu 
+- [ ] WebAssembly Audio support
+- [ ] RaspberryPi support
+- [ ] SuperGameBoy support
 
 ## Usage
 
