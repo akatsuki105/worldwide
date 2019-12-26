@@ -3,10 +3,10 @@
 
 GameBoyColor emulator written in golang.
 
-<img src="https://imgur.com/cFugCTA.gif" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/8YR987D.png" width="320" height="288">
+<img src="https://imgur.com/UnmQnVE.gif" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/cFugCTA.gif" width="320" height="288">
 
 
-<img src="https://imgur.com/8eDP0un.png" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/2zwsb84.png" width="320" height="288">
+<img src="https://imgur.com/8YR987D.png" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/2zwsb84.png" width="320" height="288">
 
 ## Features & TODO list
 - [x] 60fps
@@ -22,11 +22,14 @@ GameBoyColor emulator written in golang.
 - [x] MBC3
 - [x] MBC5
 - [x] RTC
-- [x] Coredump
+- [x] Save game data
+- [x] Quicksave
 - [x] Resizable window
-- [x] Pallete color change
+- [x] Pallete color change in DMG
 - [x] Pokemon Crystal JPN version
-- [ ] Serial communication
+- [x] Serial DMG communication in local network
+- [ ] Serial CGB communication in local network
+- [ ] Serial communication with remote network
 - [ ] GUI Menu 
 - [ ] WebAssembly Audio support
 - [ ] RaspberryPi support
@@ -39,6 +42,10 @@ GameBoyColor emulator written in golang.
 ```
 go run ./cmd/main.go "xxx.gb"
 ```
+
+## Download
+
+Please download [here](https://github.com/Akatsuki-py/Worldwide/releases).
 
 ## Command 
 

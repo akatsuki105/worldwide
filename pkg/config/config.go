@@ -26,6 +26,11 @@ func Init() *ini.File {
 	cfg.Section("pallete").Key("color2").SetValue("22,63,48")
 	cfg.Section("pallete").Key("color3").SetValue("0,40,0")
 
+	// network config
+	cfg.Section("network").Key("network").SetValue("false")
+	cfg.Section("network").Key("your").SetValue("localhost:8888")
+	cfg.Section("network").Key("peer").SetValue("localhost:9999")
+
 	// save config
 	cfg.SaveTo("gbc.ini")
 

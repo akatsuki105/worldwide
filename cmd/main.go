@@ -8,31 +8,38 @@ import (
 	"runtime"
 
 	"gbc/pkg/emulator"
+
 	"github.com/akatsuki-py/tfd"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/sqweek/dialog"
 )
 
 func main() {
+	flag.Parse()
+	filepath := flag.Arg(0)
+
+	cur, _ := os.Getwd()
 
 	cpu := &emulator.CPU{}
-	romPath := selectROM()
+	romPath := selectROM(filepath)
 	romData := readROM(romPath)
 
 	cpu.Cartridge.ParseCartridge(&romData)
 	cpu.TransferROM(&romData)
 
+	os.Chdir(cur)
 	cpu.Init()
+	defer func() {
+		os.Chdir(cur)
+		cpu.Exit()
+	}()
 
 	// go cpu.Debug()
 
 	pixelgl.Run(cpu.Render)
 }
 
-func selectROM() string {
-	var filepath string
-	flag.Parse()
-	filepath = flag.Arg(0)
+func selectROM(filepath string) string {
 	if filepath == "" {
 		switch runtime.GOOS {
 		case "windows":

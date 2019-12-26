@@ -72,8 +72,9 @@ const bufferTime = 0.05
 
 func (a *APU) play(player *oto.Player) {
 	start := time.Now()
+	counter := 0
 	var totalSamples int64 = 0
-	for c := range time.Tick(time.Second / 30) {
+	for c := range time.Tick(time.Second / 60) {
 		// Calculate the expected samples since the start adding on the buffer
 		expectedSamples := int64(math.Ceil((c.Sub(start).Seconds() + bufferTime) * sampleRate))
 		newSamples := expectedSamples - totalSamples
@@ -94,6 +95,13 @@ func (a *APU) play(player *oto.Player) {
 		if a.enabled {
 			// TODO: handle error
 			player.Write(buffer)
+			counter++
+		}
+
+		if counter == 180 {
+			counter = 0
+			start = time.Now()
+			totalSamples = 0
 		}
 	}
 }

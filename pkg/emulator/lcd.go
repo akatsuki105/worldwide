@@ -8,6 +8,7 @@ func (cpu *CPU) setHBlankMode() {
 	if cpu.GPU.HBlankDMALength > 0 {
 		cpu.doVRAMDMATransfer(0x10)
 		if cpu.GPU.HBlankDMALength == 1 {
+			cpu.GPU.HBlankDMALength--
 			cpu.RAM[HDMA5IO] = 0xff
 		} else {
 			cpu.GPU.HBlankDMALength--

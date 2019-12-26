@@ -130,6 +130,18 @@ func (cpu *CPU) timer(instruction string, cycle float64) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
+	if cpu.Serial.InTransfer {
+		cpu.cycleSerial += cycle
+		if cpu.cycleSerial > 128*8 {
+			cpu.Serial.InTransfer = false
+			close(cpu.serialTick)
+			cpu.cycleSerial = 0
+			cpu.serialTick = make(chan int)
+		}
+	} else {
+		cpu.cycleSerial = 0
+	}
+
 	// CPU使用率削減のため
 	if instruction == "HALT" {
 		cycle += 10
@@ -187,6 +199,48 @@ func (cpu *CPU) timer(instruction string, cycle float64) {
 			cpu.RAM[TIMAIO] = TIMAAfter
 		}
 	}
+}
+
+// ------------ Serial --------------------
+
+func (cpu *CPU) getSerialEnable() bool {
+	IE := cpu.FetchMemory8(IEIO)
+	SerialEnable := (IE >> 3) % 2
+	if SerialEnable == 1 {
+		return true
+	}
+	return false
+}
+
+func (cpu *CPU) setSerialEnable() {
+	IE := cpu.FetchMemory8(IEIO) | 0x08
+	cpu.SetMemory8(IEIO, IE)
+}
+
+func (cpu *CPU) clearSerialEnable() {
+	IE := cpu.FetchMemory8(IEIO) & 0xf7
+	cpu.SetMemory8(IEIO, IE)
+}
+
+func (cpu *CPU) getSerialFlag() bool {
+	IF := cpu.FetchMemory8(IFIO)
+	serialFlag := (IF >> 3) % 2
+	if serialFlag == 1 {
+		return true
+	}
+	return false
+}
+
+func (cpu *CPU) setSerialFlag() {
+	IF := cpu.FetchMemory8(IFIO) | 0x08
+	cpu.SetMemory8(IFIO, IF)
+
+	cpu.triggerInterrupt()
+}
+
+func (cpu *CPU) clearSerialFlag() {
+	IF := cpu.FetchMemory8(IFIO) & 0xf7
+	cpu.SetMemory8(IFIO, IF)
 }
 
 // ------------ Joypad --------------------
@@ -280,6 +334,18 @@ func (cpu *CPU) triggerTimer() {
 	cpu.mutex.Unlock()
 }
 
+func (cpu *CPU) triggerSerial() {
+	cpu.mutex.Lock()
+	cpu.triggerInterrupt()
+
+	cpu.pushPC()
+	cpu.clearSerialFlag()
+	cpu.Reg.IME = false
+	cpu.Reg.PC = 0x0058
+
+	cpu.mutex.Unlock()
+}
+
 func (cpu *CPU) triggerJoypad() {
 	cpu.mutex.Lock()
 	cpu.triggerInterrupt()
@@ -307,6 +373,10 @@ func (cpu *CPU) handleInterrupt() {
 
 		if cpu.getTimerEnable() && cpu.getTimerFlag() {
 			cpu.triggerTimer()
+		}
+
+		if cpu.getSerialEnable() && cpu.getSerialFlag() {
+			cpu.triggerSerial()
 		}
 
 		if cpu.getJoypadEnable() && cpu.getJoypadFlag() {

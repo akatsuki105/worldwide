@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"sync"
 
@@ -13,6 +14,7 @@ import (
 	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/rtc"
+	"gbc/pkg/serial"
 )
 
 // CPU Central Processing Unit
@@ -26,9 +28,11 @@ type CPU struct {
 	interruptTrigger bool
 	config           *ini.File
 	// timer関連
-	cycle     float64 // タイマー用
-	cycleDIV  float64 // DIVタイマー用
-	cycleLine float64 // スキャンライン用
+	cycle       float64 // タイマー用
+	cycleDIV    float64 // DIVタイマー用
+	cycleLine   float64 // スキャンライン用
+	cycleSerial float64
+	serialTick  chan int
 	// ROM bank
 	ROMBankPtr uint8
 	ROMBank    [256][0x4000]byte // 0x4000-0x7fff
@@ -49,6 +53,9 @@ type CPU struct {
 	// RTC
 	RTC       rtc.RTC
 	isBoosted bool // 倍速か
+	// シリアル通信
+	Serial  serial.Serial
+	network bool
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -168,7 +175,11 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 	case 0x0f, 0x10, 0x11, 0x12, 0x13:
 		// Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
 		cpu.Cartridge.MBC = "MBC3"
-		go cpu.RTC.Init()
+
+		go func() {
+			cpu.RTC.Init()
+		}()
+
 		switch cpu.Cartridge.ROMSize {
 		case 0:
 			cpu.transferROM(2, rom)
@@ -289,6 +300,32 @@ func (cpu *CPU) Init() {
 	}
 	cpu.smooth = smooth
 
+	network, err := cpu.config.Section("network").Key("network").Bool()
+	if err != nil {
+		network = false
+	}
+	cpu.network = network
+	if network {
+		your := cpu.config.Section("network").Key("your").MustString("localhost:8888")
+		peer := cpu.config.Section("network").Key("peer").MustString("localhost:9999")
+		myIP, myPort, _ := net.SplitHostPort(your)
+		peerIP, peerPort, _ := net.SplitHostPort(peer)
+		received := make(chan int)
+		cpu.Serial.Init(myIP, myPort, peerIP, peerPort, received)
+		cpu.serialTick = make(chan int)
+
+		go func() {
+			for {
+				<-received
+				cpu.Serial.InTransfer = true
+				<-cpu.serialTick
+				cpu.Serial.Receive()
+				cpu.Serial.ClearSC()
+				cpu.setSerialFlag()
+			}
+		}()
+	}
+
 	if !cpu.Cartridge.IsCGB {
 		color0 := cpu.config.Section("pallete").Key("color0").Ints(",")
 		color1 := cpu.config.Section("pallete").Key("color1").Ints(",")
@@ -299,6 +336,13 @@ func (cpu *CPU) Init() {
 
 	// Init APU
 	cpu.Sound.Init()
+	cpu.load()
+}
+
+// Exit 後始末を行う
+func (cpu *CPU) Exit() {
+	cpu.save()
+	cpu.Serial.Exit()
 }
 
 // Exec 1サイクル

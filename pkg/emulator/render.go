@@ -62,7 +62,7 @@ func (cpu *CPU) Render() {
 	win.SetSmooth(cpu.smooth)
 
 	for !win.Closed() {
-		if !win.Focused() {
+		if !win.Focused() && !cpu.network {
 			cpu.Sound.Off()
 			win.Update()
 			continue

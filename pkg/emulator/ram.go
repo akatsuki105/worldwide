@@ -1,6 +1,10 @@
 package emulator
 
-import "fmt"
+import (
+	"fmt"
+)
+
+var done = make(chan int)
 
 // FetchMemory8 引数で指定したアドレスから値を取得する
 func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
@@ -33,6 +37,10 @@ func (cpu *CPU) fetchIO(addr uint16) (value byte) {
 	switch {
 	case addr == JOYPADIO:
 		value = cpu.joypad.Output()
+	case addr == SBIO:
+		value = cpu.Serial.ReadSB()
+	case addr == SCIO:
+		value = cpu.Serial.ReadSC()
 	case (addr >= 0xff10 && addr <= 0xff26) || (addr >= 0xff30 && addr <= 0xff3f):
 		// サウンドアクセス
 		value = cpu.Sound.Read(addr)
@@ -160,9 +168,62 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == JOYPADIO:
 		cpu.joypad.P1 = value
 
+	case addr == SBIO:
+		cpu.Serial.WriteSB(value)
 	case addr == SCIO:
-		if value == 0x81 {
-			fmt.Println("TODO: transfer implementation")
+
+		if !cpu.Serial.InTransfer {
+			cpu.Serial.WriteSC(value)
+
+			switch value {
+			case 0x80:
+				if cpu.Serial.WaitCtr > 0 {
+					cpu.Serial.Wait.Done()
+					cpu.Serial.WaitCtr--
+				}
+			case 0x81:
+				close(done)
+				done = make(chan int)
+				go func() {
+					success := false
+					for !success {
+						success = cpu.Serial.Transfer(0)
+						select {
+						case <-done:
+							break
+						default:
+						}
+					}
+					if success {
+						cpu.Serial.InTransfer = true
+						<-cpu.serialTick
+						cpu.Serial.Receive()
+						cpu.Serial.ClearSC()
+						cpu.setSerialFlag()
+					}
+				}()
+			case 0x83:
+				close(done)
+				done = make(chan int)
+				go func() {
+					success := false
+					for !success {
+						success = cpu.Serial.Transfer(0)
+						select {
+						case <-done:
+							break
+						default:
+						}
+					}
+					if success {
+						cpu.Serial.InTransfer = true
+						<-cpu.serialTick
+						cpu.Serial.Receive()
+						cpu.Serial.ClearSC()
+						cpu.setSerialFlag()
+					}
+				}()
+			}
 		}
 
 	case addr == DMAIO:
@@ -215,7 +276,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 				cpu.RAM[HDMA5IO] = 0xff // 完了
 			case 1:
 				// H-Blank DMA
-				cpu.GPU.HBlankDMALength = int(HDMA5 & 0x7f)
+				cpu.GPU.HBlankDMALength = int(HDMA5&0x7f) + 1
 				cpu.RAM[HDMA5IO] &= 0x7f
 			}
 		}
