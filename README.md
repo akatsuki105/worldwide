@@ -1,7 +1,13 @@
 # Worldwide
 [![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/Worldwide)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
 
-GameBoyColor emulator written in golang.
+日本語のドキュメントは[こちら](./README.ja.md)
+
+GameBoyColor emulator written in golang.  
+
+Almost all ROMs work without problems, and have a wide range of functions, including sound, save, and some communication functions. 
+
 
 <img src="https://imgur.com/UnmQnVE.gif" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/cFugCTA.gif" width="320" height="288">
 
