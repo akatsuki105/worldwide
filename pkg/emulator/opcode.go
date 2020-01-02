@@ -588,10 +588,8 @@ func (cpu *CPU) JR(operand1, operand2 string) {
 
 // HALT Halt
 func (cpu *CPU) HALT(operand1, operand2 string) {
-	if cpu.interruptTrigger {
-		cpu.Reg.PC++
-		cpu.interruptTrigger = false
-	}
+	cpu.Reg.PC++
+	cpu.halt = true
 }
 
 // STOP stop CPU

@@ -8,7 +8,48 @@ import (
 
 var (
 	maxHistory = 256
+
+	insCounter map[string]uint = map[string]uint{}
+	opCounter  map[string]uint = map[string]uint{}
 )
+
+func incrementDebugCounter(opcode, operand1, operand2 string) {
+	ins := fmt.Sprintf("%s %s,%s", opcode, operand1, operand2)
+
+	opctr := opCounter[opcode]
+	opCounter[opcode] = opctr + 1
+
+	insctr := insCounter[ins]
+	insCounter[ins] = insctr + 1
+}
+
+func writeOpCounter() {
+	sum := uint(0)
+	for _, counter := range opCounter {
+		sum += counter
+	}
+
+	for opcode, counter := range opCounter {
+		percent := float64(counter*100) / float64(sum)
+		if percent > 2.0 {
+			fmt.Println(opcode, " => ", percent, "%")
+		}
+	}
+}
+
+func writeInsCounter() {
+	sum := uint(0)
+	for _, counter := range insCounter {
+		sum += counter
+	}
+
+	for instruction, counter := range insCounter {
+		percent := float64(counter*100) / float64(sum)
+		if percent > 1.0 {
+			fmt.Println(instruction, " => ", percent, "%")
+		}
+	}
+}
 
 // pushHistory CPUのログを追加する
 func (cpu *CPU) pushHistory(eip uint16, opcode byte, instruction, operand1, operand2 string) {
@@ -29,13 +70,26 @@ func (cpu *CPU) writeHistory() {
 }
 
 // Debug Ctrl + C handler
-func (cpu *CPU) Debug() {
+func (cpu *CPU) Debug(mode int) {
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 
 	<-quit
-	println("\n ============== Debug mode ==============\n")
-	cpu.writeHistory()
+
+	switch mode {
+	case 0:
+	case 1:
+		println("\n ============== Debug mode ==============\n")
+		cpu.writeHistory()
+	case 2:
+		cpu.mutex.Lock()
+		println("\n ============== Opcode counter ==============\n")
+		writeOpCounter()
+		println("\n ============== Instruction counter ==============\n")
+		writeInsCounter()
+		cpu.mutex.Unlock()
+	}
+
 	os.Exit(1)
 }
 

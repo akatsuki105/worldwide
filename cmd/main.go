@@ -34,7 +34,7 @@ func main() {
 		cpu.Exit()
 	}()
 
-	// go cpu.Debug()
+	// go cpu.Debug(2)
 
 	pixelgl.Run(cpu.Render)
 }

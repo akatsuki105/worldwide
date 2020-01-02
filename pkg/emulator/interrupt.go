@@ -130,7 +130,7 @@ func (cpu *CPU) timer(instruction string, cycle float64) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
-	if cpu.Serial.InTransfer {
+	if cpu.network && cpu.Serial.InTransfer {
 		cpu.cycleSerial += cycle
 		if cpu.cycleSerial > 128*8 {
 			cpu.Serial.InTransfer = false
@@ -288,11 +288,7 @@ func (cpu *CPU) clearJoypadFlag() {
 // ------------ trigger --------------------
 
 func (cpu *CPU) triggerInterrupt() {
-	opcode := cpu.FetchMemory8(cpu.Reg.PC)
-	instruction := instructions[opcode][0]
-	if instruction == "HALT" || instruction == "STOP" {
-		cpu.interruptTrigger = true
-	}
+	cpu.halt = false
 }
 
 func (cpu *CPU) triggerVBlank() {

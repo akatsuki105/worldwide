@@ -52,17 +52,11 @@ func (cpu *CPU) Render() {
 	)
 
 	var boost float64
-	var salt float64
-	if cpu.Cartridge.IsCGB {
-		salt = 80
-	} else {
-		salt = 0
-	}
 
 	win.SetSmooth(cpu.smooth)
 
 	for !win.Closed() {
-		if !win.Focused() && !cpu.network {
+		if !win.Focused() && !cpu.network && cpu.saving {
 			cpu.Sound.Off()
 			win.Update()
 			continue
@@ -77,8 +71,7 @@ func (cpu *CPU) Render() {
 		doRender := !cpu.saving || frames&0x01 == 0
 
 		LCDC := cpu.FetchMemory8(LCDCIO)
-		scrollX := uint(cpu.FetchMemory8(0xff43))
-		scrollY := uint(cpu.FetchMemory8(0xff42))
+		scrollX, scrollY := cpu.GPU.ReadScroll()
 		scrollTileX := scrollX / 8
 		scrollPixelX := scrollX % 8
 		scrollTileY := scrollY / 8
@@ -96,6 +89,12 @@ func (cpu *CPU) Render() {
 		// 背景描画 + CPU稼働
 		for y := 0; y < iterY; y++ {
 
+			scrollX, scrollY = cpu.GPU.ReadScroll()
+			scrollTileX = scrollX / 8
+			scrollPixelX = scrollX % 8
+			scrollTileY = scrollY / 8
+			scrollPixelY = scrollY % 8
+
 			if y < height {
 				cpu.cycleLine = 0
 				// HBlank mode0
@@ -106,12 +105,12 @@ func (cpu *CPU) Render() {
 				}
 				// LCD Driver mode3
 				cpu.setLCDMode()
-				for cpu.cycleLine < 40.25 {
+				for cpu.cycleLine < 17.25+40.25 {
 					cpu.exec()
 				}
 				// HBlank mode0
 				cpu.setHBlankMode()
-				for cpu.cycleLine < 100.25*boost+salt {
+				for cpu.cycleLine < 17.25+40.25+100.25*boost {
 					cpu.exec()
 				}
 				cpu.incrementLY()
@@ -148,7 +147,9 @@ func (cpu *CPU) Render() {
 					}
 
 					if LCDC>>7%2 == 1 {
-						cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8)
+						if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
+							break
+						}
 					}
 				}
 			}

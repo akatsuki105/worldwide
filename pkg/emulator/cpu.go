@@ -19,14 +19,14 @@ import (
 
 // CPU Central Processing Unit
 type CPU struct {
-	Reg              Register
-	RAM              [0x10000]byte
-	Cartridge        cartridge.Cartridge
-	mutex            sync.Mutex
-	history          []string
-	joypad           joypad.Joypad
-	interruptTrigger bool
-	config           *ini.File
+	Reg       Register
+	RAM       [0x10000]byte
+	Cartridge cartridge.Cartridge
+	mutex     sync.Mutex
+	history   []string
+	joypad    joypad.Joypad
+	halt      bool // Halt状態か
+	config    *ini.File
 	// timer関連
 	cycle       float64 // タイマー用
 	cycleDIV    float64 // DIVタイマー用
@@ -176,9 +176,7 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 		// Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
 		cpu.Cartridge.MBC = "MBC3"
 
-		go func() {
-			cpu.RTC.Init()
-		}()
+		cpu.RTC.Working = true
 
 		switch cpu.Cartridge.ROMSize {
 		case 0:
@@ -336,7 +334,12 @@ func (cpu *CPU) Init() {
 
 	// Init APU
 	cpu.Sound.Init()
+
+	// load save data
 	cpu.load()
+
+	// Init RTC
+	go cpu.RTC.Init()
 }
 
 // Exit 後始末を行う
@@ -348,7 +351,6 @@ func (cpu *CPU) Exit() {
 // Exec 1サイクル
 func (cpu *CPU) exec() {
 	cpu.mutex.Lock()
-
 	opcode := cpu.FetchMemory8(cpu.Reg.PC)
 	instruction, operand1, operand2 := instructions[opcode][0], instructions[opcode][1], instructions[opcode][2]
 	cycle, _ := strconv.ParseFloat(instructions[opcode][3], 64)
@@ -358,20 +360,26 @@ func (cpu *CPU) exec() {
 	// }
 
 	switch instruction {
+	case "HALT":
+		cpu.HALT(operand1, operand2)
 	case "LD":
 		cpu.LD(operand1, operand2)
 	case "LDH":
 		cpu.LDH(operand1, operand2)
+	case "JR":
+		cpu.JR(operand1, operand2)
 	case "NOP":
 		cpu.NOP(operand1, operand2)
+	case "AND":
+		cpu.AND(operand1, operand2)
 	case "INC":
 		cpu.INC(operand1, operand2)
 	case "DEC":
 		cpu.DEC(operand1, operand2)
-	case "JR":
-		cpu.JR(operand1, operand2)
-	case "HALT":
-		cpu.HALT(operand1, operand2)
+	case "PUSH":
+		cpu.PUSH(operand1, operand2)
+	case "POP":
+		cpu.POP(operand1, operand2)
 	case "XOR":
 		cpu.XOR(operand1, operand2)
 	case "JP":
@@ -382,14 +390,8 @@ func (cpu *CPU) exec() {
 		cpu.RET(operand1, operand2)
 	case "RETI":
 		cpu.RETI(operand1, operand2)
-	case "DI":
-		cpu.DI(operand1, operand2)
-	case "EI":
-		cpu.EI(operand1, operand2)
 	case "CP":
 		cpu.CP(operand1, operand2)
-	case "AND":
-		cpu.AND(operand1, operand2)
 	case "OR":
 		cpu.OR(operand1, operand2)
 	case "ADD":
@@ -404,10 +406,6 @@ func (cpu *CPU) exec() {
 		cpu.CPL(operand1, operand2)
 	case "PREFIX CB":
 		cpu.PREFIXCB(operand1, operand2)
-	case "PUSH":
-		cpu.PUSH(operand1, operand2)
-	case "POP":
-		cpu.POP(operand1, operand2)
 	case "RRA":
 		cpu.RRA(operand1, operand2)
 	case "DAA":
@@ -424,6 +422,10 @@ func (cpu *CPU) exec() {
 		cpu.RLA(operand1, operand2)
 	case "RRCA":
 		cpu.RRCA(operand1, operand2)
+	case "DI":
+		cpu.DI(operand1, operand2)
+	case "EI":
+		cpu.EI(operand1, operand2)
 	case "STOP":
 		cpu.STOP(operand1, operand2)
 	default:
@@ -432,6 +434,8 @@ func (cpu *CPU) exec() {
 		errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
 		panic(errMsg)
 	}
+
+	// incrementDebugCounter(instruction, operand1, operand2)
 
 	cpu.mutex.Unlock()
 

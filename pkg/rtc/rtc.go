@@ -191,11 +191,13 @@ func (rtc *RTC) Sync(value []byte) {
 
 	lastSaveTime := (int64(value[43]) << 24) | (int64(value[42]) << 16) | (int64(value[41]) << 8) | int64(value[40])
 	// fmt.Println(time.Now(), time.Unix(lastSaveTime, 0))
-	delta := int(time.Now().Unix() - lastSaveTime)
+	delta := int(time.Now().Unix()-lastSaveTime) / 60
+	rtc.advance(delta)
+}
 
-	for i := 0; i < delta; i++ {
-		rtc.Working = false
-		rtc.incrementSecond()
+// Advance 指定した分だけRTCを進める
+func (rtc *RTC) advance(minutes int) {
+	for i := 0; i < minutes; i++ {
+		rtc.incrementMinute()
 	}
-	rtc.Working = true
 }

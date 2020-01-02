@@ -79,7 +79,9 @@ func (serial *Serial) Transfer(ctr int) bool {
 
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%s", serial.PeerIP, serial.PeerPort))
 		if err != nil {
-			return false
+			fmt.Println(err.Error())
+			serial.SB = 0xff
+			return true
 		}
 		defer conn.Close()
 

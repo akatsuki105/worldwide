@@ -177,6 +177,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 
 			switch value {
 			case 0x80:
+				// TODO: 本来は通信相手がいるいないにかかわらず8クロック後に問答無用で割り込み
 				if cpu.Serial.WaitCtr > 0 {
 					cpu.Serial.Wait.Done()
 					cpu.Serial.WaitCtr--
@@ -190,6 +191,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						success = cpu.Serial.Transfer(0)
 						select {
 						case <-done:
+							// 次の通信が催促されたら強制的に打ち切る
 							break
 						default:
 						}
@@ -246,6 +248,11 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 
 	case addr == LCDSTATIO:
 		cpu.GPU.LCDSTAT = value
+
+	case addr == 0xff42:
+		cpu.GPU.WriteScrollY(value)
+	case addr == 0xff43:
+		cpu.GPU.WriteScrollX(value)
 
 	case addr == BGPIO:
 		cpu.GPU.DMGPallte[0] = value

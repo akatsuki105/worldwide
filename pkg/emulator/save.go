@@ -34,6 +34,14 @@ func (cpu *CPU) save() {
 				savdata[index] = cpu.RAMBank[i][j]
 			}
 		}
+	case 5:
+		savdata = make([]byte, 0x2000*8)
+		for i := 0; i < 8; i++ {
+			for j := 0; j < 0x2000; j++ {
+				index := i*0x2000 + j
+				savdata[index] = cpu.RAMBank[i][j]
+			}
+		}
 	}
 
 	if cpu.RTC.Working {
@@ -72,10 +80,18 @@ func (cpu *CPU) load() {
 				cpu.RAMBank[i][j] = savdata[index]
 			}
 		}
+	case 5:
+		for i := 0; i < 5; i++ {
+			for j := 0; j < 0x2000; j++ {
+				index := i*0x2000 + j
+				cpu.RAMBank[i][j] = savdata[index]
+			}
+		}
 	}
 
-	if len(savdata)%0x8000 == 48 {
-		rtcData := savdata[0x8000 : 0x8000+48]
+	if len(savdata) >= 0x1000 && len(savdata)%0x1000 == 48 {
+		start := (len(savdata) / 0x1000) * 0x1000
+		rtcData := savdata[start : start+48]
 		cpu.RTC.Sync(rtcData)
 	}
 }
