@@ -5,4 +5,4 @@ os: windows
 go:
   - "1.13"
 
-script: go build -o gbc.exe -ldflags -H=windowsgui ./cmd/
+script: go build ./cmd/main.go

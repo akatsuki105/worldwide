@@ -9,7 +9,6 @@ import (
 
 	"gbc/pkg/emulator"
 
-	"github.com/akatsuki-py/tfd"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/sqweek/dialog"
 )
@@ -50,12 +49,6 @@ func selectROM(filepath string) string {
 			}
 			filepath = tmp
 			os.Chdir(cd)
-		case "linux":
-			tmp, err := tfd.CreateSelectDialog([]string{"gb", "gbc"}, false)
-			if err != nil {
-				os.Exit(0)
-			}
-			filepath = tmp
 		default:
 			os.Exit(0)
 		}
