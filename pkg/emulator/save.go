@@ -7,7 +7,7 @@ import (
 )
 
 func (cpu *CPU) save() {
-	savname := fmt.Sprintf("./sav/%s.sav", cpu.Cartridge.Title)
+	savname := fmt.Sprintf("%s/%s.sav", cpu.romdir, cpu.Cartridge.Title)
 	savfile, err := os.Create(savname)
 	if err != nil {
 		return
@@ -58,7 +58,7 @@ func (cpu *CPU) save() {
 }
 
 func (cpu *CPU) load() {
-	savname := fmt.Sprintf("./sav/%s.sav", cpu.Cartridge.Title)
+	savname := fmt.Sprintf("%s/%s.sav", cpu.romdir, cpu.Cartridge.Title)
 	savdata, err := ioutil.ReadFile(savname)
 	if err != nil {
 		return

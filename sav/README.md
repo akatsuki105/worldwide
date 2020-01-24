@@ -1,1 +1,0 @@
-This is a directory for *.sav.

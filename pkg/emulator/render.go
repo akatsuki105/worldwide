@@ -27,7 +27,7 @@ func (cpu *CPU) Render() {
 	if cpu.Cartridge.Title != "" {
 		title = cpu.Cartridge.Title
 	} else {
-		title = "GameBoy"
+		title = "Worldwide"
 	}
 
 	icon, err := loadIcon()
@@ -48,7 +48,6 @@ func (cpu *CPU) Render() {
 
 	var (
 		frames = 0
-		second = time.Tick(time.Second)
 	)
 
 	var boost float64
@@ -56,8 +55,34 @@ func (cpu *CPU) Render() {
 	win.SetSmooth(cpu.smooth)
 
 	for !win.Closed() {
+
+		if cpu.Boot.Valid() {
+			if frames < int(cpu.Boot.Length) {
+				if frames == 1 {
+					cpu.Boot.PlaySE()
+				}
+				frames++
+				pic := pixel.PictureDataFromImage(cpu.Boot.Images[cpu.Boot.Table[uint(frames)]])
+				sprite := pixel.NewSprite(pic, pic.Bounds())
+				mat := pixel.IM
+				mat = mat.ScaledXY(pixel.ZV, pixel.V(0.8, 0.8))
+				mat = mat.Moved(win.Bounds().Center())
+				sprite.Draw(win, mat)
+				win.Update()
+				continue
+			} else if frames == int(cpu.Boot.Length) {
+				// Init APU
+				cpu.Boot.ExitSE()
+				cpu.Sound.Init()
+			}
+		} else if frames == 0 {
+			// Init APU
+			cpu.Sound.Init()
+		}
+
 		if !win.Focused() && !cpu.network && cpu.saving {
 			cpu.Sound.Off()
+			frames++
 			win.Update()
 			continue
 		}
@@ -199,13 +224,6 @@ func (cpu *CPU) Render() {
 		win.Update()
 
 		frames++
-		select {
-		case <-second:
-			// fps := fmt.Sprintf("%s | FPS: %d", cfg.Title, frames)
-			// win.SetTitle(fps)
-			frames = 0
-		default:
-		}
 
 		if frames%3 == 0 {
 			result := cpu.joypad.Input(win)

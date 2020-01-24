@@ -15,19 +15,20 @@ import (
 
 func main() {
 	flag.Parse()
-	filepath := flag.Arg(0)
+	fp := flag.Arg(0)
 
 	cur, _ := os.Getwd()
 
 	cpu := &emulator.CPU{}
-	romPath := selectROM(filepath)
+	romPath := selectROM(fp)
+	romDir := filepath.Dir(romPath)
 	romData := readROM(romPath)
 
 	cpu.Cartridge.ParseCartridge(&romData)
 	cpu.TransferROM(&romData)
 
 	os.Chdir(cur)
-	cpu.Init()
+	cpu.Init(romDir)
 	defer func() {
 		os.Chdir(cur)
 		cpu.Exit()
@@ -38,8 +39,8 @@ func main() {
 	pixelgl.Run(cpu.Render)
 }
 
-func selectROM(filepath string) string {
-	if filepath == "" {
+func selectROM(p string) string {
+	if p == "" {
 		switch runtime.GOOS {
 		case "windows":
 			cd, _ := os.Getwd()
@@ -47,13 +48,13 @@ func selectROM(filepath string) string {
 			if err != nil {
 				os.Exit(0)
 			}
-			filepath = tmp
+			p = tmp
 			os.Chdir(cd)
 		default:
 			os.Exit(0)
 		}
 	}
-	return filepath
+	return p
 }
 
 func readROM(path string) []byte {

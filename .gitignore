@@ -2,6 +2,10 @@
 *.exe
 *.sav
 *.ini
+public/
 game/
 dump/
+gbc-emulator
 gbc
+sav/
+.DS_store

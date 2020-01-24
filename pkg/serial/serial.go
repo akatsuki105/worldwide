@@ -17,22 +17,26 @@ type Serial struct {
 	PeerIP   net.IP
 	PeerPort string
 	// その他
-	InTransfer bool
-	buf        byte
-	received   chan int
+	TransferFlag int
+	buf          byte
+	received     chan int
 	// 制御関連
 	Wait    sync.WaitGroup
 	WaitCtr int
+
+	mutex *sync.Mutex
 }
 
 // Init set IP addr
-func (serial *Serial) Init(myIP, myPort, peerIP, peerPort string, received chan int) {
+func (serial *Serial) Init(myIP, myPort, peerIP, peerPort string, received chan int, mutex *sync.Mutex) {
 	serial.working = true
 	serial.MyIP = net.ParseIP(myIP)
 	serial.MyPort = myPort
 	serial.PeerIP = net.ParseIP(peerIP)
 	serial.PeerPort = peerPort
 	serial.received = received
+
+	serial.mutex = mutex
 
 	listen, err := net.Listen("tcp", fmt.Sprintf("%s:%s", serial.MyIP, serial.MyPort))
 	if err != nil {
@@ -85,12 +89,17 @@ func (serial *Serial) Transfer(ctr int) bool {
 		}
 		defer conn.Close()
 
+		serial.mutex.Lock()
+
 		conn.Write([]byte{send, byte(ctr)})
 
 		buf := make([]byte, 2)
 		conn.Read(buf)
 		read := buf[0]
 		serial.buf = read
+
+		serial.mutex.Unlock()
+
 		return true
 	}
 
@@ -108,12 +117,16 @@ func (serial *Serial) listen(listen *net.Listener) {
 
 			serial.Wait.Wait()
 
+			serial.mutex.Lock()
+
 			buf := make([]byte, 2)
 			conn.Read(buf)
 			read, ctr := buf[0], buf[1]
 			serial.buf = read
 
 			conn.Write([]byte{serial.SB, ctr})
+
+			serial.mutex.Unlock()
 
 			serial.received <- 1
 			conn.Close()

@@ -9,6 +9,7 @@ import (
 	"gopkg.in/ini.v1"
 
 	"gbc/pkg/apu"
+	"gbc/pkg/boot"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
 	"gbc/pkg/gpu"
@@ -56,6 +57,9 @@ type CPU struct {
 	// シリアル通信
 	Serial  serial.Serial
 	network bool
+
+	romdir string    // ロムがあるところのディレクトリパス
+	Boot   boot.Boot // ブートデータ
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -236,7 +240,7 @@ func (cpu *CPU) transferROM(bankNum int, rom *[]byte) {
 }
 
 // Init CPU・メモリの初期化
-func (cpu *CPU) Init() {
+func (cpu *CPU) Init(romdir string) {
 	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
 	cpu.Reg.BC = 0x0013
 	cpu.Reg.DE = 0x00d8
@@ -304,18 +308,18 @@ func (cpu *CPU) Init() {
 	}
 	cpu.network = network
 	if network {
-		your := cpu.config.Section("network").Key("your").MustString("localhost:8888")
-		peer := cpu.config.Section("network").Key("peer").MustString("localhost:9999")
+		your := cpu.config.Section("network").Key("your").MustString("127.0.0.1:8888")
+		peer := cpu.config.Section("network").Key("peer").MustString("127.0.0.1:9999")
 		myIP, myPort, _ := net.SplitHostPort(your)
 		peerIP, peerPort, _ := net.SplitHostPort(peer)
 		received := make(chan int)
-		cpu.Serial.Init(myIP, myPort, peerIP, peerPort, received)
+		cpu.Serial.Init(myIP, myPort, peerIP, peerPort, received, &cpu.mutex)
 		cpu.serialTick = make(chan int)
 
 		go func() {
 			for {
 				<-received
-				cpu.Serial.InTransfer = true
+				cpu.Serial.TransferFlag = 1
 				<-cpu.serialTick
 				cpu.Serial.Receive()
 				cpu.Serial.ClearSC()
@@ -332,11 +336,15 @@ func (cpu *CPU) Init() {
 		cpu.GPU.InitPallete(color0, color1, color2, color3)
 	}
 
-	// Init APU
-	cpu.Sound.Init()
-
 	// load save data
+	cpu.romdir = romdir
 	cpu.load()
+
+	// Init BootData
+	{
+		valid, _ := cpu.config.Section("display").Key("boot").Bool()
+		cpu.Boot = *boot.New(valid)
+	}
 
 	// Init RTC
 	go cpu.RTC.Init()

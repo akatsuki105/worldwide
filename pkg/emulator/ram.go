@@ -172,12 +172,11 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.Serial.WriteSB(value)
 	case addr == SCIO:
 
-		if !cpu.Serial.InTransfer {
+		if cpu.Serial.TransferFlag == 0 {
 			cpu.Serial.WriteSC(value)
 
 			switch value {
 			case 0x80:
-				// TODO: 本来は通信相手がいるいないにかかわらず8クロック後に問答無用で割り込み
 				if cpu.Serial.WaitCtr > 0 {
 					cpu.Serial.Wait.Done()
 					cpu.Serial.WaitCtr--
@@ -197,7 +196,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						}
 					}
 					if success {
-						cpu.Serial.InTransfer = true
+						cpu.Serial.TransferFlag = 1
 						<-cpu.serialTick
 						cpu.Serial.Receive()
 						cpu.Serial.ClearSC()
@@ -218,7 +217,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						}
 					}
 					if success {
-						cpu.Serial.InTransfer = true
+						cpu.Serial.TransferFlag = 1
 						<-cpu.serialTick
 						cpu.Serial.Receive()
 						cpu.Serial.ClearSC()

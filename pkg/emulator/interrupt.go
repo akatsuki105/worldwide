@@ -130,10 +130,10 @@ func (cpu *CPU) timer(instruction string, cycle float64) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
-	if cpu.network && cpu.Serial.InTransfer {
+	if cpu.network && cpu.Serial.TransferFlag > 0 {
 		cpu.cycleSerial += cycle
 		if cpu.cycleSerial > 128*8 {
-			cpu.Serial.InTransfer = false
+			cpu.Serial.TransferFlag = 0
 			close(cpu.serialTick)
 			cpu.cycleSerial = 0
 			cpu.serialTick = make(chan int)
