@@ -44,7 +44,7 @@ header > .container > .social-button {
   margin-right: 1rem;
 }
 .nav-brand > a {
-  color: #212529;
+  color: #000000;
   text-decoration: none;
 }
 
@@ -78,7 +78,7 @@ footer {
   margin-bottom: 2rem;
 }
 footer a {
-  color: #333;
+  color: #000000;
   text-decoration: none;
 }
 
@@ -98,7 +98,7 @@ h2 > a {
   z-index: 999;
   display: flex;
   height: 100px;
-  color: #333;
+  color: #000000;
   text-decoration: none;
   transition: all 0.3s ease;
 }
@@ -112,7 +112,7 @@ h2 > a {
   align-self: flex-start;
   padding: 0.2rem 0.5rem;
   font-size: 0.8rem;
-  color: #333;
+  color: #000000;
 }
 .github-link > i.nes-octocat {
   align-self: flex-end;
@@ -265,7 +265,7 @@ h3.topic-title > i {
 
 /* Articles */
 .article-link > .title a {
-  color: #333;
+  color: #000000;
 }
 .article-link > .title span {
   margin-left: 1rem;
@@ -320,4 +320,8 @@ img.lazy {
   #nescss > .container {
     margin-top: 190px;
   }
+}
+
+body {
+  color: #000000;
 }
