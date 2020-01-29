@@ -1,6 +1,6 @@
 package emulator
 
-var (
+const (
 	JOYPADIO  uint16 = 0xff00
 	SBIO      uint16 = 0xff01
 	SCIO      uint16 = 0xff02
@@ -31,48 +31,157 @@ var (
 	OCPDIO    uint16 = 0xff6b
 	SVBKIO    uint16 = 0xff70
 	IEIO      uint16 = 0xffff
+)
 
-	instructions [256][4]string = [256][4]string{
-		/* 0x0x */ {"NOP", "*", "*", "1"}, {"LD", "BC", "d16", "3"}, {"LD", "(BC)", "A", "2"}, {"INC", "BC", "*", "2"}, {"INC", "B", "*", "1"}, {"DEC", "B", "*", "1"}, {"LD", "B", "d8", "2"}, {"RLCA", "*", "*", "1"}, {"LD", "(a16)", "SP", "5"}, {"ADD", "HL", "BC", "2"}, {"LD", "A", "(BC)", "2"}, {"DEC", "BC", "*", "2"}, {"INC", "C", "*", "1"}, {"DEC", "C", "*", "1"}, {"LD", "C", "d8", "2"}, {"RRCA", "*", "*", "1"},
-		/* 0x1x */ {"STOP", "0", "*", "1"}, {"LD", "DE", "d16", "3"}, {"LD", "(DE)", "A", "2"}, {"INC", "DE", "*", "2"}, {"INC", "D", "*", "1"}, {"DEC", "D", "*", "1"}, {"LD", "D", "d8", "2"}, {"RLA", "*", "*", "1"}, {"JR", "r8", "*", "3"}, {"ADD", "HL", "DE", "2"}, {"LD", "A", "(DE)", "2"}, {"DEC", "DE", "*", "2"}, {"INC", "E", "*", "1"}, {"DEC", "E", "*", "1"}, {"LD", "E", "d8", "2"}, {"RRA", "*", "*", "1"},
-		/* 0x2x */ {"JR", "NZ", "r8", "1.5"}, {"LD", "HL", "d16", "3"}, {"LD", "(HL+)", "A", "2"}, {"INC", "HL", "*", "2"}, {"INC", "H", "*", "1"}, {"DEC", "H", "*", "1"}, {"LD", "H", "d8", "2"}, {"DAA", "*", "*", "1"}, {"JR", "Z", "r8", "1.5"}, {"ADD", "HL", "HL", "2"}, {"LD", "A", "(HL+)", "2"}, {"DEC", "HL", "*", "2"}, {"INC", "L", "*", "1"}, {"DEC", "L", "*", "1"}, {"LD", "L", "d8", "2"}, {"CPL", "*", "*", "1"},
-		/* 0x3x */ {"JR", "NC", "r8", "1.5"}, {"LD", "SP", "d16", "3"}, {"LD", "(HL-)", "A", "2"}, {"INC", "SP", "*", "2"}, {"INC", "(HL)", "*", "3"}, {"DEC", "(HL)", "*", "3"}, {"LD", "(HL)", "d8", "3"}, {"SCF", "*", "*", "1"}, {"JR", "C", "r8", "1.5"}, {"ADD", "HL", "SP", "2"}, {"LD", "A", "(HL-)", "2"}, {"DEC", "SP", "*", "2"}, {"INC", "A", "*", "1"}, {"DEC", "A", "*", "1"}, {"LD", "A", "d8", "2"}, {"CCF", "*", "*", "1"},
-		/* 0x4x */ {"LD", "B", "B", "1"}, {"LD", "B", "C", "1"}, {"LD", "B", "D", "1"}, {"LD", "B", "E", "1"}, {"LD", "B", "H", "1"}, {"LD", "B", "L", "1"}, {"LD", "B", "(HL)", "2"}, {"LD", "B", "A", "1"}, {"LD", "C", "B", "1"}, {"LD", "C", "C", "1"}, {"LD", "C", "D", "1"}, {"LD", "C", "E", "1"}, {"LD", "C", "H", "1"}, {"LD", "C", "L", "1"}, {"LD", "C", "(HL)", "2"}, {"LD", "C", "A", "1"},
-		/* 0x5x */ {"LD", "D", "B", "1"}, {"LD", "D", "C", "1"}, {"LD", "D", "D", "1"}, {"LD", "D", "E", "1"}, {"LD", "D", "H", "1"}, {"LD", "D", "L", "1"}, {"LD", "D", "(HL)", "2"}, {"LD", "D", "A", "1"}, {"LD", "E", "B", "1"}, {"LD", "E", "C", "1"}, {"LD", "E", "D", "1"}, {"LD", "E", "E", "1"}, {"LD", "E", "H", "1"}, {"LD", "E", "L", "1"}, {"LD", "E", "(HL)", "2"}, {"LD", "E", "A", "1"},
-		/* 0x6x */ {"LD", "H", "B", "1"}, {"LD", "H", "C", "1"}, {"LD", "H", "D", "1"}, {"LD", "H", "E", "1"}, {"LD", "H", "H", "1"}, {"LD", "H", "L", "1"}, {"LD", "H", "(HL)", "2"}, {"LD", "H", "A", "1"}, {"LD", "L", "B", "1"}, {"LD", "L", "C", "1"}, {"LD", "L", "D", "1"}, {"LD", "L", "E", "1"}, {"LD", "L", "H", "1"}, {"LD", "L", "L", "1"}, {"LD", "L", "(HL)", "2"}, {"LD", "L", "A", "1"},
-		/* 0x7x */ {"LD", "(HL)", "B", "2"}, {"LD", "(HL)", "C", "2"}, {"LD", "(HL)", "D", "2"}, {"LD", "(HL)", "E", "2"}, {"LD", "(HL)", "H", "2"}, {"LD", "(HL)", "L", "2"}, {"HALT", "*", "*", "1"}, {"LD", "(HL)", "A", "2"}, {"LD", "A", "B", "1"}, {"LD", "A", "C", "1"}, {"LD", "A", "D", "1"}, {"LD", "A", "E", "1"}, {"LD", "A", "H", "1"}, {"LD", "A", "L", "1"}, {"LD", "A", "(HL)", "2"}, {"LD", "A", "A", "1"},
-		/* 0x8x */ {"ADD", "A", "B", "1"}, {"ADD", "A", "C", "1"}, {"ADD", "A", "D", "1"}, {"ADD", "A", "E", "1"}, {"ADD", "A", "H", "1"}, {"ADD", "A", "L", "1"}, {"ADD", "A", "(HL)", "2"}, {"ADD", "A", "A", "1"}, {"ADC", "A", "B", "1"}, {"ADC", "A", "C", "1"}, {"ADC", "A", "D", "1"}, {"ADC", "A", "E", "1"}, {"ADC", "A", "H", "1"}, {"ADC", "A", "L", "1"}, {"ADC", "A", "(HL)", "2"}, {"ADC", "A", "A", "1"},
-		/* 0x9x */ {"SUB", "B", "*", "1"}, {"SUB", "C", "*", "1"}, {"SUB", "D", "*", "1"}, {"SUB", "E", "*", "1"}, {"SUB", "H", "*", "1"}, {"SUB", "L", "*", "1"}, {"SUB", "(HL)", "*", "2"}, {"SUB", "A", "*", "1"}, {"SBC", "A", "B", "1"}, {"SBC", "A", "C", "1"}, {"SBC", "A", "D", "1"}, {"SBC", "A", "E", "1"}, {"SBC", "A", "H", "1"}, {"SBC", "A", "L", "1"}, {"SBC", "A", "(HL)", "2"}, {"SBC", "A", "A", "1"},
-		/* 0xax */ {"AND", "B", "*", "1"}, {"AND", "C", "*", "1"}, {"AND", "D", "*", "1"}, {"AND", "E", "*", "1"}, {"AND", "H", "*", "1"}, {"AND", "L", "*", "1"}, {"AND", "(HL)", "*", "2"}, {"AND", "A", "*", "1"}, {"XOR", "B", "*", "1"}, {"XOR", "C", "*", "1"}, {"XOR", "D", "*", "1"}, {"XOR", "E", "*", "1"}, {"XOR", "H", "*", "1"}, {"XOR", "L", "*", "1"}, {"XOR", "(HL)", "*", "2"}, {"XOR", "A", "*", "1"},
-		/* 0xbx */ {"OR", "B", "*", "1"}, {"OR", "C", "*", "1"}, {"OR", "D", "*", "1"}, {"OR", "E", "*", "1"}, {"OR", "H", "*", "1"}, {"OR", "L", "*", "1"}, {"OR", "(HL)", "*", "2"}, {"OR", "A", "*", "1"}, {"CP", "B", "*", "1"}, {"CP", "C", "*", "1"}, {"CP", "D", "*", "1"}, {"CP", "E", "*", "1"}, {"CP", "H", "*", "1"}, {"CP", "L", "*", "1"}, {"CP", "(HL)", "*", "2"}, {"CP", "A", "*", "1"},
-		/* 0xcx */ {"RET", "NZ", "*", "2.5"}, {"POP", "BC", "*", "3"}, {"JP", "NZ", "a16", "1.333"}, {"JP", "a16", "*", "4"}, {"CALL", "NZ", "a16", "2"}, {"PUSH", "BC", "*", "4"}, {"ADD", "A", "d8", "2"}, {"RST", "00", "*", "4"}, {"RET", "Z", "*", "2.5"}, {"RET", "*", "*", "4"}, {"JP", "Z", "a16", "1.333"}, {"PREFIX CB", "*", "*", "1"}, {"CALL", "Z", "a16", "2"}, {"CALL", "a16", "*", "6"}, {"ADC", "A", "d8", "2"}, {"RST", "08", "*", "4"},
-		/* 0xdx */ {"RET", "NC", "*", "2.5"}, {"POP", "DE", "*", "3"}, {"JP", "NC", "a16", "1.333"}, {"*", "*", "*", "*"}, {"CALL", "NC", "a16", "2"}, {"PUSH", "DE", "*", "4"}, {"SUB", "d8", "*", "2"}, {"RST", "16", "*", "4"}, {"RET", "C", "*", "2.5"}, {"RETI", "*", "*", "4"}, {"JP", "C", "a16", "1.333"}, {"*", "*", "*", "*"}, {"CALL", "C", "a16", "2"}, {"*", "*", "*", "*"}, {"SBC", "A", "d8", "2"}, {"RST", "24", "*", "4"},
-		/* 0xex */ {"LDH", "(a8)", "A", "3"}, {"POP", "HL", "*", "3"}, {"LD", "(C)", "A", "2"}, {"*", "*", "*", "*"}, {"*", "*", "*", "*"}, {"PUSH", "HL", "*", "4"}, {"AND", "d8", "*", "2"}, {"RST", "32", "*", "4"}, {"ADD", "SP", "r8", "4"}, {"JP", "(HL)", "*", "1"}, {"LD", "(a16)", "A", "4"}, {"*", "*", "*", "*"}, {"*", "*", "*", "*"}, {"*", "*", "*", "*"}, {"XOR", "d8", "*", "2"}, {"RST", "40", "*", "4"},
-		/* 0xfx */ {"LDH", "A", "(a8)", "3"}, {"POP", "AF", "*", "3"}, {"LD", "A", "(C)", "2"}, {"DI", "*", "*", "1"}, {"*", "*", "*", "*"}, {"PUSH", "AF", "*", "4"}, {"OR", "d8", "*", "2"}, {"RST", "48", "*", "4"}, {"LD", "HL", "SP+r8", "3"}, {"LD", "SP", "HL", "2"}, {"LD", "A", "(a16)", "4"}, {"EI", "*", "*", "1"}, {"*", "*", "*", "*"}, {"*", "*", "*", "*"}, {"CP", "d8", "*", "2"}, {"RST", "56", "*", "4"},
-	}
+const (
+	INS_ADC = iota
+	INS_AND
+	INS_ADD
+	INS_CP
+	INS_DEC
+	INS_INC
+	INS_OR
+	INS_SBC
+	INS_SUB
+	INS_XOR
+	INS_BIT
+	INS_RES
+	INS_SET
+	INS_SWAP
+	INS_RL
+	INS_RLA
+	INS_RLC
+	INS_RLCA
+	INS_RR
+	INS_RRA
+	INS_RRC
+	INS_RRCA
+	INS_SLA
+	INS_SRA
+	INS_SRL
+	INS_LD
+	INS_CALL
+	INS_JP
+	INS_JR
+	INS_RET
+	INS_RETI
+	INS_RST
+	INS_POP
+	INS_PUSH
+	INS_CCF
+	INS_CPL
+	INS_DAA
+	INS_DI
+	INS_EI
+	INS_HALT
+	INS_NOP
+	INS_SCF
+	INS_STOP
+	INS_PREFIX
+	INS_NONE
+	INS_LDH
+)
 
-	prefixCB [256][4]string = [256][4]string{
-		/* 0x0x */ {"RLC", "B", "*", "2"}, {"RLC", "C", "*", "2"}, {"RLC", "D", "*", "2"}, {"RLC", "E", "*", "2"}, {"RLC", "H", "*", "2"}, {"RLC", "L", "*", "2"}, {"RLC", "(HL)", "*", "4"}, {"RLC", "A", "*", "2"}, {"RRC", "B", "*", "2"}, {"RRC", "C", "*", "2"}, {"RRC", "D", "*", "2"}, {"RRC", "E", "*", "2"}, {"RRC", "H", "*", "2"}, {"RRC", "L", "*", "2"}, {"RRC", "(HL)", "*", "4"}, {"RRC", "A", "*", "2"},
-		/* 0x1x */ {"RL", "B", "*", "2"}, {"RL", "C", "*", "2"}, {"RL", "D", "*", "2"}, {"RL", "E", "*", "2"}, {"RL", "H", "*", "2"}, {"RL", "L", "*", "2"}, {"RL", "(HL)", "*", "4"}, {"RL", "A", "*", "2"}, {"RR", "B", "*", "2"}, {"RR", "C", "*", "2"}, {"RR", "D", "*", "2"}, {"RR", "E", "*", "2"}, {"RR", "H", "*", "2"}, {"RR", "L", "*", "2"}, {"RR", "(HL)", "*", "4"}, {"RR", "A", "*", "2"},
-		/* 0x2x */ {"SLA", "B", "*", "2"}, {"SLA", "C", "*", "2"}, {"SLA", "D", "*", "2"}, {"SLA", "E", "*", "2"}, {"SLA", "H", "*", "2"}, {"SLA", "L", "*", "2"}, {"SLA", "(HL)", "*", "4"}, {"SLA", "A", "*", "2"}, {"SRA", "B", "*", "2"}, {"SRA", "C", "*", "2"}, {"SRA", "D", "*", "2"}, {"SRA", "E", "*", "2"}, {"SRA", "H", "*", "2"}, {"SRA", "L", "*", "2"}, {"SRA", "(HL)", "*", "4"}, {"SRA", "A", "*", "2"},
-		/* 0x3x */ {"SWAP", "B", "*", "2"}, {"SWAP", "C", "*", "2"}, {"SWAP", "D", "*", "2"}, {"SWAP", "E", "*", "2"}, {"SWAP", "H", "*", "2"}, {"SWAP", "L", "*", "2"}, {"SWAP", "(HL)", "*", "4"}, {"SWAP", "A", "*", "2"}, {"SRL", "B", "*", "2"}, {"SRL", "C", "*", "2"}, {"SRL", "D", "*", "2"}, {"SRL", "E", "*", "2"}, {"SRL", "H", "*", "2"}, {"SRL", "L", "*", "2"}, {"SRL", "(HL)", "*", "4"}, {"SRL", "A", "*", "2"},
+const (
+	OPERAND_NONE = iota
+	OPERAND_BC
+	OPERAND_d16
+	OPERAND_BC_PAREN
+	OPERAND_A
+	OPERAND_AF
+	OPERAND_B
+	OPERAND_d8
+	OPERAND_a16_PAREN
+	OPERAND_SP
+	OPERAND_SP_PLUS_r8
+	OPERAND_HL
+	OPERAND_C
+	OPERAND_C_PAREN
+	OPERAND_DE
+	OPERAND_DE_PAREN
+	OPERAND_D
+	OPERAND_r8
+	OPERAND_a8_PAREN
+	OPERAND_a16
+	OPERAND_E
+	OPERAND_NZ
+	OPERAND_NC
+	OPERAND_H
+	OPERAND_L
+	OPERAND_Z
+	OPERAND_HLPLUS_PAREN
+	OPERAND_HLMINUS_PAREN
+	OPERAND_HL_PAREN
+	OPERAND_00H
+	OPERAND_08H
+	OPERAND_10H
+	OPERAND_18H
+	OPERAND_20H
+	OPERAND_28H
+	OPERAND_30H
+	OPERAND_38H
+	OPERAND_0
+	OPERAND_1
+	OPERAND_2
+	OPERAND_3
+	OPERAND_4
+	OPERAND_5
+	OPERAND_6
+	OPERAND_7
+)
 
-		/* 0x4x */ {"BIT", "0", "B", "2"}, {"BIT", "0", "C", "2"}, {"BIT", "0", "D", "2"}, {"BIT", "0", "E", "2"}, {"BIT", "0", "H", "2"}, {"BIT", "0", "L", "2"}, {"BIT", "0", "(HL)", "4"}, {"BIT", "0", "A", "2"}, {"BIT", "1", "B", "2"}, {"BIT", "1", "C", "2"}, {"BIT", "1", "D", "2"}, {"BIT", "1", "E", "2"}, {"BIT", "1", "H", "2"}, {"BIT", "1", "L", "2"}, {"BIT", "1", "(HL)", "4"}, {"BIT", "1", "A", "2"},
-		/* 0x5x */ {"BIT", "2", "B", "2"}, {"BIT", "2", "C", "2"}, {"BIT", "2", "D", "2"}, {"BIT", "2", "E", "2"}, {"BIT", "2", "H", "2"}, {"BIT", "2", "L", "2"}, {"BIT", "2", "(HL)", "4"}, {"BIT", "2", "A", "2"}, {"BIT", "3", "B", "2"}, {"BIT", "3", "C", "2"}, {"BIT", "3", "D", "2"}, {"BIT", "3", "E", "2"}, {"BIT", "3", "H", "2"}, {"BIT", "3", "L", "2"}, {"BIT", "3", "(HL)", "4"}, {"BIT", "3", "A", "2"},
-		/* 0x6x */ {"BIT", "4", "B", "2"}, {"BIT", "4", "C", "2"}, {"BIT", "4", "D", "2"}, {"BIT", "4", "E", "2"}, {"BIT", "4", "H", "2"}, {"BIT", "4", "L", "2"}, {"BIT", "4", "(HL)", "4"}, {"BIT", "4", "A", "2"}, {"BIT", "5", "B", "2"}, {"BIT", "5", "C", "2"}, {"BIT", "5", "D", "2"}, {"BIT", "5", "E", "2"}, {"BIT", "5", "H", "2"}, {"BIT", "5", "L", "2"}, {"BIT", "5", "(HL)", "4"}, {"BIT", "5", "A", "2"},
-		/* 0x7x */ {"BIT", "6", "B", "2"}, {"BIT", "6", "C", "2"}, {"BIT", "6", "D", "2"}, {"BIT", "6", "E", "2"}, {"BIT", "6", "H", "2"}, {"BIT", "6", "L", "2"}, {"BIT", "6", "(HL)", "4"}, {"BIT", "6", "A", "2"}, {"BIT", "7", "B", "2"}, {"BIT", "7", "C", "2"}, {"BIT", "7", "D", "2"}, {"BIT", "7", "E", "2"}, {"BIT", "7", "H", "2"}, {"BIT", "7", "L", "2"}, {"BIT", "7", "(HL)", "4"}, {"BIT", "7", "A", "2"},
+type Opcode struct {
+	Ins      int
+	Operand1 int
+	Operand2 int
+	Cycle1   int
+	Cycle2   int // 条件分岐がある場合
+}
 
-		/* 0x8x */ {"RES", "0", "B", "2"}, {"RES", "0", "C", "2"}, {"RES", "0", "D", "2"}, {"RES", "0", "E", "2"}, {"RES", "0", "H", "2"}, {"RES", "0", "L", "2"}, {"RES", "0", "(HL)", "4"}, {"RES", "0", "A", "2"}, {"RES", "1", "B", "2"}, {"RES", "1", "C", "2"}, {"RES", "1", "D", "2"}, {"RES", "1", "E", "2"}, {"RES", "1", "H", "2"}, {"RES", "1", "L", "2"}, {"RES", "1", "(HL)", "4"}, {"RES", "1", "A", "2"},
-		/* 0x9x */ {"RES", "2", "B", "2"}, {"RES", "2", "C", "2"}, {"RES", "2", "D", "2"}, {"RES", "2", "E", "2"}, {"RES", "2", "H", "2"}, {"RES", "2", "L", "2"}, {"RES", "2", "(HL)", "4"}, {"RES", "2", "A", "2"}, {"RES", "3", "B", "2"}, {"RES", "3", "C", "2"}, {"RES", "3", "D", "2"}, {"RES", "3", "E", "2"}, {"RES", "3", "H", "2"}, {"RES", "3", "L", "2"}, {"RES", "3", "(HL)", "4"}, {"RES", "3", "A", "2"},
-		/* 0xax */ {"RES", "4", "B", "2"}, {"RES", "4", "C", "2"}, {"RES", "4", "D", "2"}, {"RES", "4", "E", "2"}, {"RES", "4", "H", "2"}, {"RES", "4", "L", "2"}, {"RES", "4", "(HL)", "4"}, {"RES", "4", "A", "2"}, {"RES", "5", "B", "2"}, {"RES", "5", "C", "2"}, {"RES", "5", "D", "2"}, {"RES", "5", "E", "2"}, {"RES", "5", "H", "2"}, {"RES", "5", "L", "2"}, {"RES", "5", "(HL)", "4"}, {"RES", "5", "A", "2"},
-		/* 0xbx */ {"RES", "6", "B", "2"}, {"RES", "6", "C", "2"}, {"RES", "6", "D", "2"}, {"RES", "6", "E", "2"}, {"RES", "6", "H", "2"}, {"RES", "6", "L", "2"}, {"RES", "6", "(HL)", "4"}, {"RES", "6", "A", "2"}, {"RES", "7", "B", "2"}, {"RES", "7", "C", "2"}, {"RES", "7", "D", "2"}, {"RES", "7", "E", "2"}, {"RES", "7", "H", "2"}, {"RES", "7", "L", "2"}, {"RES", "7", "(HL)", "4"}, {"RES", "7", "A", "2"},
+var nilOpcode = Opcode{Ins: INS_NONE}
 
-		/* 0xcx */ {"SET", "0", "B", "2"}, {"SET", "0", "C", "2"}, {"SET", "0", "D", "2"}, {"SET", "0", "E", "2"}, {"SET", "0", "H", "2"}, {"SET", "0", "L", "2"}, {"SET", "0", "(HL)", "4"}, {"SET", "0", "A", "2"}, {"SET", "1", "B", "2"}, {"SET", "1", "C", "2"}, {"SET", "1", "D", "2"}, {"SET", "1", "E", "2"}, {"SET", "1", "H", "2"}, {"SET", "1", "L", "2"}, {"SET", "1", "(HL)", "4"}, {"SET", "1", "A", "2"},
-		/* 0xdx */ {"SET", "2", "B", "2"}, {"SET", "2", "C", "2"}, {"SET", "2", "D", "2"}, {"SET", "2", "E", "2"}, {"SET", "2", "H", "2"}, {"SET", "2", "L", "2"}, {"SET", "2", "(HL)", "4"}, {"SET", "2", "A", "2"}, {"SET", "3", "B", "2"}, {"SET", "3", "C", "2"}, {"SET", "3", "D", "2"}, {"SET", "3", "E", "2"}, {"SET", "3", "H", "2"}, {"SET", "3", "L", "2"}, {"SET", "3", "(HL)", "4"}, {"SET", "3", "A", "2"},
-		/* 0xex */ {"SET", "4", "B", "2"}, {"SET", "4", "C", "2"}, {"SET", "4", "D", "2"}, {"SET", "4", "E", "2"}, {"SET", "4", "H", "2"}, {"SET", "4", "L", "2"}, {"SET", "4", "(HL)", "4"}, {"SET", "4", "A", "2"}, {"SET", "5", "B", "2"}, {"SET", "5", "C", "2"}, {"SET", "5", "D", "2"}, {"SET", "5", "E", "2"}, {"SET", "5", "H", "2"}, {"SET", "5", "L", "2"}, {"SET", "5", "(HL)", "4"}, {"SET", "5", "A", "2"},
-		/* 0xfx */ {"SET", "6", "B", "2"}, {"SET", "6", "C", "2"}, {"SET", "6", "D", "2"}, {"SET", "6", "E", "2"}, {"SET", "6", "H", "2"}, {"SET", "6", "L", "2"}, {"SET", "6", "(HL)", "4"}, {"SET", "6", "A", "2"}, {"SET", "7", "B", "2"}, {"SET", "7", "C", "2"}, {"SET", "7", "D", "2"}, {"SET", "7", "E", "2"}, {"SET", "7", "H", "2"}, {"SET", "7", "L", "2"}, {"SET", "7", "(HL)", "4"}, {"SET", "7", "A", "2"},
-	}
+var opcodes [256]Opcode = [256]Opcode{
+	/* 0x0x */ Opcode{INS_NOP, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_BC, OPERAND_d16, 3, 3}, Opcode{INS_LD, OPERAND_BC_PAREN, OPERAND_A, 2, 2}, Opcode{INS_INC, OPERAND_BC, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_d8, 2, 2}, Opcode{INS_RLCA, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_a16_PAREN, OPERAND_SP, 5, 5}, Opcode{INS_ADD, OPERAND_HL, OPERAND_BC, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_BC_PAREN, 2, 2}, Opcode{INS_DEC, OPERAND_BC, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_d8, 2, 2}, Opcode{INS_RRCA, OPERAND_NONE, OPERAND_NONE, 1, 1},
+	/* 0x1x */ Opcode{INS_STOP, OPERAND_0, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_DE, OPERAND_d16, 3, 3}, Opcode{INS_LD, OPERAND_DE_PAREN, OPERAND_A, 2, 2}, Opcode{INS_INC, OPERAND_DE, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_d8, 2, 2}, Opcode{INS_RLA, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_JR, OPERAND_r8, OPERAND_NONE, 3, 3}, Opcode{INS_ADD, OPERAND_HL, OPERAND_DE, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_DE_PAREN, 2, 2}, Opcode{INS_DEC, OPERAND_DE, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_d8, 2, 2}, Opcode{INS_RRA, OPERAND_NONE, OPERAND_NONE, 1, 1},
+	/* 0x2x */ Opcode{INS_JR, OPERAND_NZ, OPERAND_r8, 3, 2}, Opcode{INS_LD, OPERAND_HL, OPERAND_d16, 3, 3}, Opcode{INS_LD, OPERAND_HLPLUS_PAREN, OPERAND_A, 2, 2}, Opcode{INS_INC, OPERAND_HL, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_d8, 2, 2}, Opcode{INS_DAA, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_JR, OPERAND_Z, OPERAND_r8, 3, 2}, Opcode{INS_ADD, OPERAND_HL, OPERAND_HL, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_HLPLUS_PAREN, 2, 2}, Opcode{INS_DEC, OPERAND_HL, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_d8, 2, 2}, Opcode{INS_CPL, OPERAND_NONE, OPERAND_NONE, 1, 1},
+	/* 0x3x */ Opcode{INS_JR, OPERAND_NC, OPERAND_r8, 3, 2}, Opcode{INS_LD, OPERAND_SP, OPERAND_d16, 3, 3}, Opcode{INS_LD, OPERAND_HLMINUS_PAREN, OPERAND_A, 2, 2}, Opcode{INS_INC, OPERAND_SP, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_HL_PAREN, OPERAND_NONE, 3, 3}, Opcode{INS_DEC, OPERAND_HL_PAREN, OPERAND_NONE, 3, 3}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_d8, 3, 3}, Opcode{INS_SCF, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_JR, OPERAND_C, OPERAND_r8, 3, 2}, Opcode{INS_ADD, OPERAND_HL, OPERAND_SP, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_HLMINUS_PAREN, 2, 2}, Opcode{INS_DEC, OPERAND_SP, OPERAND_NONE, 2, 2}, Opcode{INS_INC, OPERAND_A, OPERAND_NONE, 1, 1}, Opcode{INS_DEC, OPERAND_A, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_d8, 2, 2}, Opcode{INS_CCF, OPERAND_NONE, OPERAND_NONE, 1, 1},
+	/* 0x4x */ Opcode{INS_LD, OPERAND_B, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_B, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_B, OPERAND_A, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_C, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_C, OPERAND_A, 1, 1},
+	/* 0x5x */ Opcode{INS_LD, OPERAND_D, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_D, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_D, OPERAND_A, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_E, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_E, OPERAND_A, 1, 1},
+	/* 0x6x */ Opcode{INS_LD, OPERAND_H, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_H, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_H, OPERAND_A, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_L, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_L, OPERAND_A, 1, 1},
+	/* 0x7x */ Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_B, 2, 2}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_C, 2, 2}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_D, 2, 2}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_E, 2, 2}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_H, 2, 2}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_L, 2, 2}, Opcode{INS_HALT, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_HL_PAREN, OPERAND_A, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_B, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_C, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_D, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_E, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_H, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_L, 1, 1}, Opcode{INS_LD, OPERAND_A, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_A, 1, 1},
+	/* 0x8x */ Opcode{INS_ADD, OPERAND_A, OPERAND_B, 1, 1}, Opcode{INS_ADD, OPERAND_A, OPERAND_C, 1, 1}, Opcode{INS_ADD, OPERAND_A, OPERAND_D, 1, 1}, Opcode{INS_ADD, OPERAND_A, OPERAND_E, 1, 1}, Opcode{INS_ADD, OPERAND_A, OPERAND_H, 1, 1}, Opcode{INS_ADD, OPERAND_A, OPERAND_L, 1, 1}, Opcode{INS_ADD, OPERAND_A, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_ADD, OPERAND_A, OPERAND_A, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_B, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_C, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_D, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_E, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_H, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_L, 1, 1}, Opcode{INS_ADC, OPERAND_A, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_ADC, OPERAND_A, OPERAND_A, 1, 1},
+	/* 0x9x */ Opcode{INS_SUB, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_SUB, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_SUB, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_SUB, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_SUB, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_SUB, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_SUB, OPERAND_HL_PAREN, OPERAND_NONE, 2, 2}, Opcode{INS_SUB, OPERAND_A, OPERAND_NONE, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_B, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_C, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_D, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_E, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_H, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_L, 1, 1}, Opcode{INS_SBC, OPERAND_A, OPERAND_HL_PAREN, 2, 2}, Opcode{INS_SBC, OPERAND_A, OPERAND_A, 1, 1},
+	/* 0xax */ Opcode{INS_AND, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_AND, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_AND, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_AND, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_AND, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_AND, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_AND, OPERAND_HL_PAREN, OPERAND_NONE, 2, 2}, Opcode{INS_AND, OPERAND_A, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_XOR, OPERAND_HL_PAREN, OPERAND_NONE, 2, 2}, Opcode{INS_XOR, OPERAND_A, OPERAND_NONE, 1, 1},
+	/* 0xbx */ Opcode{INS_OR, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_OR, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_OR, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_OR, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_OR, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_OR, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_OR, OPERAND_HL_PAREN, OPERAND_NONE, 2, 2}, Opcode{INS_OR, OPERAND_A, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_B, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_C, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_D, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_E, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_L, OPERAND_NONE, 1, 1}, Opcode{INS_CP, OPERAND_HL_PAREN, OPERAND_NONE, 2, 2}, Opcode{INS_CP, OPERAND_A, OPERAND_NONE, 1, 1},
+	/* 0xcx */ Opcode{INS_RET, OPERAND_NZ, OPERAND_NONE, 5, 2}, Opcode{INS_POP, OPERAND_BC, OPERAND_NONE, 3, 3}, Opcode{INS_JP, OPERAND_NZ, OPERAND_a16, 4, 3}, Opcode{INS_JP, OPERAND_a16, OPERAND_NONE, 4, 4}, Opcode{INS_CALL, OPERAND_NZ, OPERAND_a16, 6, 3}, Opcode{INS_PUSH, OPERAND_BC, OPERAND_NONE, 4, 4}, Opcode{INS_ADD, OPERAND_A, OPERAND_d8, 2, 2}, Opcode{INS_RST, OPERAND_00H, OPERAND_NONE, 4, 4}, Opcode{INS_RET, OPERAND_Z, OPERAND_NONE, 5, 2}, Opcode{INS_RET, OPERAND_NONE, OPERAND_NONE, 4, 4}, Opcode{INS_JP, OPERAND_Z, OPERAND_a16, 4, 3}, Opcode{INS_PREFIX, OPERAND_NONE, OPERAND_NONE, 1, 1}, Opcode{INS_CALL, OPERAND_Z, OPERAND_a16, 6, 3}, Opcode{INS_CALL, OPERAND_a16, OPERAND_NONE, 6, 6}, Opcode{INS_ADC, OPERAND_A, OPERAND_d8, 2, 2}, Opcode{INS_RST, OPERAND_08H, OPERAND_NONE, 4, 4},
+	/* 0xdx */ Opcode{INS_RET, OPERAND_NC, OPERAND_NONE, 5, 2}, Opcode{INS_POP, OPERAND_DE, OPERAND_NONE, 3, 3}, Opcode{INS_JP, OPERAND_NC, OPERAND_a16, 4, 3}, nilOpcode, Opcode{INS_CALL, OPERAND_NC, OPERAND_a16, 6, 3}, Opcode{INS_PUSH, OPERAND_DE, OPERAND_NONE, 4, 4}, Opcode{INS_SUB, OPERAND_d8, OPERAND_NONE, 2, 2}, Opcode{INS_RST, OPERAND_10H, OPERAND_NONE, 4, 4}, Opcode{INS_RET, OPERAND_C, OPERAND_NONE, 5, 2}, Opcode{INS_RETI, OPERAND_NONE, OPERAND_NONE, 4, 4}, Opcode{INS_JP, OPERAND_C, OPERAND_a16, 4, 3}, nilOpcode, Opcode{INS_CALL, OPERAND_C, OPERAND_a16, 6, 3}, nilOpcode, Opcode{INS_SBC, OPERAND_A, OPERAND_d8, 2, 2}, Opcode{INS_RST, OPERAND_18H, OPERAND_NONE, 4, 4},
+	/* 0xex */ Opcode{INS_LDH, OPERAND_a8_PAREN, OPERAND_A, 3, 3}, Opcode{INS_POP, OPERAND_HL, OPERAND_NONE, 3, 3}, Opcode{INS_LD, OPERAND_C_PAREN, OPERAND_A, 2, 2}, nilOpcode, nilOpcode, Opcode{INS_PUSH, OPERAND_HL, OPERAND_NONE, 4, 4}, Opcode{INS_AND, OPERAND_d8, OPERAND_NONE, 2, 2}, Opcode{INS_RST, OPERAND_20H, OPERAND_NONE, 4, 4}, Opcode{INS_ADD, OPERAND_SP, OPERAND_r8, 4, 4}, Opcode{INS_JP, OPERAND_HL_PAREN, OPERAND_NONE, 1, 1}, Opcode{INS_LD, OPERAND_a16_PAREN, OPERAND_A, 4, 4}, nilOpcode, nilOpcode, nilOpcode, Opcode{INS_XOR, OPERAND_d8, OPERAND_NONE, 2, 2}, Opcode{INS_RST, OPERAND_28H, OPERAND_NONE, 4, 4},
+	/* 0xfx */ Opcode{INS_LDH, OPERAND_A, OPERAND_a8_PAREN, 3, 3}, Opcode{INS_POP, OPERAND_AF, OPERAND_NONE, 3, 3}, Opcode{INS_LD, OPERAND_A, OPERAND_C_PAREN, 2, 2}, Opcode{INS_DI, OPERAND_NONE, OPERAND_NONE, 1, 1}, nilOpcode, Opcode{INS_PUSH, OPERAND_AF, OPERAND_NONE, 4, 4}, Opcode{INS_OR, OPERAND_d8, OPERAND_NONE, 2, 2}, Opcode{INS_RST, OPERAND_30H, OPERAND_NONE, 4, 4}, Opcode{INS_LD, OPERAND_HL, OPERAND_SP_PLUS_r8, 3, 3}, Opcode{INS_LD, OPERAND_SP, OPERAND_HL, 2, 2}, Opcode{INS_LD, OPERAND_A, OPERAND_a16_PAREN, 4, 4}, Opcode{INS_EI, OPERAND_NONE, OPERAND_NONE, 1, 1}, nilOpcode, nilOpcode, Opcode{INS_CP, OPERAND_d8, OPERAND_NONE, 2, 2}, Opcode{INS_RST, OPERAND_38H, OPERAND_NONE, 4, 4},
+}
 
+var prefixCBs [256]Opcode = [256]Opcode{
+	/* 0x0x */ Opcode{INS_RLC, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_RLC, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_RLC, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_RLC, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_RLC, OPERAND_H, OPERAND_NONE, 2, 2}, Opcode{INS_RLC, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_RLC, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_RLC, OPERAND_A, OPERAND_NONE, 2, 2}, Opcode{INS_RRC, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_RRC, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_RRC, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_RRC, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_RRC, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_RRC, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_RRC, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_RRC, OPERAND_A, OPERAND_NONE, 2, 2},
+	/* 0x1x */ Opcode{INS_RL, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_RL, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_RL, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_RL, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_RL, OPERAND_H, OPERAND_NONE, 2, 2}, Opcode{INS_RL, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_RL, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_RL, OPERAND_A, OPERAND_NONE, 2, 2}, Opcode{INS_RR, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_RR, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_RR, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_RR, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_RR, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_RR, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_RR, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_RR, OPERAND_A, OPERAND_NONE, 2, 2},
+	/* 0x2x */ Opcode{INS_SLA, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_SLA, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_SLA, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_SLA, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_SLA, OPERAND_H, OPERAND_NONE, 2, 2}, Opcode{INS_SLA, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_SLA, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_SLA, OPERAND_A, OPERAND_NONE, 2, 2}, Opcode{INS_SRA, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_SRA, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_SRA, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_SRA, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_SRA, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_SRA, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_SRA, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_SRA, OPERAND_A, OPERAND_NONE, 2, 2},
+	/* 0x3x */ Opcode{INS_SWAP, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_SWAP, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_SWAP, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_SWAP, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_SWAP, OPERAND_H, OPERAND_NONE, 2, 2}, Opcode{INS_SWAP, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_SWAP, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_SWAP, OPERAND_A, OPERAND_NONE, 2, 2}, Opcode{INS_SRL, OPERAND_B, OPERAND_NONE, 2, 2}, Opcode{INS_SRL, OPERAND_C, OPERAND_NONE, 2, 2}, Opcode{INS_SRL, OPERAND_D, OPERAND_NONE, 2, 2}, Opcode{INS_SRL, OPERAND_E, OPERAND_NONE, 2, 2}, Opcode{INS_SRL, OPERAND_H, OPERAND_NONE, 1, 1}, Opcode{INS_SRL, OPERAND_L, OPERAND_NONE, 2, 2}, Opcode{INS_SRL, OPERAND_HL_PAREN, OPERAND_NONE, 4, 4}, Opcode{INS_SRL, OPERAND_A, OPERAND_NONE, 2, 2},
+
+	/* 0x4x */ Opcode{INS_BIT, OPERAND_0, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_0, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_0, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_0, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_0, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_0, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_0, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_0, OPERAND_A, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_1, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_1, OPERAND_A, 2, 2},
+	/* 0x5x */ Opcode{INS_BIT, OPERAND_2, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_2, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_2, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_2, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_2, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_2, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_2, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_2, OPERAND_A, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_3, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_3, OPERAND_A, 2, 2},
+	/* 0x6x */ Opcode{INS_BIT, OPERAND_4, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_4, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_4, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_4, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_4, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_4, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_4, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_4, OPERAND_A, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_5, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_5, OPERAND_A, 2, 2},
+	/* 0x7x */ Opcode{INS_BIT, OPERAND_6, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_6, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_6, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_6, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_6, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_6, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_6, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_6, OPERAND_A, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_B, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_C, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_D, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_E, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_H, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_L, 2, 2}, Opcode{INS_BIT, OPERAND_7, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_BIT, OPERAND_7, OPERAND_A, 2, 2},
+
+	/* 0x8x */ Opcode{INS_RES, OPERAND_0, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_0, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_0, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_0, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_0, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_0, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_0, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_0, OPERAND_A, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_1, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_1, OPERAND_A, 2, 2},
+	/* 0x9x */ Opcode{INS_RES, OPERAND_2, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_2, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_2, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_2, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_2, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_2, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_2, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_2, OPERAND_A, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_3, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_3, OPERAND_A, 2, 2},
+	/* 0xax */ Opcode{INS_RES, OPERAND_4, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_4, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_4, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_4, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_4, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_4, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_4, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_4, OPERAND_A, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_5, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_5, OPERAND_A, 2, 2},
+	/* 0xbx */ Opcode{INS_RES, OPERAND_6, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_6, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_6, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_6, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_6, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_6, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_6, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_6, OPERAND_A, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_B, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_C, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_D, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_E, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_H, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_L, 2, 2}, Opcode{INS_RES, OPERAND_7, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_RES, OPERAND_7, OPERAND_A, 2, 2},
+
+	/* 0xcx */ Opcode{INS_SET, OPERAND_0, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_0, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_0, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_0, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_0, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_0, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_0, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_0, OPERAND_A, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_1, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_1, OPERAND_A, 2, 2},
+	/* 0xdx */ Opcode{INS_SET, OPERAND_2, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_2, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_2, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_2, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_2, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_2, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_2, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_2, OPERAND_A, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_3, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_3, OPERAND_A, 2, 2},
+	/* 0xex */ Opcode{INS_SET, OPERAND_4, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_4, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_4, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_4, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_4, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_4, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_4, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_4, OPERAND_A, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_5, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_5, OPERAND_A, 2, 2},
+	/* 0xfx */ Opcode{INS_SET, OPERAND_6, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_6, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_6, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_6, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_6, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_6, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_6, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_6, OPERAND_A, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_B, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_C, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_D, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_E, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_H, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_L, 2, 2}, Opcode{INS_SET, OPERAND_7, OPERAND_HL_PAREN, 4, 4}, Opcode{INS_SET, OPERAND_7, OPERAND_A, 2, 2},
+}
+
+var (
 	icon []byte = []byte{137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 32, 0, 0, 0, 32, 8, 6, 0, 0, 0, 115, 122, 122, 244, 0, 0, 0, 4, 115, 66, 73, 84, 8, 8, 8, 8, 124, 8, 100, 136, 0, 0, 0, 9, 112, 72, 89, 115, 0, 0, 14, 196, 0, 0, 14, 196, 1, 149, 43, 14, 27, 0, 0, 6, 9, 73, 68, 65, 84, 88, 133, 205,
 		151, 89, 108, 19, 87, 20, 134, 255, 153, 241, 120, 137, 215, 196, 78, 216, 2, 33, 16, 32, 16, 168, 237, 76, 10, 73, 139, 128, 182, 168, 5, 26, 162, 96, 182, 22, 84, 250, 64, 27, 182, 7, 164, 46, 82, 43, 81, 241, 90, 30, 90, 218, 74, 21, 130, 7, 30, 104, 33, 15, 109, 165, 182, 44, 37, 108,
 		21, 107, 33, 177, 147, 16, 2, 134, 176, 56, 118, 2, 222, 98, 59, 241, 62, 99, 103, 166, 15, 1, 7, 39, 142, 13, 18, 168, 61, 210, 72, 115, 239, 57, 62, 255, 119, 175, 206, 185, 115, 13, 252, 199, 70, 60, 239, 15, 74, 74, 74, 164, 186, 162, 137, 13, 154, 130, 252, 15, 102, 76, 159, 54, 143, 231, 57, 220, 127, 224, 184, 209, 31, 24, 248, 169, 207, 243, 232, 128, 221, 110, 143, 191, 12, 80, 0, 0, 195, 84, 87, 214, 214, 173, 234, 58, 241, 215, 113, 33, 145, 136, 10, 130, 192, 9, 44, 219, 43, 68, 34, 221, 194, 159, 71, 27, 133, 21, 117, 117, 93, 12, 83, 93, 249, 82, 196, 13,

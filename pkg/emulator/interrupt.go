@@ -126,7 +126,7 @@ func (cpu *CPU) clearTimerFlag() {
 	cpu.SetMemory8(IFIO, IF)
 }
 
-func (cpu *CPU) timer(instruction string, cycle float64) {
+func (cpu *CPU) timer(instruction int, cycle float64) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
@@ -143,7 +143,7 @@ func (cpu *CPU) timer(instruction string, cycle float64) {
 	}
 
 	// CPU使用率削減のため
-	if instruction == "HALT" {
+	if instruction == INS_HALT {
 		cycle += 10
 	}
 

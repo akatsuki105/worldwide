@@ -2,7 +2,6 @@ package emulator
 
 import (
 	"fmt"
-	"strconv"
 )
 
 func (cpu *CPU) a16Fetch() uint16 {
@@ -23,278 +22,273 @@ func (cpu *CPU) d16Fetch() uint16 {
 }
 
 // LD Load
-func (cpu *CPU) LD(operand1, operand2 string) {
+func (cpu *CPU) LD(operand1, operand2 int) {
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setAReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setAReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setAReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setAReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setAReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setAReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setAReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			if cpu.Cartridge.Title == "PM_CRYSTAL" && cpu.Reg.PC == 0x658c {
-				// クリスタルはMobileGBの関係で起動できないので強引に起動する
-				cpu.Reg.PC = 0x6385
-			} else {
-				cpu.Reg.PC += 2
-			}
-		case "(C)":
+			cpu.Reg.PC += 2
+		case OPERAND_C_PAREN:
 			addr := 0xff00 + uint16(cpu.getCReg())
 			cpu.setAReg(cpu.FetchMemory8(addr))
 			cpu.Reg.PC++ // 誤植(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
-		case "(BC)":
+		case OPERAND_BC_PAREN:
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.BC))
 			cpu.Reg.PC++
-		case "(DE)":
+		case OPERAND_DE_PAREN:
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.DE))
 			cpu.Reg.PC++
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setAReg(value)
 			cpu.Reg.PC++
-		case "(HL+)":
+		case OPERAND_HLPLUS_PAREN:
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.HL))
 			cpu.Reg.HL++
 			cpu.Reg.PC++
-		case "(HL-)":
+		case OPERAND_HLMINUS_PAREN:
 			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.HL))
 			cpu.Reg.HL--
 			cpu.Reg.PC++
-		case "(a16)":
+		case OPERAND_a16_PAREN:
 			addr := cpu.a16Fetch()
 			cpu.setAReg(cpu.FetchMemory8(addr))
 			cpu.Reg.PC += 3
 		}
-	case "B":
+	case OPERAND_B:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setBReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setBReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setBReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setBReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setBReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setBReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setBReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.setBReg(value)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setBReg(value)
 			cpu.Reg.PC++
 		}
-	case "C":
+	case OPERAND_C:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setCReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setCReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setCReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setCReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setCReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setCReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setCReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.setCReg(value)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setCReg(value)
 			cpu.Reg.PC++
 		}
-	case "D":
+	case OPERAND_D:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setDReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setDReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setDReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setDReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setDReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setDReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setDReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.setDReg(value)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setDReg(value)
 			cpu.Reg.PC++
 		}
-	case "E":
+	case OPERAND_E:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setEReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setEReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setEReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setEReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setEReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setEReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setEReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.setEReg(value)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setEReg(value)
 			cpu.Reg.PC++
 		}
-	case "H":
+	case OPERAND_H:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setHReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setHReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setHReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setHReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setHReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setHReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setHReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.setHReg(value)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setHReg(value)
 			cpu.Reg.PC++
 		}
-	case "L":
+	case OPERAND_L:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.setLReg(cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.setLReg(cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.setLReg(cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.setLReg(cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.setLReg(cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.setLReg(cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.setLReg(cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.setLReg(value)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := cpu.FetchMemory8(cpu.Reg.HL)
 			cpu.setLReg(value)
 			cpu.Reg.PC++
 		}
-	case "BC":
+	case OPERAND_BC:
 		switch operand2 {
-		case "d16":
+		case OPERAND_d16:
 			value := cpu.d16Fetch()
 			cpu.Reg.BC = value
 			cpu.Reg.PC += 3
 		}
-	case "DE":
+	case OPERAND_DE:
 		switch operand2 {
-		case "d16":
+		case OPERAND_d16:
 			value := cpu.d16Fetch()
 			cpu.Reg.DE = value
 			cpu.Reg.PC += 3
 		}
-	case "HL":
+	case OPERAND_HL:
 		switch operand2 {
-		case "d16":
+		case OPERAND_d16:
 			cpu.Reg.HL = cpu.d16Fetch()
 			cpu.Reg.PC += 3
-		case "SP+r8":
+		case OPERAND_SP_PLUS_r8:
 			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			value := int32(cpu.Reg.SP) + int32(delta)
 			carryBits := uint32(cpu.Reg.SP) ^ uint32(delta) ^ uint32(value)
@@ -305,85 +299,85 @@ func (cpu *CPU) LD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.Reg.PC += 2
 		}
-	case "SP":
+	case OPERAND_SP:
 		switch operand2 {
-		case "d16":
+		case OPERAND_d16:
 			value := cpu.d16Fetch()
 			cpu.Reg.SP = value
 			cpu.Reg.PC += 3
-		case "HL":
+		case OPERAND_HL:
 			cpu.Reg.SP = cpu.Reg.HL
 			cpu.Reg.PC++
 		}
-	case "(C)":
+	case OPERAND_C_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			addr := 0xff00 + uint16(cpu.getCReg())
 			cpu.SetMemory8(addr, cpu.getAReg())
 			cpu.Reg.PC++ // 誤植(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 		}
-	case "(BC)":
+	case OPERAND_BC_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.SetMemory8(cpu.Reg.BC, cpu.getAReg())
 			cpu.Reg.PC++
 		}
-	case "(DE)":
+	case OPERAND_DE_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.SetMemory8(cpu.Reg.DE, cpu.getAReg())
 			cpu.Reg.PC++
 		}
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getBReg())
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getCReg())
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getDReg())
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getEReg())
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getHReg())
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getLReg())
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := cpu.d8Fetch()
 			cpu.SetMemory8(cpu.Reg.HL, value)
 			cpu.Reg.PC += 2
 		}
-	case "(HL+)":
+	case OPERAND_HLPLUS_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
 			cpu.Reg.HL++
 			cpu.Reg.PC++
 		}
-	case "(HL-)":
+	case OPERAND_HLMINUS_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			// (HL)=A, HL=HL-1
 			cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
 			cpu.Reg.HL--
 			cpu.Reg.PC++
 		}
-	case "(a16)":
+	case OPERAND_a16_PAREN:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			addr := cpu.a16Fetch()
 			cpu.SetMemory8(addr, cpu.getAReg())
 			cpu.Reg.PC += 3
-		case "SP":
+		case OPERAND_SP:
 			// Store SP into addresses n16 (LSB) and n16 + 1 (MSB).
 			addr := cpu.a16Fetch()
 			upper := byte(cpu.Reg.SP >> 8)     // MSB
@@ -399,15 +393,15 @@ func (cpu *CPU) LD(operand1, operand2 string) {
 }
 
 // LDH Load High Byte
-func (cpu *CPU) LDH(operand1, operand2 string) {
-	if operand1 == "A" && operand2 == "(a8)" {
+func (cpu *CPU) LDH(operand1, operand2 int) {
+	if operand1 == OPERAND_A && operand2 == OPERAND_a8_PAREN {
 		// LD A,($FF00+a8)
 		addr := 0xff00 + uint16(cpu.FetchMemory8(cpu.Reg.PC+1))
 		value := cpu.FetchMemory8(addr)
 
 		cpu.setAReg(value)
 		cpu.Reg.PC += 2
-	} else if operand1 == "(a8)" && operand2 == "A" {
+	} else if operand1 == OPERAND_a8_PAREN && operand2 == OPERAND_A {
 		// LD ($FF00+a8),A
 		addr := 0xff00 + uint16(cpu.FetchMemory8(cpu.Reg.PC+1))
 
@@ -420,61 +414,61 @@ func (cpu *CPU) LDH(operand1, operand2 string) {
 }
 
 // NOP No operation
-func (cpu *CPU) NOP(operand1, operand2 string) {
+func (cpu *CPU) NOP(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
 // INC Increment
-func (cpu *CPU) INC(operand1, operand2 string) {
+func (cpu *CPU) INC(operand1, operand2 int) {
 	var value, carryBits byte
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg() + 1
 		carryBits = cpu.getAReg() ^ 1 ^ value
 		cpu.setAReg(value)
-	case "B":
+	case OPERAND_B:
 		value = cpu.getBReg() + 1
 		carryBits = cpu.getBReg() ^ 1 ^ value
 		cpu.setBReg(value)
-	case "C":
+	case OPERAND_C:
 		value = cpu.getCReg() + 1
 		carryBits = cpu.getCReg() ^ 1 ^ value
 		cpu.setCReg(value)
-	case "D":
+	case OPERAND_D:
 		value = cpu.getDReg() + 1
 		carryBits = cpu.getDReg() ^ 1 ^ value
 		cpu.setDReg(value)
-	case "E":
+	case OPERAND_E:
 		value = cpu.getEReg() + 1
 		carryBits = cpu.getEReg() ^ 1 ^ value
 		cpu.setEReg(value)
-	case "H":
+	case OPERAND_H:
 		value = cpu.getHReg() + 1
 		carryBits = cpu.getHReg() ^ 1 ^ value
 		cpu.setHReg(value)
-	case "L":
+	case OPERAND_L:
 		value = cpu.getLReg() + 1
 		carryBits = cpu.getLReg() ^ 1 ^ value
 		cpu.setLReg(value)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL) + 1
 		carryBits = cpu.FetchMemory8(cpu.Reg.HL) ^ 1 ^ value
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	case "BC":
+	case OPERAND_BC:
 		cpu.Reg.BC++
-	case "DE":
+	case OPERAND_DE:
 		cpu.Reg.DE++
-	case "HL":
+	case OPERAND_HL:
 		cpu.Reg.HL++
-	case "SP":
+	case OPERAND_SP:
 		cpu.Reg.SP++
 	default:
 		errMsg := fmt.Sprintf("Error: INC %s %s", operand1, operand2)
 		panic(errMsg)
 	}
 
-	if operand1 != "BC" && operand1 != "DE" && operand1 != "HL" && operand1 != "SP" {
+	if operand1 != OPERAND_BC && operand1 != OPERAND_DE && operand1 != OPERAND_HL && operand1 != OPERAND_SP {
 		cpu.flagZ(value)
 		cpu.flagN(false)
 		cpu.flagH8(carryBits)
@@ -483,57 +477,57 @@ func (cpu *CPU) INC(operand1, operand2 string) {
 }
 
 // DEC Decrement
-func (cpu *CPU) DEC(operand1, operand2 string) {
+func (cpu *CPU) DEC(operand1, operand2 int) {
 	var value byte
 	var carryBits byte
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg() - 1
 		carryBits = cpu.getAReg() ^ 1 ^ value
 		cpu.setAReg(value)
-	case "B":
+	case OPERAND_B:
 		value = cpu.getBReg() - 1
 		carryBits = cpu.getBReg() ^ 1 ^ value
 		cpu.setBReg(value)
-	case "C":
+	case OPERAND_C:
 		value = cpu.getCReg() - 1
 		carryBits = cpu.getCReg() ^ 1 ^ value
 		cpu.setCReg(value)
-	case "D":
+	case OPERAND_D:
 		value = cpu.getDReg() - 1
 		carryBits = cpu.getDReg() ^ 1 ^ value
 		cpu.setDReg(value)
-	case "E":
+	case OPERAND_E:
 		value = cpu.getEReg() - 1
 		carryBits = cpu.getEReg() ^ 1 ^ value
 		cpu.setEReg(value)
-	case "H":
+	case OPERAND_H:
 		value = cpu.getHReg() - 1
 		carryBits = cpu.getHReg() ^ 1 ^ value
 		cpu.setHReg(value)
-	case "L":
+	case OPERAND_L:
 		value = cpu.getLReg() - 1
 		carryBits = cpu.getLReg() ^ 1 ^ value
 		cpu.setLReg(value)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL) - 1
 		carryBits = cpu.FetchMemory8(cpu.Reg.HL) ^ 1 ^ value
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	case "BC":
+	case OPERAND_BC:
 		cpu.Reg.BC--
-	case "DE":
+	case OPERAND_DE:
 		cpu.Reg.DE--
-	case "HL":
+	case OPERAND_HL:
 		cpu.Reg.HL--
-	case "SP":
+	case OPERAND_SP:
 		cpu.Reg.SP--
 	default:
 		errMsg := fmt.Sprintf("Error: DEC %s %s", operand1, operand2)
 		panic(errMsg)
 	}
 
-	if operand1 != "BC" && operand1 != "DE" && operand1 != "HL" && operand1 != "SP" {
+	if operand1 != OPERAND_BC && operand1 != OPERAND_DE && operand1 != OPERAND_HL && operand1 != OPERAND_SP {
 		cpu.flagZ(value)
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
@@ -542,13 +536,13 @@ func (cpu *CPU) DEC(operand1, operand2 string) {
 }
 
 // JR Jump relatively
-func (cpu *CPU) JR(operand1, operand2 string) {
+func (cpu *CPU) JR(operand1, operand2 int) {
 	switch operand1 {
-	case "r8":
+	case OPERAND_r8:
 		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
 		cpu.Reg.PC = destination
-	case "Z":
+	case OPERAND_Z:
 		if cpu.getZFlag() {
 			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
@@ -556,7 +550,7 @@ func (cpu *CPU) JR(operand1, operand2 string) {
 		} else {
 			cpu.Reg.PC += 2
 		}
-	case "C":
+	case OPERAND_C:
 		if cpu.getCFlag() {
 			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
@@ -564,7 +558,7 @@ func (cpu *CPU) JR(operand1, operand2 string) {
 		} else {
 			cpu.Reg.PC += 2
 		}
-	case "NZ":
+	case OPERAND_NZ:
 		if !cpu.getZFlag() {
 			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
@@ -572,7 +566,7 @@ func (cpu *CPU) JR(operand1, operand2 string) {
 		} else {
 			cpu.Reg.PC += 2
 		}
-	case "NC":
+	case OPERAND_NC:
 		if !cpu.getCFlag() {
 			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
@@ -587,14 +581,14 @@ func (cpu *CPU) JR(operand1, operand2 string) {
 }
 
 // HALT Halt
-func (cpu *CPU) HALT(operand1, operand2 string) {
+func (cpu *CPU) HALT(operand1, operand2 int) {
 	cpu.Reg.PC++
 	cpu.halt = true
 }
 
 // STOP stop CPU
-func (cpu *CPU) STOP(operand1, operand2 string) {
-	if operand1 == "0" && operand2 == "*" {
+func (cpu *CPU) STOP(operand1, operand2 int) {
+	if operand1 == OPERAND_0 && operand2 == OPERAND_NONE {
 		cpu.Reg.PC += 2
 		// 速度切り替え
 		KEY1 := cpu.FetchMemory8(KEY1IO)
@@ -615,26 +609,26 @@ func (cpu *CPU) STOP(operand1, operand2 string) {
 }
 
 // XOR xor
-func (cpu *CPU) XOR(operand1, operand2 string) {
+func (cpu *CPU) XOR(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
-	case "B":
+	case OPERAND_B:
 		value = cpu.getAReg() ^ cpu.getBReg()
-	case "C":
+	case OPERAND_C:
 		value = cpu.getAReg() ^ cpu.getCReg()
-	case "D":
+	case OPERAND_D:
 		value = cpu.getAReg() ^ cpu.getDReg()
-	case "E":
+	case OPERAND_E:
 		value = cpu.getAReg() ^ cpu.getEReg()
-	case "H":
+	case OPERAND_H:
 		value = cpu.getAReg() ^ cpu.getHReg()
-	case "L":
+	case OPERAND_L:
 		value = cpu.getAReg() ^ cpu.getLReg()
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.getAReg() ^ cpu.FetchMemory8(cpu.Reg.HL)
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg() ^ cpu.getAReg()
-	case "d8":
+	case OPERAND_d8:
 		value = cpu.getAReg() ^ cpu.FetchMemory8(cpu.Reg.PC+1)
 		cpu.Reg.PC++
 	default:
@@ -651,36 +645,36 @@ func (cpu *CPU) XOR(operand1, operand2 string) {
 }
 
 // JP Jump
-func (cpu *CPU) JP(operand1, operand2 string) {
+func (cpu *CPU) JP(operand1, operand2 int) {
 	switch operand1 {
-	case "a16":
+	case OPERAND_a16:
 		destination := cpu.a16Fetch()
 		cpu.Reg.PC = destination
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		destination := cpu.Reg.HL
 		cpu.Reg.PC = destination
-	case "Z":
+	case OPERAND_Z:
 		if cpu.getZFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 		}
-	case "C":
+	case OPERAND_C:
 		if cpu.getCFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 		}
-	case "NZ":
+	case OPERAND_NZ:
 		if !cpu.getZFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 		}
-	case "NC":
+	case OPERAND_NC:
 		if !cpu.getCFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC = destination
@@ -694,30 +688,30 @@ func (cpu *CPU) JP(operand1, operand2 string) {
 }
 
 // RET Return
-func (cpu *CPU) RET(operand1, operand2 string) {
+func (cpu *CPU) RET(operand1, operand2 int) {
 	switch operand1 {
-	case "*":
+	case OPERAND_NONE:
 		// PC=(SP), SP=SP+2
 		cpu.popPC()
-	case "Z":
+	case OPERAND_Z:
 		if cpu.getZFlag() {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
 		}
-	case "C":
+	case OPERAND_C:
 		if cpu.getCFlag() {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
 		}
-	case "NZ":
+	case OPERAND_NZ:
 		if !cpu.getZFlag() {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
 		}
-	case "NC":
+	case OPERAND_NC:
 		if !cpu.getCFlag() {
 			cpu.popPC()
 		} else {
@@ -730,20 +724,20 @@ func (cpu *CPU) RET(operand1, operand2 string) {
 }
 
 // RETI Return Interrupt
-func (cpu *CPU) RETI(operand1, operand2 string) {
+func (cpu *CPU) RETI(operand1, operand2 int) {
 	cpu.popPC()
 	cpu.Reg.IME = true
 }
 
 // CALL Call subroutine
-func (cpu *CPU) CALL(operand1, operand2 string) {
+func (cpu *CPU) CALL(operand1, operand2 int) {
 	switch operand1 {
-	case "a16":
+	case OPERAND_a16:
 		destination := cpu.a16Fetch()
 		cpu.Reg.PC += 3
 		cpu.pushPC()
 		cpu.Reg.PC = destination
-	case "Z":
+	case OPERAND_Z:
 		if cpu.getZFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC += 3
@@ -752,7 +746,7 @@ func (cpu *CPU) CALL(operand1, operand2 string) {
 		} else {
 			cpu.Reg.PC += 3
 		}
-	case "C":
+	case OPERAND_C:
 		if cpu.getCFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC += 3
@@ -761,7 +755,7 @@ func (cpu *CPU) CALL(operand1, operand2 string) {
 		} else {
 			cpu.Reg.PC += 3
 		}
-	case "NZ":
+	case OPERAND_NZ:
 		if !cpu.getZFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC += 3
@@ -770,7 +764,7 @@ func (cpu *CPU) CALL(operand1, operand2 string) {
 		} else {
 			cpu.Reg.PC += 3
 		}
-	case "NC":
+	case OPERAND_NC:
 		if !cpu.getCFlag() {
 			destination := cpu.a16Fetch()
 			cpu.Reg.PC += 3
@@ -786,8 +780,8 @@ func (cpu *CPU) CALL(operand1, operand2 string) {
 }
 
 // DI Disable Interrupt
-func (cpu *CPU) DI(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
+func (cpu *CPU) DI(operand1, operand2 int) {
+	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
 		cpu.Reg.IME = false
 		cpu.Reg.PC++
 	} else {
@@ -797,8 +791,8 @@ func (cpu *CPU) DI(operand1, operand2 string) {
 }
 
 // EI Enable Interrupt
-func (cpu *CPU) EI(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
+func (cpu *CPU) EI(operand1, operand2 int) {
+	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
 		cpu.Reg.IME = true
 		cpu.Reg.PC++
 	} else {
@@ -808,44 +802,44 @@ func (cpu *CPU) EI(operand1, operand2 string) {
 }
 
 // CP Compare
-func (cpu *CPU) CP(operand1, operand2 string) {
+func (cpu *CPU) CP(operand1, operand2 int) {
 	var value, carryBits byte
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg() - cpu.getAReg()
 		carryBits = cpu.getAReg() ^ cpu.getAReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getAReg())
-	case "B":
+	case OPERAND_B:
 		value = cpu.getAReg() - cpu.getBReg()
 		carryBits = cpu.getAReg() ^ cpu.getBReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getBReg())
-	case "C":
+	case OPERAND_C:
 		value = cpu.getAReg() - cpu.getCReg()
 		carryBits = cpu.getAReg() ^ cpu.getCReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getCReg())
-	case "D":
+	case OPERAND_D:
 		value = cpu.getAReg() - cpu.getDReg()
 		carryBits = cpu.getAReg() ^ cpu.getDReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getDReg())
-	case "E":
+	case OPERAND_E:
 		value = cpu.getAReg() - cpu.getEReg()
 		carryBits = cpu.getAReg() ^ cpu.getEReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getEReg())
-	case "H":
+	case OPERAND_H:
 		value = cpu.getAReg() - cpu.getHReg()
 		carryBits = cpu.getAReg() ^ cpu.getHReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getHReg())
-	case "L":
+	case OPERAND_L:
 		value = cpu.getAReg() - cpu.getLReg()
 		carryBits = cpu.getAReg() ^ cpu.getLReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getLReg())
-	case "d8":
+	case OPERAND_d8:
 		value = cpu.getAReg() - cpu.d8Fetch()
 		carryBits = cpu.getAReg() ^ cpu.d8Fetch() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.d8Fetch())
 		cpu.Reg.PC++
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.getAReg() - cpu.FetchMemory8(cpu.Reg.HL)
 		carryBits = cpu.getAReg() ^ cpu.FetchMemory8(cpu.Reg.HL) ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.FetchMemory8(cpu.Reg.HL))
@@ -860,26 +854,26 @@ func (cpu *CPU) CP(operand1, operand2 string) {
 }
 
 // AND And instruction
-func (cpu *CPU) AND(operand1, operand2 string) {
+func (cpu *CPU) AND(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg() & cpu.getAReg()
-	case "B":
+	case OPERAND_B:
 		value = cpu.getAReg() & cpu.getBReg()
-	case "C":
+	case OPERAND_C:
 		value = cpu.getAReg() & cpu.getCReg()
-	case "D":
+	case OPERAND_D:
 		value = cpu.getAReg() & cpu.getDReg()
-	case "E":
+	case OPERAND_E:
 		value = cpu.getAReg() & cpu.getEReg()
-	case "H":
+	case OPERAND_H:
 		value = cpu.getAReg() & cpu.getHReg()
-	case "L":
+	case OPERAND_L:
 		value = cpu.getAReg() & cpu.getLReg()
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.getAReg() & cpu.FetchMemory8(cpu.Reg.HL)
-	case "d8":
+	case OPERAND_d8:
 		value = cpu.getAReg() & cpu.d8Fetch()
 		cpu.Reg.PC++
 	default:
@@ -896,42 +890,42 @@ func (cpu *CPU) AND(operand1, operand2 string) {
 }
 
 // OR or
-func (cpu *CPU) OR(operand1, operand2 string) {
+func (cpu *CPU) OR(operand1, operand2 int) {
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value := cpu.getAReg() | cpu.getAReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "B":
+	case OPERAND_B:
 		value := cpu.getAReg() | cpu.getBReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "C":
+	case OPERAND_C:
 		value := cpu.getAReg() | cpu.getCReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "D":
+	case OPERAND_D:
 		value := cpu.getAReg() | cpu.getDReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "E":
+	case OPERAND_E:
 		value := cpu.getAReg() | cpu.getEReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "H":
+	case OPERAND_H:
 		value := cpu.getAReg() | cpu.getHReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "L":
+	case OPERAND_L:
 		value := cpu.getAReg() | cpu.getLReg()
 		cpu.setAReg(value)
 		cpu.flagZ(value)
-	case "d8":
+	case OPERAND_d8:
 		value := cpu.getAReg() | cpu.FetchMemory8(cpu.Reg.PC+1)
 		cpu.setAReg(value)
 		cpu.flagZ(value)
 		cpu.Reg.PC++
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value := cpu.getAReg() | cpu.FetchMemory8(cpu.Reg.HL)
 		cpu.setAReg(value)
 		cpu.flagZ(value)
@@ -947,11 +941,11 @@ func (cpu *CPU) OR(operand1, operand2 string) {
 }
 
 // ADD Addition
-func (cpu *CPU) ADD(operand1, operand2 string) {
+func (cpu *CPU) ADD(operand1, operand2 int) {
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getAReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getAReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -960,7 +954,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "B":
+		case OPERAND_B:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getBReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getBReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -969,7 +963,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "C":
+		case OPERAND_C:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getCReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getCReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -978,7 +972,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "D":
+		case OPERAND_D:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getDReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getDReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -987,7 +981,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "E":
+		case OPERAND_E:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getEReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getEReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -996,7 +990,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "H":
+		case OPERAND_H:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getHReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getHReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -1005,7 +999,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "L":
+		case OPERAND_L:
 			value := uint16(cpu.getAReg()) + uint16(cpu.getLReg())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.getLReg()) ^ value
 			cpu.setAReg(byte(value))
@@ -1014,7 +1008,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
-		case "d8":
+		case OPERAND_d8:
 			value := uint16(cpu.getAReg()) + uint16(cpu.d8Fetch())
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.d8Fetch()) ^ value
 			cpu.setAReg(byte(value))
@@ -1023,7 +1017,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH8(byte(carryBits))
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC += 2
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			value := uint16(cpu.getAReg()) + uint16(cpu.FetchMemory8(cpu.Reg.HL))
 			carryBits := uint16(cpu.getAReg()) ^ uint16(cpu.FetchMemory8(cpu.Reg.HL)) ^ value
 			cpu.setAReg(byte(value))
@@ -1033,9 +1027,9 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagC8(carryBits)
 			cpu.Reg.PC++
 		}
-	case "HL":
+	case OPERAND_HL:
 		switch operand2 {
-		case "BC":
+		case OPERAND_BC:
 			value := uint32(cpu.Reg.HL) + uint32(cpu.Reg.BC)
 			carryBits := uint32(cpu.Reg.HL) ^ uint32(cpu.Reg.BC) ^ value
 			cpu.Reg.HL = uint16(value)
@@ -1043,7 +1037,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH16(uint16(carryBits))
 			cpu.flagC16(carryBits)
 			cpu.Reg.PC++
-		case "DE":
+		case OPERAND_DE:
 			value := uint32(cpu.Reg.HL) + uint32(cpu.Reg.DE)
 			carryBits := uint32(cpu.Reg.HL) ^ uint32(cpu.Reg.DE) ^ value
 			cpu.Reg.HL = uint16(value)
@@ -1051,7 +1045,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH16(uint16(carryBits))
 			cpu.flagC16(carryBits)
 			cpu.Reg.PC++
-		case "HL":
+		case OPERAND_HL:
 			value := uint32(cpu.Reg.HL) + uint32(cpu.Reg.HL)
 			carryBits := uint32(cpu.Reg.HL) ^ uint32(cpu.Reg.HL) ^ value
 			cpu.Reg.HL = uint16(value)
@@ -1059,7 +1053,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagH16(uint16(carryBits))
 			cpu.flagC16(carryBits)
 			cpu.Reg.PC++
-		case "SP":
+		case OPERAND_SP:
 			value := uint32(cpu.Reg.HL) + uint32(cpu.Reg.SP)
 			carryBits := uint32(cpu.Reg.HL) ^ uint32(cpu.Reg.SP) ^ value
 			cpu.Reg.HL = uint16(value)
@@ -1068,9 +1062,9 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 			cpu.flagC16(carryBits)
 			cpu.Reg.PC++
 		}
-	case "SP":
+	case OPERAND_SP:
 		switch operand2 {
-		case "r8":
+		case OPERAND_r8:
 			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
 			value := int32(cpu.Reg.SP) + int32(delta)
 			carryBits := uint32(cpu.Reg.SP) ^ uint32(delta) ^ uint32(value)
@@ -1088,7 +1082,7 @@ func (cpu *CPU) ADD(operand1, operand2 string) {
 }
 
 // CPL Complement A Register(Aレジスタのbitをすべて反転)
-func (cpu *CPU) CPL(operand1, operand2 string) {
+func (cpu *CPU) CPL(operand1, operand2 int) {
 	A := ^cpu.getAReg()
 	cpu.setAReg(A)
 	cpu.flagN(true)
@@ -1097,36 +1091,36 @@ func (cpu *CPU) CPL(operand1, operand2 string) {
 }
 
 // PREFIXCB 拡張命令
-func (cpu *CPU) PREFIXCB(operand1, operand2 string) {
-	if operand1 == "*" && operand2 == "*" {
+func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
+	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
 		cpu.Reg.PC++
-		opcode := cpu.FetchMemory8(cpu.Reg.PC)
-		instruction, operand1, operand2 := prefixCB[opcode][0], prefixCB[opcode][1], prefixCB[opcode][2]
+		opcode := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
+		instruction, operand1, operand2 := opcode.Ins, opcode.Operand1, opcode.Operand2
 
 		// cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
 
 		switch instruction {
-		case "RLC":
+		case INS_RLC:
 			cpu.RLC(operand1, operand2)
-		case "RRC":
+		case INS_RRC:
 			cpu.RRC(operand1, operand2)
-		case "RL":
+		case INS_RL:
 			cpu.RL(operand1, operand2)
-		case "RR":
+		case INS_RR:
 			cpu.RR(operand1, operand2)
-		case "SLA":
+		case INS_SLA:
 			cpu.SLA(operand1, operand2)
-		case "SRA":
+		case INS_SRA:
 			cpu.SRA(operand1, operand2)
-		case "SWAP":
+		case INS_SWAP:
 			cpu.SWAP(operand1, operand2)
-		case "SRL":
+		case INS_SRL:
 			cpu.SRL(operand1, operand2)
-		case "BIT":
+		case INS_BIT:
 			cpu.BIT(operand1, operand2)
-		case "RES":
+		case INS_RES:
 			cpu.RES(operand1, operand2)
-		case "SET":
+		case INS_SET:
 			cpu.SET(operand1, operand2)
 		default:
 			errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
@@ -1139,10 +1133,10 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 string) {
 }
 
 // RLC Rotate n left carry => bit0
-func (cpu *CPU) RLC(operand1, operand2 string) {
+func (cpu *CPU) RLC(operand1, operand2 int) {
 	var value byte
 	var bit7 byte
-	if operand1 == "B" && operand2 == "*" {
+	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
 		value = cpu.getBReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1152,7 +1146,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setBReg(value)
-	} else if operand1 == "C" && operand2 == "*" {
+	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
 		value = cpu.getCReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1162,7 +1156,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setCReg(value)
-	} else if operand1 == "D" && operand2 == "*" {
+	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
 		value = cpu.getDReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1172,7 +1166,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setDReg(value)
-	} else if operand1 == "E" && operand2 == "*" {
+	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
 		value = cpu.getEReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1182,7 +1176,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setEReg(value)
-	} else if operand1 == "H" && operand2 == "*" {
+	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
 		value = cpu.getHReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1192,7 +1186,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setHReg(value)
-	} else if operand1 == "L" && operand2 == "*" {
+	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
 		value = cpu.getLReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1202,7 +1196,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setLReg(value)
-	} else if operand1 == "(HL)" && operand2 == "*" {
+	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1212,7 +1206,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	} else if operand1 == "A" && operand2 == "*" {
+	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1239,7 +1233,7 @@ func (cpu *CPU) RLC(operand1, operand2 string) {
 }
 
 // RLCA Rotate register A left.
-func (cpu *CPU) RLCA(operand1, operand2 string) {
+func (cpu *CPU) RLCA(operand1, operand2 int) {
 	var value byte
 	var bit7 byte
 	value = cpu.getAReg()
@@ -1264,10 +1258,10 @@ func (cpu *CPU) RLCA(operand1, operand2 string) {
 }
 
 // RRC Rotate n right carry => bit7
-func (cpu *CPU) RRC(operand1, operand2 string) {
+func (cpu *CPU) RRC(operand1, operand2 int) {
 	var value byte
 	var bit0 byte
-	if operand1 == "B" && operand2 == "*" {
+	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
 		value = cpu.getBReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1277,7 +1271,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setBReg(value)
-	} else if operand1 == "C" && operand2 == "*" {
+	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
 		value = cpu.getCReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1287,7 +1281,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setCReg(value)
-	} else if operand1 == "D" && operand2 == "*" {
+	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
 		value = cpu.getDReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1297,7 +1291,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setDReg(value)
-	} else if operand1 == "E" && operand2 == "*" {
+	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
 		value = cpu.getEReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1307,7 +1301,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setEReg(value)
-	} else if operand1 == "H" && operand2 == "*" {
+	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
 		value = cpu.getHReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1317,7 +1311,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setHReg(value)
-	} else if operand1 == "L" && operand2 == "*" {
+	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
 		value = cpu.getLReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1327,7 +1321,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setLReg(value)
-	} else if operand1 == "(HL)" && operand2 == "*" {
+	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1337,7 +1331,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	} else if operand1 == "A" && operand2 == "*" {
+	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1363,7 +1357,7 @@ func (cpu *CPU) RRC(operand1, operand2 string) {
 }
 
 // RRCA Rotate register A right.
-func (cpu *CPU) RRCA(operand1, operand2 string) {
+func (cpu *CPU) RRCA(operand1, operand2 int) {
 	var value byte
 	var bit0 byte
 
@@ -1389,13 +1383,13 @@ func (cpu *CPU) RRCA(operand1, operand2 string) {
 }
 
 // RL Rotate n rigth through carry bit7 => bit0
-func (cpu *CPU) RL(operand1, operand2 string) {
+func (cpu *CPU) RL(operand1, operand2 int) {
 	var value byte
 	var bit7 byte
 	carry := cpu.getCFlag()
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1405,7 +1399,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setAReg(value)
-	case "B":
+	case OPERAND_B:
 		value = cpu.getBReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1415,7 +1409,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setBReg(value)
-	case "C":
+	case OPERAND_C:
 		value = cpu.getCReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1425,7 +1419,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setCReg(value)
-	case "D":
+	case OPERAND_D:
 		value = cpu.getDReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1435,7 +1429,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setDReg(value)
-	case "E":
+	case OPERAND_E:
 		value = cpu.getEReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1445,7 +1439,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setEReg(value)
-	case "H":
+	case OPERAND_H:
 		value = cpu.getHReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1455,7 +1449,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setHReg(value)
-	case "L":
+	case OPERAND_L:
 		value = cpu.getLReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1465,7 +1459,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 			value &= 0xfe
 		}
 		cpu.setLReg(value)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1492,7 +1486,7 @@ func (cpu *CPU) RL(operand1, operand2 string) {
 }
 
 // RLA Rotate register A left through carry.
-func (cpu *CPU) RLA(operand1, operand2 string) {
+func (cpu *CPU) RLA(operand1, operand2 int) {
 	var value byte
 	var bit7 byte
 	carry := cpu.getCFlag()
@@ -1519,13 +1513,13 @@ func (cpu *CPU) RLA(operand1, operand2 string) {
 }
 
 // RR Rotate n right through carry bit0 => bit7
-func (cpu *CPU) RR(operand1, operand2 string) {
+func (cpu *CPU) RR(operand1, operand2 int) {
 	var value byte
 	var bit0 byte
 	carry := cpu.getCFlag()
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1535,7 +1529,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setAReg(value)
-	case "B":
+	case OPERAND_B:
 		value = cpu.getBReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1545,7 +1539,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setBReg(value)
-	case "C":
+	case OPERAND_C:
 		value = cpu.getCReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1555,7 +1549,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setCReg(value)
-	case "D":
+	case OPERAND_D:
 		value = cpu.getDReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1565,7 +1559,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setDReg(value)
-	case "E":
+	case OPERAND_E:
 		value = cpu.getEReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1575,7 +1569,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setEReg(value)
-	case "H":
+	case OPERAND_H:
 		value = cpu.getHReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1585,7 +1579,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setHReg(value)
-	case "L":
+	case OPERAND_L:
 		value = cpu.getLReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1595,7 +1589,7 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setLReg(value)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1622,45 +1616,45 @@ func (cpu *CPU) RR(operand1, operand2 string) {
 }
 
 // SLA Shift Left
-func (cpu *CPU) SLA(operand1, operand2 string) {
+func (cpu *CPU) SLA(operand1, operand2 int) {
 	var value byte
 	var bit7 byte
-	if operand1 == "B" && operand2 == "*" {
+	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
 		value = cpu.getBReg()
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.setBReg(value)
-	} else if operand1 == "C" && operand2 == "*" {
+	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
 		value = cpu.getCReg()
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.setCReg(value)
-	} else if operand1 == "D" && operand2 == "*" {
+	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
 		value = cpu.getDReg()
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.setDReg(value)
-	} else if operand1 == "E" && operand2 == "*" {
+	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
 		value = cpu.getEReg()
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.setEReg(value)
-	} else if operand1 == "H" && operand2 == "*" {
+	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
 		value = cpu.getHReg()
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.setHReg(value)
-	} else if operand1 == "L" && operand2 == "*" {
+	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
 		value = cpu.getLReg()
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.setLReg(value)
-	} else if operand1 == "(HL)" && operand2 == "*" {
+	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	} else if operand1 == "A" && operand2 == "*" {
+	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit7 = value >> 7
 		value = (value << 1)
@@ -1682,10 +1676,10 @@ func (cpu *CPU) SLA(operand1, operand2 string) {
 }
 
 // SRA Shift Right MSBit dosen't change
-func (cpu *CPU) SRA(operand1, operand2 string) {
+func (cpu *CPU) SRA(operand1, operand2 int) {
 	var value byte
 	var bit0 byte
-	if operand1 == "B" && operand2 == "*" {
+	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
 		value = cpu.getBReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1696,7 +1690,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setBReg(value)
-	} else if operand1 == "C" && operand2 == "*" {
+	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
 		value = cpu.getCReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1707,7 +1701,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setCReg(value)
-	} else if operand1 == "D" && operand2 == "*" {
+	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
 		value = cpu.getDReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1718,7 +1712,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setDReg(value)
-	} else if operand1 == "E" && operand2 == "*" {
+	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
 		value = cpu.getEReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1729,7 +1723,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setEReg(value)
-	} else if operand1 == "H" && operand2 == "*" {
+	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
 		value = cpu.getHReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1740,7 +1734,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setHReg(value)
-	} else if operand1 == "L" && operand2 == "*" {
+	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
 		value = cpu.getLReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1751,7 +1745,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.setLReg(value)
-	} else if operand1 == "(HL)" && operand2 == "*" {
+	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1762,7 +1756,7 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 			value &= 0x7f
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	} else if operand1 == "A" && operand2 == "*" {
+	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit0 = value % 2
 		bit7 := value >> 7
@@ -1790,53 +1784,53 @@ func (cpu *CPU) SRA(operand1, operand2 string) {
 }
 
 // SWAP Swap n[4:8] and n[0:4]
-func (cpu *CPU) SWAP(operand1, operand2 string) {
+func (cpu *CPU) SWAP(operand1, operand2 int) {
 	var value byte
 
 	switch operand1 {
-	case "B":
+	case OPERAND_B:
 		B := cpu.getBReg()
 		B03 := B & 0x0f
 		B47 := B >> 4
 		value = (B03 << 4) | B47
 		cpu.setBReg(value)
-	case "C":
+	case OPERAND_C:
 		C := cpu.getCReg()
 		C03 := C & 0x0f
 		C47 := C >> 4
 		value = (C03 << 4) | C47
 		cpu.setCReg(value)
-	case "D":
+	case OPERAND_D:
 		D := cpu.getDReg()
 		D03 := D & 0x0f
 		D47 := D >> 4
 		value = (D03 << 4) | D47
 		cpu.setDReg(value)
-	case "E":
+	case OPERAND_E:
 		E := cpu.getEReg()
 		E03 := E & 0x0f
 		E47 := E >> 4
 		value = (E03 << 4) | E47
 		cpu.setEReg(value)
-	case "H":
+	case OPERAND_H:
 		H := cpu.getHReg()
 		H03 := H & 0x0f
 		H47 := H >> 4
 		value = (H03 << 4) | H47
 		cpu.setHReg(value)
-	case "L":
+	case OPERAND_L:
 		L := cpu.getLReg()
 		L03 := L & 0x0f
 		L47 := L >> 4
 		value = (L03 << 4) | L47
 		cpu.setLReg(value)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		data := cpu.FetchMemory8(cpu.Reg.HL)
 		data03 := data & 0x0f
 		data47 := data >> 4
 		value = (data03 << 4) | data47
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	case "A":
+	case OPERAND_A:
 		A := cpu.getAReg()
 		A03 := A & 0x0f
 		A47 := A >> 4
@@ -1855,47 +1849,47 @@ func (cpu *CPU) SWAP(operand1, operand2 string) {
 }
 
 // SRL Shift Right MSBit = 0
-func (cpu *CPU) SRL(operand1, operand2 string) {
+func (cpu *CPU) SRL(operand1, operand2 int) {
 	var value byte
 	var bit0 byte
 
 	switch operand1 {
-	case "B":
+	case OPERAND_B:
 		value = cpu.getBReg()
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.setBReg(value)
-	case "C":
+	case OPERAND_C:
 		value = cpu.getCReg()
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.setCReg(value)
-	case "D":
+	case OPERAND_D:
 		value = cpu.getDReg()
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.setDReg(value)
-	case "E":
+	case OPERAND_E:
 		value = cpu.getEReg()
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.setEReg(value)
-	case "H":
+	case OPERAND_H:
 		value = cpu.getHReg()
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.setHReg(value)
-	case "L":
+	case OPERAND_L:
 		value = cpu.getLReg()
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.setLReg(value)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL)
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	case "A":
+	case OPERAND_A:
 		value = cpu.getAReg()
 		bit0 = value % 2
 		value = (value >> 1)
@@ -1917,26 +1911,45 @@ func (cpu *CPU) SRL(operand1, operand2 string) {
 }
 
 // BIT Test bit n
-func (cpu *CPU) BIT(operand1, operand2 string) {
+func (cpu *CPU) BIT(operand1, operand2 int) {
 	var value byte
-	tmp, _ := strconv.Atoi(operand1)
-	targetBit := uint(tmp) // ターゲットのbit
+
+	var targetBit uint // ターゲットのbit
+	switch operand1 {
+	case OPERAND_0:
+		targetBit = 0
+	case OPERAND_1:
+		targetBit = 1
+	case OPERAND_2:
+		targetBit = 2
+	case OPERAND_3:
+		targetBit = 3
+	case OPERAND_4:
+		targetBit = 4
+	case OPERAND_5:
+		targetBit = 5
+	case OPERAND_6:
+		targetBit = 6
+	case OPERAND_7:
+		targetBit = 7
+	}
+
 	switch operand2 {
-	case "B":
+	case OPERAND_B:
 		value = (cpu.getBReg() >> targetBit) % 2
-	case "C":
+	case OPERAND_C:
 		value = (cpu.getCReg() >> targetBit) % 2
-	case "D":
+	case OPERAND_D:
 		value = (cpu.getDReg() >> targetBit) % 2
-	case "E":
+	case OPERAND_E:
 		value = (cpu.getEReg() >> targetBit) % 2
-	case "H":
+	case OPERAND_H:
 		value = (cpu.getHReg() >> targetBit) % 2
-	case "L":
+	case OPERAND_L:
 		value = (cpu.getLReg() >> targetBit) % 2
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value = (cpu.FetchMemory8(cpu.Reg.HL) >> targetBit) % 2
-	case "A":
+	case OPERAND_A:
 		value = (cpu.getAReg() >> targetBit) % 2
 	}
 
@@ -1947,39 +1960,58 @@ func (cpu *CPU) BIT(operand1, operand2 string) {
 }
 
 // RES Clear bit n
-func (cpu *CPU) RES(operand1, operand2 string) {
-	tmp, _ := strconv.Atoi(operand1)
-	targetBit := uint(tmp) // ターゲットのbit
+func (cpu *CPU) RES(operand1, operand2 int) {
+
+	var targetBit uint // ターゲットのbit
+	switch operand1 {
+	case OPERAND_0:
+		targetBit = 0
+	case OPERAND_1:
+		targetBit = 1
+	case OPERAND_2:
+		targetBit = 2
+	case OPERAND_3:
+		targetBit = 3
+	case OPERAND_4:
+		targetBit = 4
+	case OPERAND_5:
+		targetBit = 5
+	case OPERAND_6:
+		targetBit = 6
+	case OPERAND_7:
+		targetBit = 7
+	}
+
 	switch operand2 {
-	case "B":
+	case OPERAND_B:
 		mask := ^(byte(1) << targetBit)
 		B := cpu.getBReg() & mask
 		cpu.setBReg(B)
-	case "C":
+	case OPERAND_C:
 		mask := ^(byte(1) << targetBit)
 		C := cpu.getCReg() & mask
 		cpu.setCReg(C)
-	case "D":
+	case OPERAND_D:
 		mask := ^(byte(1) << targetBit)
 		D := cpu.getDReg() & mask
 		cpu.setDReg(D)
-	case "E":
+	case OPERAND_E:
 		mask := ^(byte(1) << targetBit)
 		E := cpu.getEReg() & mask
 		cpu.setEReg(E)
-	case "H":
+	case OPERAND_H:
 		mask := ^(byte(1) << targetBit)
 		H := cpu.getHReg() & mask
 		cpu.setHReg(H)
-	case "L":
+	case OPERAND_L:
 		mask := ^(byte(1) << targetBit)
 		L := cpu.getLReg() & mask
 		cpu.setLReg(L)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		mask := ^(byte(1) << targetBit)
 		value := cpu.FetchMemory8(cpu.Reg.HL) & mask
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	case "A":
+	case OPERAND_A:
 		mask := ^(byte(1) << targetBit)
 		A := cpu.getAReg() & mask
 		cpu.setAReg(A)
@@ -1988,39 +2020,58 @@ func (cpu *CPU) RES(operand1, operand2 string) {
 }
 
 // SET Clear bit n
-func (cpu *CPU) SET(operand1, operand2 string) {
-	tmp, _ := strconv.Atoi(operand1)
-	targetBit := uint(tmp) // ターゲットのbit
+func (cpu *CPU) SET(operand1, operand2 int) {
+
+	var targetBit uint // ターゲットのbit
+	switch operand1 {
+	case OPERAND_0:
+		targetBit = 0
+	case OPERAND_1:
+		targetBit = 1
+	case OPERAND_2:
+		targetBit = 2
+	case OPERAND_3:
+		targetBit = 3
+	case OPERAND_4:
+		targetBit = 4
+	case OPERAND_5:
+		targetBit = 5
+	case OPERAND_6:
+		targetBit = 6
+	case OPERAND_7:
+		targetBit = 7
+	}
+
 	switch operand2 {
-	case "B":
+	case OPERAND_B:
 		mask := byte(1) << targetBit
 		B := cpu.getBReg() | mask
 		cpu.setBReg(B)
-	case "C":
+	case OPERAND_C:
 		mask := byte(1) << targetBit
 		C := cpu.getCReg() | mask
 		cpu.setCReg(C)
-	case "D":
+	case OPERAND_D:
 		mask := byte(1) << targetBit
 		D := cpu.getDReg() | mask
 		cpu.setDReg(D)
-	case "E":
+	case OPERAND_E:
 		mask := byte(1) << targetBit
 		E := cpu.getEReg() | mask
 		cpu.setEReg(E)
-	case "H":
+	case OPERAND_H:
 		mask := byte(1) << targetBit
 		H := cpu.getHReg() | mask
 		cpu.setHReg(H)
-	case "L":
+	case OPERAND_L:
 		mask := byte(1) << targetBit
 		L := cpu.getLReg() | mask
 		cpu.setLReg(L)
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		mask := byte(1) << targetBit
 		value := cpu.FetchMemory8(cpu.Reg.HL) | mask
 		cpu.SetMemory8(cpu.Reg.HL, value)
-	case "A":
+	case OPERAND_A:
 		mask := byte(1) << targetBit
 		A := cpu.getAReg() | mask
 		cpu.setAReg(A)
@@ -2029,15 +2080,15 @@ func (cpu *CPU) SET(operand1, operand2 string) {
 }
 
 // PUSH スタックにPUSH
-func (cpu *CPU) PUSH(operand1, operand2 string) {
+func (cpu *CPU) PUSH(operand1, operand2 int) {
 	switch operand1 {
-	case "BC":
+	case OPERAND_BC:
 		cpu.pushBC()
-	case "DE":
+	case OPERAND_DE:
 		cpu.pushDE()
-	case "HL":
+	case OPERAND_HL:
 		cpu.pushHL()
-	case "AF":
+	case OPERAND_AF:
 		cpu.pushAF()
 	default:
 		errMsg := fmt.Sprintf("Error: PUSH %s %s", operand1, operand2)
@@ -2047,15 +2098,15 @@ func (cpu *CPU) PUSH(operand1, operand2 string) {
 }
 
 // POP スタックからPOP
-func (cpu *CPU) POP(operand1, operand2 string) {
+func (cpu *CPU) POP(operand1, operand2 int) {
 	switch operand1 {
-	case "BC":
+	case OPERAND_BC:
 		cpu.popBC()
-	case "DE":
+	case OPERAND_DE:
 		cpu.popDE()
-	case "HL":
+	case OPERAND_HL:
 		cpu.popHL()
-	case "AF":
+	case OPERAND_AF:
 		cpu.popAF()
 	default:
 		errMsg := fmt.Sprintf("Error: POP %s %s", operand1, operand2)
@@ -2065,9 +2116,9 @@ func (cpu *CPU) POP(operand1, operand2 string) {
 }
 
 // SUB 減算
-func (cpu *CPU) SUB(operand1, operand2 string) {
+func (cpu *CPU) SUB(operand1, operand2 int) {
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		value := cpu.getAReg() - cpu.getAReg()
 		carryBits := cpu.getAReg() ^ cpu.getAReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getAReg())
@@ -2076,7 +2127,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "B":
+	case OPERAND_B:
 		value := cpu.getAReg() - cpu.getBReg()
 		carryBits := cpu.getAReg() ^ cpu.getBReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getBReg())
@@ -2085,7 +2136,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "C":
+	case OPERAND_C:
 		value := cpu.getAReg() - cpu.getCReg()
 		carryBits := cpu.getAReg() ^ cpu.getCReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getCReg())
@@ -2094,7 +2145,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "D":
+	case OPERAND_D:
 		value := cpu.getAReg() - cpu.getDReg()
 		carryBits := cpu.getAReg() ^ cpu.getDReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getDReg())
@@ -2103,7 +2154,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "E":
+	case OPERAND_E:
 		value := cpu.getAReg() - cpu.getEReg()
 		carryBits := cpu.getAReg() ^ cpu.getEReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getEReg())
@@ -2112,7 +2163,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "H":
+	case OPERAND_H:
 		value := cpu.getAReg() - cpu.getHReg()
 		carryBits := cpu.getAReg() ^ cpu.getHReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getHReg())
@@ -2121,7 +2172,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "L":
+	case OPERAND_L:
 		value := cpu.getAReg() - cpu.getLReg()
 		carryBits := cpu.getAReg() ^ cpu.getLReg() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.getLReg())
@@ -2130,7 +2181,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC++
-	case "d8":
+	case OPERAND_d8:
 		value := cpu.getAReg() - cpu.d8Fetch()
 		carryBits := cpu.getAReg() ^ cpu.d8Fetch() ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.d8Fetch())
@@ -2139,7 +2190,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 		cpu.flagN(true)
 		cpu.flagH8(carryBits)
 		cpu.Reg.PC += 2
-	case "(HL)":
+	case OPERAND_HL_PAREN:
 		value := cpu.getAReg() - cpu.FetchMemory8(cpu.Reg.HL)
 		carryBits := cpu.getAReg() ^ cpu.FetchMemory8(cpu.Reg.HL) ^ value
 		cpu.flagC8Sub(cpu.getAReg(), cpu.FetchMemory8(cpu.Reg.HL))
@@ -2155,7 +2206,7 @@ func (cpu *CPU) SUB(operand1, operand2 string) {
 }
 
 // RRA Rotate register A right through carry.
-func (cpu *CPU) RRA(operand1, operand2 string) {
+func (cpu *CPU) RRA(operand1, operand2 int) {
 	carry := cpu.getCFlag()
 	A := cpu.getAReg()
 	A0 := A % 2
@@ -2177,7 +2228,7 @@ func (cpu *CPU) RRA(operand1, operand2 string) {
 }
 
 // ADC Add the value n8 plus the carry flag to A
-func (cpu *CPU) ADC(operand1, operand2 string) {
+func (cpu *CPU) ADC(operand1, operand2 int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.getCFlag() {
@@ -2187,42 +2238,42 @@ func (cpu *CPU) ADC(operand1, operand2 string) {
 	}
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			value = cpu.getAReg() + carry + cpu.getAReg()
 			value4 = cpu.getARegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getAReg()) + uint16(cpu.getAReg()) + uint16(carry)
-		case "B":
+		case OPERAND_B:
 			value = cpu.getBReg() + carry + cpu.getAReg()
 			value4 = cpu.getBRegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getBReg()) + uint16(carry) + uint16(cpu.getAReg())
-		case "C":
+		case OPERAND_C:
 			value = cpu.getCReg() + carry + cpu.getAReg()
 			value4 = cpu.getCRegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getCReg()) + uint16(carry) + uint16(cpu.getAReg())
-		case "D":
+		case OPERAND_D:
 			value = cpu.getDReg() + carry + cpu.getAReg()
 			value4 = cpu.getDRegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getDReg()) + uint16(carry) + uint16(cpu.getAReg())
-		case "E":
+		case OPERAND_E:
 			value = cpu.getEReg() + carry + cpu.getAReg()
 			value4 = cpu.getERegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getEReg()) + uint16(carry) + uint16(cpu.getAReg())
-		case "H":
+		case OPERAND_H:
 			value = cpu.getHReg() + carry + cpu.getAReg()
 			value4 = cpu.getHRegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getHReg()) + uint16(carry) + uint16(cpu.getAReg())
-		case "L":
+		case OPERAND_L:
 			value = cpu.getLReg() + carry + cpu.getAReg()
 			value4 = cpu.getLRegLower4() + carry + cpu.getARegLower4()
 			value16 = uint16(cpu.getLReg()) + uint16(carry) + uint16(cpu.getAReg())
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			data := cpu.FetchMemory8(cpu.Reg.HL)
 			value = data + carry + cpu.getAReg()
 			value4 = (data & 0x0f) + carry + cpu.getARegLower4()
 			value16 = uint16(data) + uint16(cpu.getAReg()) + uint16(carry)
-		case "d8":
+		case OPERAND_d8:
 			data := cpu.d8Fetch()
 			value = data + carry + cpu.getAReg()
 			value4 = (data & 0x0f) + carry + cpu.getARegLower4()
@@ -2242,7 +2293,7 @@ func (cpu *CPU) ADC(operand1, operand2 string) {
 }
 
 // SBC Subtract the value n8 and the carry flag from A
-func (cpu *CPU) SBC(operand1, operand2 string) {
+func (cpu *CPU) SBC(operand1, operand2 int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.getCFlag() {
@@ -2252,42 +2303,42 @@ func (cpu *CPU) SBC(operand1, operand2 string) {
 	}
 
 	switch operand1 {
-	case "A":
+	case OPERAND_A:
 		switch operand2 {
-		case "A":
+		case OPERAND_A:
 			value = cpu.getAReg() - (cpu.getAReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getARegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getAReg()) + uint16(carry))
-		case "B":
+		case OPERAND_B:
 			value = cpu.getAReg() - (cpu.getBReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getBRegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getBReg()) + uint16(carry))
-		case "C":
+		case OPERAND_C:
 			value = cpu.getAReg() - (cpu.getCReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getCRegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getCReg()) + uint16(carry))
-		case "D":
+		case OPERAND_D:
 			value = cpu.getAReg() - (cpu.getDReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getDRegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getDReg()) + uint16(carry))
-		case "E":
+		case OPERAND_E:
 			value = cpu.getAReg() - (cpu.getEReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getERegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getEReg()) + uint16(carry))
-		case "H":
+		case OPERAND_H:
 			value = cpu.getAReg() - (cpu.getHReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getHRegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getHReg()) + uint16(carry))
-		case "L":
+		case OPERAND_L:
 			value = cpu.getAReg() - (cpu.getLReg() + carry)
 			value4 = cpu.getARegLower4() - (cpu.getLRegLower4() + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(cpu.getLReg()) + uint16(carry))
-		case "(HL)":
+		case OPERAND_HL_PAREN:
 			data := cpu.FetchMemory8(cpu.Reg.HL)
 			value = cpu.getAReg() - (data + carry)
 			value4 = cpu.getARegLower4() - ((data & 0x0f) + carry)
 			value16 = uint16(cpu.getAReg()) - (uint16(data) + uint16(carry))
-		case "d8":
+		case OPERAND_d8:
 			data := cpu.d8Fetch()
 			value = cpu.getAReg() - (data + carry)
 			value4 = cpu.getARegLower4() - ((data & 0x0f) + carry)
@@ -2307,7 +2358,7 @@ func (cpu *CPU) SBC(operand1, operand2 string) {
 }
 
 // DAA Decimal adjust
-func (cpu *CPU) DAA(operand1, operand2 string) {
+func (cpu *CPU) DAA(operand1, operand2 int) {
 	A := uint8(cpu.getAReg())
 	// 参考: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !cpu.getNFlag() {
@@ -2334,11 +2385,28 @@ func (cpu *CPU) DAA(operand1, operand2 string) {
 }
 
 // RST Push present address and jump to vector address
-func (cpu *CPU) RST(operand1, operand2 string) {
-	vector, err := strconv.Atoi(operand1)
-	if err != nil {
-		panic(err)
+func (cpu *CPU) RST(operand1, operand2 int) {
+
+	var vector uint16
+	switch operand1 {
+	case OPERAND_00H:
+		vector = 0x00
+	case OPERAND_08H:
+		vector = 0x08
+	case OPERAND_10H:
+		vector = 0x10
+	case OPERAND_18H:
+		vector = 0x18
+	case OPERAND_20H:
+		vector = 0x20
+	case OPERAND_28H:
+		vector = 0x28
+	case OPERAND_30H:
+		vector = 0x30
+	case OPERAND_38H:
+		vector = 0x38
 	}
+
 	destination := uint16(vector)
 	cpu.Reg.PC++
 	cpu.pushPC()
@@ -2346,7 +2414,7 @@ func (cpu *CPU) RST(operand1, operand2 string) {
 }
 
 // SCF Set Carry Flag
-func (cpu *CPU) SCF(operand1, operand2 string) {
+func (cpu *CPU) SCF(operand1, operand2 int) {
 	cpu.flagN(false)
 	cpu.clearHFlag()
 	cpu.setCFlag()
@@ -2354,7 +2422,7 @@ func (cpu *CPU) SCF(operand1, operand2 string) {
 }
 
 // CCF Complement Carry Flag
-func (cpu *CPU) CCF(operand1, operand2 string) {
+func (cpu *CPU) CCF(operand1, operand2 int) {
 	cpu.flagN(false)
 	cpu.clearHFlag()
 	if cpu.getCFlag() {

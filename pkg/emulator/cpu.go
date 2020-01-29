@@ -3,13 +3,11 @@ package emulator
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"sync"
 
 	"gopkg.in/ini.v1"
 
 	"gbc/pkg/apu"
-	"gbc/pkg/boot"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
 	"gbc/pkg/gpu"
@@ -49,7 +47,6 @@ type CPU struct {
 	// 画面
 	GPU    gpu.GPU
 	expand uint
-	saving bool // trueだとリフレッシュレートが30に落ちるがCPU使用率は下がる
 	smooth bool // pixelglのsmoothモードの有無
 	// RTC
 	RTC       rtc.RTC
@@ -58,8 +55,7 @@ type CPU struct {
 	Serial  serial.Serial
 	network bool
 
-	romdir string    // ロムがあるところのディレクトリパス
-	Boot   boot.Boot // ブートデータ
+	romdir string // ロムがあるところのディレクトリパス
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -290,12 +286,6 @@ func (cpu *CPU) Init(romdir string) {
 		cpu.expand = expand
 	}
 
-	saving, err := cpu.config.Section("display").Key("saving").Bool()
-	if err != nil {
-		saving = false
-	}
-	cpu.saving = saving
-
 	smooth, err := cpu.config.Section("display").Key("smooth").Bool()
 	if err != nil {
 		smooth = false
@@ -340,11 +330,8 @@ func (cpu *CPU) Init(romdir string) {
 	cpu.romdir = romdir
 	cpu.load()
 
-	// Init BootData
-	{
-		valid, _ := cpu.config.Section("display").Key("boot").Bool()
-		cpu.Boot = *boot.New(valid)
-	}
+	// Init APU
+	cpu.Sound.Init()
 
 	// Init RTC
 	go cpu.RTC.Init()
@@ -359,82 +346,81 @@ func (cpu *CPU) Exit() {
 // Exec 1サイクル
 func (cpu *CPU) exec() {
 	cpu.mutex.Lock()
-	opcode := cpu.FetchMemory8(cpu.Reg.PC)
-	instruction, operand1, operand2 := instructions[opcode][0], instructions[opcode][1], instructions[opcode][2]
-	cycle, _ := strconv.ParseFloat(instructions[opcode][3], 64)
+	opcode := opcodes[cpu.FetchMemory8(cpu.Reg.PC)]
+	instruction, operand1, operand2, cycle1 := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1
 
 	// if instruction != "HALT" {
 	// 	cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
 	// }
 
 	switch instruction {
-	case "HALT":
+	case INS_HALT:
 		cpu.HALT(operand1, operand2)
-	case "LD":
+	case INS_LD:
 		cpu.LD(operand1, operand2)
-	case "LDH":
+	case INS_LDH:
 		cpu.LDH(operand1, operand2)
-	case "JR":
+	case INS_JR:
 		cpu.JR(operand1, operand2)
-	case "NOP":
+	case INS_NOP:
 		cpu.NOP(operand1, operand2)
-	case "AND":
+	case INS_AND:
 		cpu.AND(operand1, operand2)
-	case "INC":
+	case INS_INC:
 		cpu.INC(operand1, operand2)
-	case "DEC":
+	case INS_DEC:
 		cpu.DEC(operand1, operand2)
-	case "PUSH":
+	case INS_PUSH:
 		cpu.PUSH(operand1, operand2)
-	case "POP":
+	case INS_POP:
 		cpu.POP(operand1, operand2)
-	case "XOR":
+	case INS_XOR:
 		cpu.XOR(operand1, operand2)
-	case "JP":
+	case INS_JP:
 		cpu.JP(operand1, operand2)
-	case "CALL":
+	case INS_CALL:
 		cpu.CALL(operand1, operand2)
-	case "RET":
+	case INS_RET:
 		cpu.RET(operand1, operand2)
-	case "RETI":
+	case INS_RETI:
 		cpu.RETI(operand1, operand2)
-	case "CP":
+	case INS_CP:
 		cpu.CP(operand1, operand2)
-	case "OR":
+	case INS_OR:
 		cpu.OR(operand1, operand2)
-	case "ADD":
+	case INS_ADD:
 		cpu.ADD(operand1, operand2)
-	case "SUB":
+	case INS_SUB:
 		cpu.SUB(operand1, operand2)
-	case "ADC":
+	case INS_ADC:
 		cpu.ADC(operand1, operand2)
-	case "SBC":
+	case INS_SBC:
 		cpu.SBC(operand1, operand2)
-	case "CPL":
+	case INS_CPL:
 		cpu.CPL(operand1, operand2)
-	case "PREFIX CB":
+	case INS_PREFIX:
 		cpu.PREFIXCB(operand1, operand2)
-	case "RRA":
+	case INS_RRA:
 		cpu.RRA(operand1, operand2)
-	case "DAA":
+	case INS_DAA:
 		cpu.DAA(operand1, operand2)
-	case "RST":
+	case INS_RST:
 		cpu.RST(operand1, operand2)
-	case "SCF":
+	case INS_SCF:
 		cpu.SCF(operand1, operand2)
-	case "CCF":
+	case INS_CCF:
 		cpu.CCF(operand1, operand2)
-	case "RLCA":
+	case INS_RLCA:
 		cpu.RLCA(operand1, operand2)
-	case "RLA":
+	case INS_RLA:
 		cpu.RLA(operand1, operand2)
-	case "RRCA":
+	case INS_RRCA:
 		cpu.RRCA(operand1, operand2)
-	case "DI":
+	case INS_DI:
 		cpu.DI(operand1, operand2)
-	case "EI":
+	case INS_EI:
 		cpu.EI(operand1, operand2)
-	case "STOP":
+	case INS_STOP:
 		cpu.STOP(operand1, operand2)
 	default:
 		cpu.writeHistory()
@@ -447,7 +433,7 @@ func (cpu *CPU) exec() {
 
 	cpu.mutex.Unlock()
 
-	cpu.timer(instruction, cycle)
+	cpu.timer(instruction, float64(cycle1))
 
 	cpu.handleInterrupt()
 }

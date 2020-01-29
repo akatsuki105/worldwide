@@ -32,8 +32,6 @@ Almost all ROMs work without problems, and have a wide range of functions, inclu
 - [x] Quick save
 - [x] Resizable window
 - [x] Pallete color change in DMG
-- [x] Pokemon Crystal JPN version
-- [x] Startup animation
 - [x] Serial DMG communication in local network
 - [ ] Serial CGB communication in local network
 - [ ] Serial communication with remote network
