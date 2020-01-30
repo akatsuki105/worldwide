@@ -234,10 +234,10 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == DMAIO:
 		// DMA転送
 		start := uint16(cpu.getAReg()) << 8
-		for i := 0; i <= 0x9f; i++ {
-			cpu.SetMemory8(0xfe00+uint16(i), cpu.FetchMemory8(start+uint16(i)))
-		}
-		cpu.cycleLine += 150
+		cpu.inOAMDMA = true
+		cpu.startOAMDMA = start
+		cpu.ptrOAMDMA = 160 + 3 // 転送開始までにラグがある
+		cpu.RAM[OAM] = 0xff
 
 	case addr >= 0xff10 && addr <= 0xff26:
 		// サウンドアクセス

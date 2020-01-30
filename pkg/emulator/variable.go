@@ -1,6 +1,7 @@
 package emulator
 
 const (
+	OAM       uint16 = 0xfe00
 	JOYPADIO  uint16 = 0xff00
 	SBIO      uint16 = 0xff01
 	SCIO      uint16 = 0xff02

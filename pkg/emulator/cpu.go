@@ -56,6 +56,10 @@ type CPU struct {
 	network bool
 
 	romdir string // ロムがあるところのディレクトリパス
+
+	inOAMDMA    bool
+	startOAMDMA uint16
+	ptrOAMDMA   uint16
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
