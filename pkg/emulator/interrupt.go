@@ -126,7 +126,7 @@ func (cpu *CPU) clearTimerFlag() {
 	cpu.SetMemory8(IFIO, IF)
 }
 
-func (cpu *CPU) timer(instruction int, cycle float64) {
+func (cpu *CPU) timer(instruction int, cycle int) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
@@ -142,17 +142,12 @@ func (cpu *CPU) timer(instruction int, cycle float64) {
 		cpu.cycleSerial = 0
 	}
 
-	// CPU使用率削減のため
-	if instruction == INS_HALT {
-		cycle += 10
-	}
-
 	// スキャンライン
 	cpu.cycleLine += cycle
 
 	// DIVレジスタ
 	cpu.cycleDIV += cycle
-	if cpu.cycleDIV >= 64 {
+	if cpu.cycleDIV >= 64*cpu.boost {
 		cpu.RAM[DIVIO]++
 		cpu.cycleDIV = 0
 	}
@@ -161,17 +156,17 @@ func (cpu *CPU) timer(instruction int, cycle float64) {
 		cpu.cycle += cycle
 		switch TAC % 4 {
 		case 0:
-			if cpu.cycle > 256 {
+			if cpu.cycle >= 256 {
 				cpu.cycle = 0
 				tickFlag = true
 			}
 		case 1:
-			if cpu.cycle > 3.4 {
+			if cpu.cycle >= 4 {
 				cpu.cycle = 0
 				tickFlag = true
 			}
 		case 2:
-			if cpu.cycle > 13 {
+			if cpu.cycle >= 12 {
 				cpu.cycle = 0
 				tickFlag = true
 			}
@@ -289,6 +284,7 @@ func (cpu *CPU) clearJoypadFlag() {
 
 func (cpu *CPU) triggerInterrupt() {
 	cpu.halt = false
+	cpu.timer(INS_NONE, 5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
 }
 
 func (cpu *CPU) triggerVBlank() {
@@ -358,6 +354,7 @@ func (cpu *CPU) triggerJoypad() {
 
 // 能動的な割り込みに対処する
 func (cpu *CPU) handleInterrupt() {
+
 	if cpu.Reg.IME {
 		if cpu.getVBlankEnable() && cpu.getVBlankFlag() {
 			cpu.triggerVBlank()

@@ -536,7 +536,8 @@ func (cpu *CPU) DEC(operand1, operand2 int) {
 }
 
 // JR Jump relatively
-func (cpu *CPU) JR(operand1, operand2 int) {
+func (cpu *CPU) JR(operand1, operand2, cycle1, cycle2 int) (cycle int) {
+	cycle = cycle1
 	switch operand1 {
 	case OPERAND_r8:
 		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
@@ -549,6 +550,7 @@ func (cpu *CPU) JR(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 2
+			cycle = cycle2
 		}
 	case OPERAND_C:
 		if cpu.getCFlag() {
@@ -557,6 +559,7 @@ func (cpu *CPU) JR(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 2
+			cycle = cycle2
 		}
 	case OPERAND_NZ:
 		if !cpu.getZFlag() {
@@ -565,6 +568,7 @@ func (cpu *CPU) JR(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 2
+			cycle = cycle2
 		}
 	case OPERAND_NC:
 		if !cpu.getCFlag() {
@@ -573,11 +577,14 @@ func (cpu *CPU) JR(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 2
+			cycle = cycle2
 		}
 	default:
 		errMsg := fmt.Sprintf("Error: JR %s %s", operand1, operand2)
 		panic(errMsg)
 	}
+
+	return cycle
 }
 
 // HALT Halt
@@ -595,10 +602,10 @@ func (cpu *CPU) STOP(operand1, operand2 int) {
 		if KEY1&0x01 == 1 {
 			if KEY1>>7 == 1 {
 				KEY1 = 0x00
-				cpu.isBoosted = false
+				cpu.boost = 1
 			} else {
 				KEY1 = 0x80
-				cpu.isBoosted = true
+				cpu.boost = 2
 			}
 			cpu.SetMemory8(KEY1IO, KEY1)
 		}
@@ -645,7 +652,9 @@ func (cpu *CPU) XOR(operand1, operand2 int) {
 }
 
 // JP Jump
-func (cpu *CPU) JP(operand1, operand2 int) {
+func (cpu *CPU) JP(operand1, operand2, cycle1, cycle2 int) (cycle int) {
+	cycle = cycle1
+
 	switch operand1 {
 	case OPERAND_a16:
 		destination := cpu.a16Fetch()
@@ -659,6 +668,7 @@ func (cpu *CPU) JP(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	case OPERAND_C:
 		if cpu.getCFlag() {
@@ -666,6 +676,7 @@ func (cpu *CPU) JP(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	case OPERAND_NZ:
 		if !cpu.getZFlag() {
@@ -673,6 +684,7 @@ func (cpu *CPU) JP(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	case OPERAND_NC:
 		if !cpu.getCFlag() {
@@ -680,15 +692,20 @@ func (cpu *CPU) JP(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	default:
 		errMsg := fmt.Sprintf("Error: JP %s %s", operand1, operand2)
 		panic(errMsg)
 	}
+
+	return cycle
 }
 
 // RET Return
-func (cpu *CPU) RET(operand1, operand2 int) {
+func (cpu *CPU) RET(operand1, operand2, cycle1, cycle2 int) (cycle int) {
+	cycle = cycle1
+
 	switch operand1 {
 	case OPERAND_NONE:
 		// PC=(SP), SP=SP+2
@@ -698,29 +715,35 @@ func (cpu *CPU) RET(operand1, operand2 int) {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
+			cycle = cycle2
 		}
 	case OPERAND_C:
 		if cpu.getCFlag() {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
+			cycle = cycle2
 		}
 	case OPERAND_NZ:
 		if !cpu.getZFlag() {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
+			cycle = cycle2
 		}
 	case OPERAND_NC:
 		if !cpu.getCFlag() {
 			cpu.popPC()
 		} else {
 			cpu.Reg.PC++
+			cycle = cycle2
 		}
 	default:
 		errMsg := fmt.Sprintf("Error: RET %s %s", operand1, operand2)
 		panic(errMsg)
 	}
+
+	return cycle
 }
 
 // RETI Return Interrupt
@@ -730,7 +753,9 @@ func (cpu *CPU) RETI(operand1, operand2 int) {
 }
 
 // CALL Call subroutine
-func (cpu *CPU) CALL(operand1, operand2 int) {
+func (cpu *CPU) CALL(operand1, operand2, cycle1, cycle2 int) (cycle int) {
+	cycle = cycle1
+
 	switch operand1 {
 	case OPERAND_a16:
 		destination := cpu.a16Fetch()
@@ -745,6 +770,7 @@ func (cpu *CPU) CALL(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	case OPERAND_C:
 		if cpu.getCFlag() {
@@ -754,6 +780,7 @@ func (cpu *CPU) CALL(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	case OPERAND_NZ:
 		if !cpu.getZFlag() {
@@ -763,6 +790,7 @@ func (cpu *CPU) CALL(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	case OPERAND_NC:
 		if !cpu.getCFlag() {
@@ -772,11 +800,14 @@ func (cpu *CPU) CALL(operand1, operand2 int) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
+			cycle = cycle2
 		}
 	default:
 		errMsg := fmt.Sprintf("Error: CALL %s %s", operand1, operand2)
 		panic(errMsg)
 	}
+
+	return cycle
 }
 
 // DI Disable Interrupt

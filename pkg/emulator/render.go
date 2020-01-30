@@ -51,8 +51,6 @@ func (cpu *CPU) Render() {
 		frames = 0
 	)
 
-	var boost float64
-
 	win.SetSmooth(cpu.smooth)
 
 	for !win.Closed() {
@@ -64,12 +62,6 @@ func (cpu *CPU) Render() {
 			continue
 		}
 		cpu.Sound.On()
-
-		if cpu.isBoosted {
-			boost = 2
-		} else {
-			boost = 1
-		}
 
 		LCDC := cpu.FetchMemory8(LCDCIO)
 		scrollX, scrollY := cpu.GPU.ReadScroll()
@@ -111,7 +103,7 @@ func (cpu *CPU) Render() {
 				}
 				// HBlank mode0
 				cpu.setHBlankMode()
-				for cpu.cycleLine < cyclePerLine*boost {
+				for cpu.cycleLine < cyclePerLine*cpu.boost {
 					cpu.exec()
 				}
 				cpu.incrementLY()
@@ -173,7 +165,7 @@ func (cpu *CPU) Render() {
 		for {
 			cpu.cycleLine = 0
 
-			for cpu.cycleLine < cyclePerLine*boost {
+			for cpu.cycleLine < cyclePerLine*cpu.boost {
 				cpu.exec()
 			}
 			cpu.incrementLY()

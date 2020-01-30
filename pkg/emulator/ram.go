@@ -227,6 +227,10 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 			}
 		}
 
+	case addr == DIVIO:
+		cpu.RAM[DIVIO] = 0
+		cpu.cycleDIV = 0
+
 	case addr == DMAIO:
 		// DMA転送
 		start := uint16(cpu.getAReg()) << 8

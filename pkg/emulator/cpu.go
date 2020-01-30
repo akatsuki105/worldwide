@@ -27,10 +27,10 @@ type CPU struct {
 	halt      bool // Halt状態か
 	config    *ini.File
 	// timer関連
-	cycle       float64 // タイマー用
-	cycleDIV    float64 // DIVタイマー用
-	cycleLine   float64 // スキャンライン用
-	cycleSerial float64
+	cycle       int // タイマー用
+	cycleDIV    int // DIVタイマー用
+	cycleLine   int // スキャンライン用
+	cycleSerial int
 	serialTick  chan int
 	// ROM bank
 	ROMBankPtr uint8
@@ -49,8 +49,8 @@ type CPU struct {
 	expand uint
 	smooth bool // pixelglのsmoothモードの有無
 	// RTC
-	RTC       rtc.RTC
-	isBoosted bool // 倍速か
+	RTC   rtc.RTC
+	boost int // 倍速か
 	// シリアル通信
 	Serial  serial.Serial
 	network bool
@@ -279,6 +279,8 @@ func (cpu *CPU) Init(romdir string) {
 	cpu.GPU.Init()
 	cpu.config = config.Init()
 
+	cpu.boost = 1
+
 	expand, err := cpu.config.Section("display").Key("expand").Uint()
 	if err != nil {
 		cpu.expand = 1
@@ -347,93 +349,92 @@ func (cpu *CPU) Exit() {
 func (cpu *CPU) exec() {
 	cpu.mutex.Lock()
 	opcode := opcodes[cpu.FetchMemory8(cpu.Reg.PC)]
-	instruction, operand1, operand2, cycle1 := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1
+	instruction, operand1, operand2, cycle1, cycle2 := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2
+	cycle := cycle1
 
-	// if instruction != "HALT" {
-	// 	cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
-	// }
+	if !cpu.halt {
+		switch instruction {
+		case INS_HALT:
+			cpu.HALT(operand1, operand2)
+		case INS_LD:
+			cpu.LD(operand1, operand2)
+		case INS_LDH:
+			cpu.LDH(operand1, operand2)
+		case INS_JR:
+			cycle = cpu.JR(operand1, operand2, cycle1, cycle2)
+		case INS_NOP:
+			cpu.NOP(operand1, operand2)
+		case INS_AND:
+			cpu.AND(operand1, operand2)
+		case INS_INC:
+			cpu.INC(operand1, operand2)
+		case INS_DEC:
+			cpu.DEC(operand1, operand2)
+		case INS_PUSH:
+			cpu.PUSH(operand1, operand2)
+		case INS_POP:
+			cpu.POP(operand1, operand2)
+		case INS_XOR:
+			cpu.XOR(operand1, operand2)
+		case INS_JP:
+			cycle = cpu.JP(operand1, operand2, cycle1, cycle2)
+		case INS_CALL:
+			cycle = cpu.CALL(operand1, operand2, cycle1, cycle2)
+		case INS_RET:
+			cycle = cpu.RET(operand1, operand2, cycle1, cycle2)
+		case INS_RETI:
+			cpu.RETI(operand1, operand2)
+		case INS_CP:
+			cpu.CP(operand1, operand2)
+		case INS_OR:
+			cpu.OR(operand1, operand2)
+		case INS_ADD:
+			cpu.ADD(operand1, operand2)
+		case INS_SUB:
+			cpu.SUB(operand1, operand2)
+		case INS_ADC:
+			cpu.ADC(operand1, operand2)
+		case INS_SBC:
+			cpu.SBC(operand1, operand2)
+		case INS_CPL:
+			cpu.CPL(operand1, operand2)
+		case INS_PREFIX:
+			cpu.PREFIXCB(operand1, operand2)
+		case INS_RRA:
+			cpu.RRA(operand1, operand2)
+		case INS_DAA:
+			cpu.DAA(operand1, operand2)
+		case INS_RST:
+			cpu.RST(operand1, operand2)
+		case INS_SCF:
+			cpu.SCF(operand1, operand2)
+		case INS_CCF:
+			cpu.CCF(operand1, operand2)
+		case INS_RLCA:
+			cpu.RLCA(operand1, operand2)
+		case INS_RLA:
+			cpu.RLA(operand1, operand2)
+		case INS_RRCA:
+			cpu.RRCA(operand1, operand2)
+		case INS_DI:
+			cpu.DI(operand1, operand2)
+		case INS_EI:
+			cpu.EI(operand1, operand2)
+		case INS_STOP:
+			cpu.STOP(operand1, operand2)
+		default:
+			cpu.writeHistory()
 
-	switch instruction {
-	case INS_HALT:
-		cpu.HALT(operand1, operand2)
-	case INS_LD:
-		cpu.LD(operand1, operand2)
-	case INS_LDH:
-		cpu.LDH(operand1, operand2)
-	case INS_JR:
-		cpu.JR(operand1, operand2)
-	case INS_NOP:
-		cpu.NOP(operand1, operand2)
-	case INS_AND:
-		cpu.AND(operand1, operand2)
-	case INS_INC:
-		cpu.INC(operand1, operand2)
-	case INS_DEC:
-		cpu.DEC(operand1, operand2)
-	case INS_PUSH:
-		cpu.PUSH(operand1, operand2)
-	case INS_POP:
-		cpu.POP(operand1, operand2)
-	case INS_XOR:
-		cpu.XOR(operand1, operand2)
-	case INS_JP:
-		cpu.JP(operand1, operand2)
-	case INS_CALL:
-		cpu.CALL(operand1, operand2)
-	case INS_RET:
-		cpu.RET(operand1, operand2)
-	case INS_RETI:
-		cpu.RETI(operand1, operand2)
-	case INS_CP:
-		cpu.CP(operand1, operand2)
-	case INS_OR:
-		cpu.OR(operand1, operand2)
-	case INS_ADD:
-		cpu.ADD(operand1, operand2)
-	case INS_SUB:
-		cpu.SUB(operand1, operand2)
-	case INS_ADC:
-		cpu.ADC(operand1, operand2)
-	case INS_SBC:
-		cpu.SBC(operand1, operand2)
-	case INS_CPL:
-		cpu.CPL(operand1, operand2)
-	case INS_PREFIX:
-		cpu.PREFIXCB(operand1, operand2)
-	case INS_RRA:
-		cpu.RRA(operand1, operand2)
-	case INS_DAA:
-		cpu.DAA(operand1, operand2)
-	case INS_RST:
-		cpu.RST(operand1, operand2)
-	case INS_SCF:
-		cpu.SCF(operand1, operand2)
-	case INS_CCF:
-		cpu.CCF(operand1, operand2)
-	case INS_RLCA:
-		cpu.RLCA(operand1, operand2)
-	case INS_RLA:
-		cpu.RLA(operand1, operand2)
-	case INS_RRCA:
-		cpu.RRCA(operand1, operand2)
-	case INS_DI:
-		cpu.DI(operand1, operand2)
-	case INS_EI:
-		cpu.EI(operand1, operand2)
-	case INS_STOP:
-		cpu.STOP(operand1, operand2)
-	default:
-		cpu.writeHistory()
-
-		errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
-		panic(errMsg)
+			errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
+			panic(errMsg)
+		}
 	}
 
 	// incrementDebugCounter(instruction, operand1, operand2)
 
 	cpu.mutex.Unlock()
 
-	cpu.timer(instruction, float64(cycle1))
+	cpu.timer(instruction, cycle)
 
 	cpu.handleInterrupt()
 }
