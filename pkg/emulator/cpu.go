@@ -386,9 +386,8 @@ func (cpu *CPU) exec() {
 			cpu.JP(operand1, operand2)
 			cycle = 0 // JPは内部でサイクルのインクリメントを行う
 		case INS_CALL:
-			if !cpu.CALL(operand1, operand2) {
-				cycle = cycle2
-			}
+			cpu.CALL(operand1, operand2)
+			cycle = 0 // CALLは内部でサイクルのインクリメントを行う
 		case INS_RET:
 			if !cpu.RET(operand1, operand2) {
 				cycle = cycle2

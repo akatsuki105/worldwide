@@ -768,49 +768,63 @@ func (cpu *CPU) CALL(operand1, operand2 int) (result bool) {
 
 	switch operand1 {
 	case OPERAND_a16:
-		destination := cpu.a16Fetch()
+		destination := cpu.a16FetchJP()
 		cpu.Reg.PC += 3
-		cpu.pushPC()
+		cpu.timer(1)
+		cpu.pushPCCALL()
+		cpu.timer(1)
 		cpu.Reg.PC = destination
 	case OPERAND_Z:
 		if cpu.getZFlag() {
-			destination := cpu.a16Fetch()
+			destination := cpu.a16FetchJP()
 			cpu.Reg.PC += 3
-			cpu.pushPC()
+			cpu.timer(1)
+			cpu.pushPCCALL()
+			cpu.timer(1)
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 			result = false
+			cpu.timer(3)
 		}
 	case OPERAND_C:
 		if cpu.getCFlag() {
-			destination := cpu.a16Fetch()
+			destination := cpu.a16FetchJP()
 			cpu.Reg.PC += 3
-			cpu.pushPC()
+			cpu.timer(1)
+			cpu.pushPCCALL()
+			cpu.timer(1)
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 			result = false
+			cpu.timer(3)
 		}
 	case OPERAND_NZ:
 		if !cpu.getZFlag() {
-			destination := cpu.a16Fetch()
+			destination := cpu.a16FetchJP()
 			cpu.Reg.PC += 3
-			cpu.pushPC()
+			cpu.timer(1)
+			cpu.pushPCCALL()
+			cpu.timer(1)
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 			result = false
+			cpu.timer(3)
 		}
 	case OPERAND_NC:
 		if !cpu.getCFlag() {
-			destination := cpu.a16Fetch()
+			destination := cpu.a16FetchJP()
 			cpu.Reg.PC += 3
-			cpu.pushPC()
+			cpu.timer(1)
+			cpu.pushPCCALL()
+			cpu.timer(1)
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
 			result = false
+			cpu.timer(3)
 		}
 	default:
 		errMsg := fmt.Sprintf("Error: CALL %s %s", operand1, operand2)

@@ -99,6 +99,15 @@ func (cpu *CPU) pushPC() {
 	cpu.push(lower)
 }
 
+func (cpu *CPU) pushPCCALL() {
+	upper := byte(cpu.Reg.PC >> 8)
+	cpu.timer(1) // M = 4: PC push: memory access for high byte
+	lower := byte(cpu.Reg.PC & 0x00ff)
+	cpu.timer(1) // M = 5: PC push: memory access for low byte
+	cpu.push(upper)
+	cpu.push(lower)
+}
+
 func (cpu *CPU) popPC() {
 	lower := uint16(cpu.pop())
 	upper := uint16(cpu.pop())
