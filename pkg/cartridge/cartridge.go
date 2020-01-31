@@ -1,16 +1,24 @@
 package cartridge
 
-// Cartridge ROMヘッダから得られたカードリッジ情報
+const (
+	ROM = iota
+	MBC1
+	MBC2
+	MBC3
+	MBC5
+)
+
+// Cartridge - ROMヘッダから得られたカードリッジ情報
 type Cartridge struct {
 	Title   string
 	IsCGB   bool // 0x80 or 0xc0 => ゲームボーイカラーで true
 	Type    uint8
 	ROMSize uint8
 	RAMSize uint8
-	MBC     string
+	MBC     int
 }
 
-// ParseCartridge カートリッジ情報を読み取る
+// ParseCartridge - カートリッジ情報を読み取る
 func (cart *Cartridge) ParseCartridge(rom *[]byte) {
 	var titleBuf []byte
 	for i := 0x0134; i < 0x0143; i++ {

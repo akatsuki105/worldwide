@@ -57,7 +57,6 @@ type CPU struct {
 
 	romdir string // ロムがあるところのディレクトリパス
 
-	inOAMDMA    bool
 	startOAMDMA uint16
 	ptrOAMDMA   uint16
 }
@@ -72,11 +71,11 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 	switch cpu.Cartridge.Type {
 	case 0x00:
 		// Type : 0
-		cpu.Cartridge.MBC = "ROM"
+		cpu.Cartridge.MBC = cartridge.ROM
 		cpu.transferROM(2, rom)
 	case 0x01:
 		// Type : 1 => MBC1
-		cpu.Cartridge.MBC = "MBC1"
+		cpu.Cartridge.MBC = cartridge.MBC1
 		switch cpu.Cartridge.ROMSize {
 		case 0:
 			cpu.transferROM(2, rom)
@@ -98,7 +97,7 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 		}
 	case 0x02, 0x03:
 		// Type : 2, 3 => MBC1+RAM
-		cpu.Cartridge.MBC = "MBC1"
+		cpu.Cartridge.MBC = cartridge.MBC1
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
 			switch cpu.Cartridge.ROMSize {
@@ -142,7 +141,7 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 		}
 	case 0x05, 0x06:
 		// Type : 5, 6 => MBC2
-		cpu.Cartridge.MBC = "MBC2"
+		cpu.Cartridge.MBC = cartridge.MBC2
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
 			switch cpu.Cartridge.ROMSize {
@@ -178,7 +177,7 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 		}
 	case 0x0f, 0x10, 0x11, 0x12, 0x13:
 		// Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
-		cpu.Cartridge.MBC = "MBC3"
+		cpu.Cartridge.MBC = cartridge.MBC3
 
 		cpu.RTC.Working = true
 
@@ -203,7 +202,7 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 		}
 	case 0x19, 0x1a, 0x1b:
 		// Type : 0x19, 0x1a, 0x1b => MBC5
-		cpu.Cartridge.MBC = "MBC5"
+		cpu.Cartridge.MBC = cartridge.MBC5
 		switch cpu.Cartridge.ROMSize {
 		case 0:
 			cpu.transferROM(2, rom)
@@ -365,7 +364,9 @@ func (cpu *CPU) exec() {
 		case INS_LDH:
 			cpu.LDH(operand1, operand2)
 		case INS_JR:
-			cycle = cpu.JR(operand1, operand2, cycle1, cycle2)
+			if !cpu.JR(operand1, operand2) {
+				cycle = cycle2
+			}
 		case INS_NOP:
 			cpu.NOP(operand1, operand2)
 		case INS_AND:
@@ -376,16 +377,22 @@ func (cpu *CPU) exec() {
 			cpu.DEC(operand1, operand2)
 		case INS_PUSH:
 			cpu.PUSH(operand1, operand2)
+			cycle = 0 // PUSH内部でサイクルのインクリメントを行う
 		case INS_POP:
 			cpu.POP(operand1, operand2)
 		case INS_XOR:
 			cpu.XOR(operand1, operand2)
 		case INS_JP:
-			cycle = cpu.JP(operand1, operand2, cycle1, cycle2)
+			cpu.JP(operand1, operand2)
+			cycle = 0 // JPは内部でサイクルのインクリメントを行う
 		case INS_CALL:
-			cycle = cpu.CALL(operand1, operand2, cycle1, cycle2)
+			if !cpu.CALL(operand1, operand2) {
+				cycle = cycle2
+			}
 		case INS_RET:
-			cycle = cpu.RET(operand1, operand2, cycle1, cycle2)
+			if !cpu.RET(operand1, operand2) {
+				cycle = cycle2
+			}
 		case INS_RETI:
 			cpu.RETI(operand1, operand2)
 		case INS_CP:
@@ -438,7 +445,7 @@ func (cpu *CPU) exec() {
 
 	cpu.mutex.Unlock()
 
-	cpu.timer(instruction, cycle)
+	cpu.timer(cycle)
 
 	cpu.handleInterrupt()
 }

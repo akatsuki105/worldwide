@@ -1,7 +1,14 @@
 package emulator
 
 func (cpu *CPU) push(b byte) {
-	cpu.SetMemory8(cpu.Reg.SP-1, b)
+	if cpu.ptrOAMDMA > 0 && cpu.ptrOAMDMA <= 160 {
+		addr := cpu.Reg.SP - 1
+		if addr >= 0xff80 && addr <= 0xfffe {
+			cpu.SetMemory8(cpu.Reg.SP-1, b)
+		}
+	} else {
+		cpu.SetMemory8(cpu.Reg.SP-1, b)
+	}
 	cpu.Reg.SP--
 }
 
@@ -15,8 +22,10 @@ func (cpu *CPU) pop() byte {
 
 func (cpu *CPU) pushAF() {
 	upper := byte(cpu.Reg.AF >> 8)
-	lower := byte(cpu.Reg.AF & 0x00f0)
 	cpu.push(upper)
+	cpu.timer(1)
+
+	lower := byte(cpu.Reg.AF & 0x00f0)
 	cpu.push(lower)
 }
 
@@ -31,8 +40,10 @@ func (cpu *CPU) popAF() {
 
 func (cpu *CPU) pushBC() {
 	upper := byte(cpu.Reg.BC >> 8)
-	lower := byte(cpu.Reg.BC & 0x00ff)
 	cpu.push(upper)
+	cpu.timer(1)
+
+	lower := byte(cpu.Reg.BC & 0x00ff)
 	cpu.push(lower)
 }
 
@@ -47,8 +58,10 @@ func (cpu *CPU) popBC() {
 
 func (cpu *CPU) pushDE() {
 	upper := byte(cpu.Reg.DE >> 8)
-	lower := byte(cpu.Reg.DE & 0x00ff)
 	cpu.push(upper)
+	cpu.timer(1)
+
+	lower := byte(cpu.Reg.DE & 0x00ff)
 	cpu.push(lower)
 }
 
@@ -63,8 +76,10 @@ func (cpu *CPU) popDE() {
 
 func (cpu *CPU) pushHL() {
 	upper := byte(cpu.Reg.HL >> 8)
-	lower := byte(cpu.Reg.HL & 0x00ff)
 	cpu.push(upper)
+	cpu.timer(1)
+
+	lower := byte(cpu.Reg.HL & 0x00ff)
 	cpu.push(lower)
 }
 

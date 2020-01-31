@@ -126,7 +126,7 @@ func (cpu *CPU) clearTimerFlag() {
 	cpu.SetMemory8(IFIO, IF)
 }
 
-func (cpu *CPU) timer(instruction int, cycle int) {
+func (cpu *CPU) timer(cycle int) {
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
@@ -196,14 +196,16 @@ func (cpu *CPU) timer(instruction int, cycle int) {
 	}
 
 	// OAMDMA
-	if cpu.inOAMDMA {
+	if cpu.ptrOAMDMA > 0 {
 		for i := 0; i < cycle; i++ {
-			if cpu.ptrOAMDMA <= 160 {
+			if cpu.ptrOAMDMA == 160 {
+				cpu.SetMemory8(0xfe00+uint16(cpu.ptrOAMDMA)-1, cpu.FetchMemory8(cpu.startOAMDMA+uint16(cpu.ptrOAMDMA)-1))
+				cpu.RAM[OAM] = 0xff
+			} else if cpu.ptrOAMDMA < 160 {
 				cpu.SetMemory8(0xfe00+uint16(cpu.ptrOAMDMA)-1, cpu.FetchMemory8(cpu.startOAMDMA+uint16(cpu.ptrOAMDMA)-1))
 			}
 			cpu.ptrOAMDMA--
 			if cpu.ptrOAMDMA == 0 {
-				cpu.inOAMDMA = false
 				break
 			}
 		}
@@ -298,7 +300,7 @@ func (cpu *CPU) clearJoypadFlag() {
 
 func (cpu *CPU) triggerInterrupt() {
 	cpu.halt = false
-	cpu.timer(INS_NONE, 5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
+	cpu.timer(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
 }
 
 func (cpu *CPU) triggerVBlank() {

@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"fmt"
+	"gbc/pkg/cartridge"
 )
 
 var done = make(chan int)
@@ -64,11 +65,12 @@ func (cpu *CPU) fetchIO(addr uint16) (value byte) {
 
 // SetMemory8 引数で指定したアドレスにvalueを書き込む
 func (cpu *CPU) SetMemory8(addr uint16, value byte) {
+
 	if addr <= 0x7fff {
 		// ROM領域
 		if (addr >= 0x2000) && (addr <= 0x3fff) {
 			switch cpu.Cartridge.MBC {
-			case "MBC1":
+			case cartridge.MBC1:
 				// ROMバンク下位5bit
 				if value == 0 {
 					value = 1
@@ -77,7 +79,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				lower5 := value
 				newROMBankPtr := (upper2 << 5) | lower5
 				cpu.switchROMBank(newROMBankPtr)
-			case "MBC3":
+			case cartridge.MBC3:
 				if cpu.GPU.HBlankDMALength == 0 {
 					newROMBankPtr := value & 0x7f
 					if newROMBankPtr == 0 {
@@ -85,7 +87,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 					}
 					cpu.switchROMBank(newROMBankPtr)
 				}
-			case "MBC5":
+			case cartridge.MBC5:
 				if addr < 0x3000 {
 					// 下位8bit
 					newROMBankPtr := value
@@ -97,7 +99,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 			}
 		} else if (addr >= 0x4000) && (addr <= 0x5fff) {
 			switch cpu.Cartridge.MBC {
-			case "MBC1":
+			case cartridge.MBC1:
 				// RAM バンク番号または、 ROM バンク番号の上位ビット
 				if cpu.bankMode == 0 {
 					// ROMptrの上位2bitの切り替え
@@ -110,7 +112,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 					newRAMBankPtr := value
 					cpu.RAMBankPtr = newRAMBankPtr
 				}
-			case "MBC3":
+			case cartridge.MBC3:
 				switch {
 				case value <= 0x07 && cpu.GPU.HBlankDMALength == 0:
 					cpu.RTC.Mapped = 0
@@ -118,18 +120,18 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				case value >= 0x08 && value <= 0x0c:
 					cpu.RTC.Mapped = uint(value)
 				}
-			case "MBC5":
+			case cartridge.MBC5:
 				// fmt.Println(value)
 				cpu.RAMBankPtr = value & 0x0f
 			}
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch cpu.Cartridge.MBC {
-			case "MBC1":
+			case cartridge.MBC1:
 				// ROM/RAM モード選択
 				if value == 1 || value == 0 {
 					cpu.bankMode = uint(value)
 				}
-			case "MBC3":
+			case cartridge.MBC3:
 				if value == 1 {
 					cpu.RTC.Latched = false
 				} else if value == 0 {
@@ -139,6 +141,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 			}
 		}
 	} else {
+
 		switch {
 		case addr >= 0x8000 && addr < 0xa000:
 			// VRAM
@@ -234,10 +237,8 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == DMAIO:
 		// DMA転送
 		start := uint16(cpu.getAReg()) << 8
-		cpu.inOAMDMA = true
 		cpu.startOAMDMA = start
 		cpu.ptrOAMDMA = 160 + 3 // 転送開始までにラグがある
-		cpu.RAM[OAM] = 0xff
 
 	case addr >= 0xff10 && addr <= 0xff26:
 		// サウンドアクセス
