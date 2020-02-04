@@ -380,14 +380,15 @@ func (cpu *CPU) exec() {
 			cycle = 0 // PUSH内部でサイクルのインクリメントを行う
 		case INS_POP:
 			cpu.POP(operand1, operand2)
+			cycle = 0 // POP内部でサイクルのインクリメントを行う
 		case INS_XOR:
 			cpu.XOR(operand1, operand2)
 		case INS_JP:
 			cpu.JP(operand1, operand2)
-			cycle = 0 // JPは内部でサイクルのインクリメントを行う
+			cycle = 0 // JP内部でサイクルのインクリメントを行う
 		case INS_CALL:
 			cpu.CALL(operand1, operand2)
-			cycle = 0 // CALLは内部でサイクルのインクリメントを行う
+			cycle = 0 // CALL内部でサイクルのインクリメントを行う
 		case INS_RET:
 			if !cpu.RET(operand1, operand2) {
 				cycle = cycle2

@@ -142,6 +142,13 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 		}
 	} else {
 
+		// OAMDMA中はCPUは0xff80-0xfffeのみアクセス可能
+		if addr < 0xff80 || addr > 0xfffe {
+			if cpu.ptrOAMDMA > 0 && cpu.ptrOAMDMA <= 160 {
+				return
+			}
+		}
+
 		switch {
 		case addr >= 0x8000 && addr < 0xa000:
 			// VRAM
@@ -233,6 +240,9 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == DIVIO:
 		cpu.RAM[DIVIO] = 0
 		cpu.cycleDIV = 0
+
+	case addr == IFIO:
+		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7]は常に1
 
 	case addr == DMAIO:
 		// DMA転送

@@ -2170,6 +2170,7 @@ func (cpu *CPU) POP(operand1, operand2 int) {
 		panic(errMsg)
 	}
 	cpu.Reg.PC++
+	cpu.timer(2)
 }
 
 // SUB 減算

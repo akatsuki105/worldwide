@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"bytes"
+	"gbc/pkg/joypad"
 	"image/png"
 	"sync"
 	"time"
@@ -187,26 +188,26 @@ func (cpu *CPU) Render() {
 
 		if frames%3 == 0 {
 			result := cpu.joypad.Input(win)
-			if result != "" {
+			if result != 0 {
 				switch result {
-				case "pressed":
+				case joypad.Pressed:
 					// Joypad Interrupt
 					if cpu.Reg.IME && cpu.getJoypadEnable() {
 						cpu.triggerJoypad()
 					}
-				case "save":
+				case joypad.Save:
 					cpu.Sound.Off()
 					cpu.dumpData()
 					cpu.Sound.On()
-				case "load":
+				case joypad.Load:
 					cpu.Sound.Off()
 					cpu.loadData()
 					cpu.Sound.On()
-				case "expand":
+				case joypad.Expand:
 					cpu.expand *= 2
 					time.Sleep(time.Millisecond * 400)
 					win.SetBounds(pixel.R(0, 0, float64(width*cpu.expand), float64(height*cpu.expand)))
-				case "collapse":
+				case joypad.Collapse:
 					if cpu.expand >= 2 {
 						cpu.expand /= 2
 						time.Sleep(time.Millisecond * 400)

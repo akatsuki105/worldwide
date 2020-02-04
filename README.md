@@ -9,10 +9,10 @@ GameBoyColor emulator written in golang.
 Almost all ROMs work without problems, and have a wide range of functions, including sound, save, and some communication functions. 
 
 
-<img src="https://imgur.com/UnmQnVE.gif" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/cFugCTA.gif" width="320" height="288">
+<img src="https://imgur.com/UnmQnVE.gif" width="320" height="288" style="border-radius:6px;box-shadow:2px 3px 6px 3px #000000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/cFugCTA.gif" width="320" height="288" style="border-radius:6px;box-shadow:2px 3px 6px 3px #000000;">
 
 
-<img src="https://imgur.com/8YR987D.png" width="320" height="288">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/2zwsb84.png" width="320" height="288">
+<img src="https://imgur.com/8YR987D.png" width="320" height="288" style="border-radius:6px;box-shadow:2px 3px 6px 3px #000000;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://imgur.com/2zwsb84.png" width="320" height="288" style="border-radius:6px;box-shadow:2px 3px 6px 3px #000000;">
 
 ## Features & TODO list
 - [x] 60fps

@@ -1,14 +1,7 @@
 package emulator
 
 func (cpu *CPU) push(b byte) {
-	if cpu.ptrOAMDMA > 0 && cpu.ptrOAMDMA <= 160 {
-		addr := cpu.Reg.SP - 1
-		if addr >= 0xff80 && addr <= 0xfffe {
-			cpu.SetMemory8(cpu.Reg.SP-1, b)
-		}
-	} else {
-		cpu.SetMemory8(cpu.Reg.SP-1, b)
-	}
+	cpu.SetMemory8(cpu.Reg.SP-1, b)
 	cpu.Reg.SP--
 }
 
@@ -31,6 +24,7 @@ func (cpu *CPU) pushAF() {
 
 func (cpu *CPU) popAF() {
 	lower := uint16(cpu.pop() & 0xf0)
+	cpu.timer(1)
 	upper := uint16(cpu.pop())
 	AF := (upper << 8) | lower
 	cpu.Reg.AF = AF
@@ -49,6 +43,7 @@ func (cpu *CPU) pushBC() {
 
 func (cpu *CPU) popBC() {
 	lower := uint16(cpu.pop())
+	cpu.timer(1)
 	upper := uint16(cpu.pop())
 	BC := (upper << 8) | lower
 	cpu.Reg.BC = BC
@@ -58,8 +53,8 @@ func (cpu *CPU) popBC() {
 
 func (cpu *CPU) pushDE() {
 	upper := byte(cpu.Reg.DE >> 8)
-	cpu.push(upper)
-	cpu.timer(1)
+	cpu.push(upper) // まだOAMDMA中なのでここでのアクセスは弾かれる https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/push_timing.s
+	cpu.timer(1)    // OAMDMAが終わる
 
 	lower := byte(cpu.Reg.DE & 0x00ff)
 	cpu.push(lower)
@@ -67,6 +62,7 @@ func (cpu *CPU) pushDE() {
 
 func (cpu *CPU) popDE() {
 	lower := uint16(cpu.pop())
+	cpu.timer(1)
 	upper := uint16(cpu.pop())
 	DE := (upper << 8) | lower
 	cpu.Reg.DE = DE
@@ -85,6 +81,7 @@ func (cpu *CPU) pushHL() {
 
 func (cpu *CPU) popHL() {
 	lower := uint16(cpu.pop())
+	cpu.timer(1)
 	upper := uint16(cpu.pop())
 	HL := (upper << 8) | lower
 	cpu.Reg.HL = HL
@@ -101,11 +98,11 @@ func (cpu *CPU) pushPC() {
 
 func (cpu *CPU) pushPCCALL() {
 	upper := byte(cpu.Reg.PC >> 8)
+	cpu.push(upper)
 	cpu.timer(1) // M = 4: PC push: memory access for high byte
 	lower := byte(cpu.Reg.PC & 0x00ff)
-	cpu.timer(1) // M = 5: PC push: memory access for low byte
-	cpu.push(upper)
 	cpu.push(lower)
+	cpu.timer(1) // M = 5: PC push: memory access for low byte
 }
 
 func (cpu *CPU) popPC() {

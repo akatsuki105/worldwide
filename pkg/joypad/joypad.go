@@ -19,6 +19,14 @@ const (
 	player0 = 0
 )
 
+const (
+	Pressed = iota + 1
+	Save
+	Load
+	Expand
+	Collapse
+)
+
 var Xbox360Controller map[string]int = map[string]int{"A": 1, "B": 0, "Start": 7, "Select": 6, "Horizontal": 0, "Vertical": 1}
 var LogitechGamepadF310 map[string]int = map[string]int{"A": 1, "B": 0, "Start": 8, "Select": 7, "Horizontal": 0, "Vertical": 1}
 var HORIPAD map[string]int = map[string]int{"A": 2, "B": 1, "Start": 3, "Select": 0, "Horizontal": 0, "Vertical": 1}
@@ -44,13 +52,13 @@ func (pad *Joypad) Output() byte {
 }
 
 // Input ジョイパッド入力処理
-func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
+func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	joystickName := win.JoystickName(player0)
 
 	// A
 	if btnA(win, joystickName) {
 		pad.Button[0] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Button[0] = false
 	}
@@ -58,7 +66,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// B
 	if btnB(win, joystickName) {
 		pad.Button[1] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Button[1] = false
 	}
@@ -66,7 +74,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// select
 	if btnSelect(win, joystickName) {
 		pad.Button[2] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Button[2] = false
 	}
@@ -74,7 +82,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// start
 	if btnStart(win, joystickName) {
 		pad.Button[3] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Button[3] = false
 	}
@@ -82,7 +90,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// 右
 	if keyRight(win, joystickName) {
 		pad.Direction[0] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Direction[0] = false
 	}
@@ -90,7 +98,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// 左
 	if keyLeft(win, joystickName) {
 		pad.Direction[1] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Direction[1] = false
 	}
@@ -98,7 +106,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// 上
 	if keyUp(win, joystickName) {
 		pad.Direction[2] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Direction[2] = false
 	}
@@ -106,24 +114,24 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result string) {
 	// 下
 	if keyDown(win, joystickName) {
 		pad.Direction[3] = true
-		result = "pressed"
+		result = Pressed
 	} else {
 		pad.Direction[3] = false
 	}
 
 	if btnSaveData(win, joystickName) {
-		result = "save"
+		result = Save
 	}
 	if btnLoadData(win, joystickName) {
-		result = "load"
+		result = Load
 	}
 
 	// expand
 	if btnExpandDisplay(win, joystickName) {
-		result = "expand"
+		result = Expand
 	}
 	if btnCollapseDisplay(win, joystickName) {
-		result = "collapse"
+		result = Collapse
 	}
 
 	return result

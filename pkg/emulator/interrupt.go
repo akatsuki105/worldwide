@@ -199,10 +199,10 @@ func (cpu *CPU) timer(cycle int) {
 	if cpu.ptrOAMDMA > 0 {
 		for i := 0; i < cycle; i++ {
 			if cpu.ptrOAMDMA == 160 {
-				cpu.SetMemory8(0xfe00+uint16(cpu.ptrOAMDMA)-1, cpu.FetchMemory8(cpu.startOAMDMA+uint16(cpu.ptrOAMDMA)-1))
+				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
 				cpu.RAM[OAM] = 0xff
 			} else if cpu.ptrOAMDMA < 160 {
-				cpu.SetMemory8(0xfe00+uint16(cpu.ptrOAMDMA)-1, cpu.FetchMemory8(cpu.startOAMDMA+uint16(cpu.ptrOAMDMA)-1))
+				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
 			}
 			cpu.ptrOAMDMA--
 			if cpu.ptrOAMDMA == 0 {
