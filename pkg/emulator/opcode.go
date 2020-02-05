@@ -839,6 +839,9 @@ func (cpu *CPU) DI(operand1, operand2 int) {
 	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
 		cpu.Reg.IME = false
 		cpu.Reg.PC++
+		if cpu.IMESwitch.Working && cpu.IMESwitch.Value {
+			cpu.IMESwitch.Working = false // https://gbdev.gg8.se/wiki/articles/Interrupts 『The effect of EI is delayed by one instruction. This means that EI followed immediately by DI does not allow interrupts between the EI and the DI.』
+		}
 	} else {
 		errMsg := fmt.Sprintf("Error: DI %s %s", operand1, operand2)
 		panic(errMsg)
@@ -847,13 +850,14 @@ func (cpu *CPU) DI(operand1, operand2 int) {
 
 // EI Enable Interrupt
 func (cpu *CPU) EI(operand1, operand2 int) {
-	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
-		cpu.Reg.IME = true
-		cpu.Reg.PC++
-	} else {
-		errMsg := fmt.Sprintf("Error: EI %s %s", operand1, operand2)
-		panic(errMsg)
+	if !cpu.IMESwitch.Working {
+		cpu.IMESwitch = IMESwitch{
+			Count:   2,
+			Value:   true,
+			Working: true,
+		}
 	}
+	cpu.Reg.PC++
 }
 
 // CP Compare
@@ -1149,8 +1153,9 @@ func (cpu *CPU) CPL(operand1, operand2 int) {
 func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
 	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
 		cpu.Reg.PC++
+		cpu.timer(1)
 		opcode := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
-		instruction, operand1, operand2 := opcode.Ins, opcode.Operand1, opcode.Operand2
+		instruction, operand1, operand2, cycle := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1
 
 		// cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
 
@@ -1181,6 +1186,8 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
 			errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
 			panic(errMsg)
 		}
+
+		cpu.timer(cycle)
 	} else {
 		errMsg := fmt.Sprintf("Error: PREFIXCB %s %s", operand1, operand2)
 		panic(errMsg)

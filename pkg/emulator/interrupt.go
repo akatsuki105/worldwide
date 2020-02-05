@@ -1,5 +1,12 @@
 package emulator
 
+// IMESwitch - ${Count}サイクル後にIMEを${Value}の値に切り替える ${Working}=falseのときは無効
+type IMESwitch struct {
+	Count   uint
+	Value   bool
+	Working bool
+}
+
 // ------------ VBlank --------------------
 
 func (cpu *CPU) getVBlankEnable() bool {
@@ -33,8 +40,7 @@ func (cpu *CPU) getVBlankFlag() bool {
 func (cpu *CPU) setVBlankFlag() {
 	IF := cpu.FetchMemory8(IFIO) | 0x01
 	cpu.SetMemory8(IFIO, IF)
-
-	cpu.triggerInterrupt()
+	cpu.halt = false
 }
 
 func (cpu *CPU) clearVBlankFlag() {
@@ -75,8 +81,7 @@ func (cpu *CPU) getLCDSTATFlag() bool {
 func (cpu *CPU) setLCDSTATFlag() {
 	IF := cpu.FetchMemory8(IFIO) | 0x02
 	cpu.SetMemory8(IFIO, IF)
-
-	cpu.triggerInterrupt()
+	cpu.halt = false
 }
 
 func (cpu *CPU) clearLCDSTATFlag() {
@@ -117,8 +122,7 @@ func (cpu *CPU) getTimerFlag() bool {
 func (cpu *CPU) setTimerFlag() {
 	IF := cpu.FetchMemory8(IFIO) | 0x04
 	cpu.SetMemory8(IFIO, IF)
-
-	cpu.triggerInterrupt()
+	cpu.halt = false
 }
 
 func (cpu *CPU) clearTimerFlag() {
@@ -127,9 +131,26 @@ func (cpu *CPU) clearTimerFlag() {
 }
 
 func (cpu *CPU) timer(cycle int) {
+	if cycle == 0 {
+		return
+	}
+
 	TAC := cpu.FetchMemory8(TACIO)
 	tickFlag := false
 
+	// DI,EIの遅延処理
+	if cpu.IMESwitch.Working {
+		for i := 0; i < cycle; i++ {
+			cpu.IMESwitch.Count--
+			if cpu.IMESwitch.Count == 0 {
+				cpu.Reg.IME = cpu.IMESwitch.Value
+				cpu.IMESwitch.Working = false
+				break
+			}
+		}
+	}
+
+	// シリアル通信のクロック管理
 	if cpu.network && cpu.Serial.TransferFlag > 0 {
 		cpu.cycleSerial += cycle
 		if cpu.cycleSerial > 128*8 {
@@ -185,11 +206,7 @@ func (cpu *CPU) timer(cycle int) {
 			// オーバーフローしたとき
 			TIMAAfter = uint8(cpu.FetchMemory8(TMAIO))
 			cpu.RAM[TIMAIO] = TIMAAfter
-			if cpu.Reg.IME && cpu.getTimerEnable() {
-				cpu.triggerTimer()
-			} else {
-				cpu.setTimerFlag()
-			}
+			cpu.setTimerFlag()
 		} else {
 			cpu.RAM[TIMAIO] = TIMAAfter
 		}
@@ -245,8 +262,7 @@ func (cpu *CPU) getSerialFlag() bool {
 func (cpu *CPU) setSerialFlag() {
 	IF := cpu.FetchMemory8(IFIO) | 0x08
 	cpu.SetMemory8(IFIO, IF)
-
-	cpu.triggerInterrupt()
+	cpu.halt = false
 }
 
 func (cpu *CPU) clearSerialFlag() {
@@ -287,8 +303,7 @@ func (cpu *CPU) getJoypadFlag() bool {
 func (cpu *CPU) setJoypadFlag() {
 	IF := cpu.FetchMemory8(IFIO) | 0x10
 	cpu.SetMemory8(IFIO, IF)
-
-	cpu.triggerInterrupt()
+	cpu.halt = false
 }
 
 func (cpu *CPU) clearJoypadFlag() {
@@ -299,71 +314,43 @@ func (cpu *CPU) clearJoypadFlag() {
 // ------------ trigger --------------------
 
 func (cpu *CPU) triggerInterrupt() {
+	cpu.Reg.IME = false
 	cpu.halt = false
 	cpu.timer(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
+	cpu.pushPC()
 }
 
 func (cpu *CPU) triggerVBlank() {
 	LCDActive := (cpu.FetchMemory8(LCDCIO) >> 7) == 1
 	if LCDActive {
-		cpu.mutex.Lock()
-		cpu.triggerInterrupt()
-
-		cpu.pushPC()
 		cpu.clearVBlankFlag()
-		cpu.Reg.IME = false
+		cpu.triggerInterrupt()
 		cpu.Reg.PC = 0x0040
-
-		cpu.mutex.Unlock()
 	}
 }
 
 func (cpu *CPU) triggerLCDC() {
-	cpu.mutex.Lock()
-	cpu.triggerInterrupt()
-
-	cpu.pushPC()
 	cpu.clearLCDSTATFlag()
-	cpu.Reg.IME = false
+	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0048
-
-	cpu.mutex.Unlock()
 }
 
 func (cpu *CPU) triggerTimer() {
-	cpu.mutex.Lock()
-	cpu.triggerInterrupt()
-
-	cpu.pushPC()
 	cpu.clearTimerFlag()
-	cpu.Reg.IME = false
+	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0050
-
-	cpu.mutex.Unlock()
 }
 
 func (cpu *CPU) triggerSerial() {
-	cpu.mutex.Lock()
-	cpu.triggerInterrupt()
-
-	cpu.pushPC()
 	cpu.clearSerialFlag()
-	cpu.Reg.IME = false
+	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0058
-
-	cpu.mutex.Unlock()
 }
 
 func (cpu *CPU) triggerJoypad() {
-	cpu.mutex.Lock()
-	cpu.triggerInterrupt()
-
-	cpu.pushPC()
 	cpu.clearJoypadFlag()
-	cpu.Reg.IME = false
+	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0060
-
-	cpu.mutex.Unlock()
 }
 
 // ------------ handler --------------------

@@ -193,7 +193,7 @@ func (cpu *CPU) Render() {
 				case joypad.Pressed:
 					// Joypad Interrupt
 					if cpu.Reg.IME && cpu.getJoypadEnable() {
-						cpu.triggerJoypad()
+						cpu.setJoypadFlag()
 					}
 				case joypad.Save:
 					cpu.Sound.Off()

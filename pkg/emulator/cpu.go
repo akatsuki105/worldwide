@@ -59,6 +59,7 @@ type CPU struct {
 
 	startOAMDMA uint16
 	ptrOAMDMA   uint16
+	IMESwitch
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -411,6 +412,7 @@ func (cpu *CPU) exec() {
 			cpu.CPL(operand1, operand2)
 		case INS_PREFIX:
 			cpu.PREFIXCB(operand1, operand2)
+			cycle = 0 // PREFIXCB内部でサイクルのインクリメントを行う
 		case INS_RRA:
 			cpu.RRA(operand1, operand2)
 		case INS_DAA:
