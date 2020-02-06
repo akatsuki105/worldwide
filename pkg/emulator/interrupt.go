@@ -170,7 +170,7 @@ func (cpu *CPU) timer(cycle int) {
 	cpu.cycleDIV += cycle
 	if cpu.cycleDIV >= 64*cpu.boost {
 		cpu.RAM[DIVIO]++
-		cpu.cycleDIV = 0
+		cpu.cycleDIV -= 64
 	}
 
 	if (TAC>>2)%2 == 1 {
@@ -178,22 +178,22 @@ func (cpu *CPU) timer(cycle int) {
 		switch TAC % 4 {
 		case 0:
 			if cpu.cycle >= 256 {
-				cpu.cycle = 0
+				cpu.cycle -= 256
 				tickFlag = true
 			}
 		case 1:
 			if cpu.cycle >= 4 {
-				cpu.cycle = 0
+				cpu.cycle -= 4
 				tickFlag = true
 			}
 		case 2:
 			if cpu.cycle >= 12 {
-				cpu.cycle = 0
+				cpu.cycle -= 12
 				tickFlag = true
 			}
 		case 3:
 			if cpu.cycle >= 64 {
-				cpu.cycle = 0
+				cpu.cycle -= 64
 				tickFlag = true
 			}
 		}

@@ -1157,8 +1157,6 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
 		opcode := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
 		instruction, operand1, operand2, cycle := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1
 
-		// cpu.pushHistory(cpu.Reg.PC, opcode, instruction, operand1, operand2)
-
 		switch instruction {
 		case INS_RLC:
 			cpu.RLC(operand1, operand2)
@@ -1187,7 +1185,7 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
 			panic(errMsg)
 		}
 
-		cpu.timer(cycle)
+		cpu.timer(cycle - 1)
 	} else {
 		errMsg := fmt.Sprintf("Error: PREFIXCB %s %s", operand1, operand2)
 		panic(errMsg)

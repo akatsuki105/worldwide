@@ -21,6 +21,10 @@ func main() {
 
 // Run - エミュレータを実行する
 func Run() int {
+	var (
+		debug = flag.Bool("debug", false, "enable debug mode")
+	)
+
 	flag.Parse()
 	fp := flag.Arg(0)
 	cur, _ := os.Getwd()
@@ -47,13 +51,11 @@ func Run() int {
 	cpu.TransferROM(&romData)
 
 	os.Chdir(cur)
-	cpu.Init(romDir)
+	cpu.Init(romDir, *debug)
 	defer func() {
 		os.Chdir(cur)
 		cpu.Exit()
 	}()
-
-	// go cpu.Debug(2)
 
 	pixelgl.Run(cpu.Render)
 	return 0

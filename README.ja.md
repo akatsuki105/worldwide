@@ -10,7 +10,7 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 
 ## このエミュレータの特徴 & 今後実装予定の機能
 - [x] 60fpsで動作
-- [x] [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) というテストROMをクリアしています
+- [x] [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) と [instr_timing](https://github.com/retrio/gb-test-roms/tree/master/instr_timing)というテストROMをクリアしています
 - [x] 少ないCPU使用率
 - [x] サウンドの実装
 - [x] ゲームボーイカラーのソフトに対応
@@ -21,7 +21,7 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 - [x] MBC2に対応
 - [x] MBC3に対応
 - [x] MBC5に対応
-- [x] RTCも実装しています
+- [x] RTCの実装
 - [x] セーブ機能をサポート(得られたsavファイルは実機やBGBなどの一般的なエミュレータで利用できます)
 - [x] クイックセーブのサポート
 - [x] ウィンドウの縮小拡大が可能
@@ -38,8 +38,9 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 
 - go 1.13 以上で動作します。
 
-```
+```sh
 go run ./cmd/main.go "xxx.gb"
+go run ./cmd/main.go --debug "xxx.gb" // debug mode
 ```
 
 ## ダウンロード

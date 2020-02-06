@@ -13,9 +13,9 @@ Almost all ROMs work without problems, and have a wide range of functions, inclu
 
 ## Features & TODO list
 - [x] 60fps
-- [x] [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) is clear
+- [x] pass [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) and [instr_timing](https://github.com/retrio/gb-test-roms/tree/master/instr_timing)
 - [x] Low CPU consumption
-- [x] Sound(thank to goboy)
+- [x] Sound(ported from goboy)
 - [x] GameBoy Color ROM support
 - [x] Multi-platform support
 - [x] Xbox 360 Controller support
@@ -41,8 +41,9 @@ Almost all ROMs work without problems, and have a wide range of functions, inclu
 
 - go 1.13
 
-```
+```sh
 go run ./cmd/main.go "xxx.gb"
+go run ./cmd/main.go --debug "xxx.gb" // debug mode
 ```
 
 ## Download

@@ -2,12 +2,10 @@ package emulator
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 )
 
 var (
-	maxHistory = 256
+	maxHistory = 128
 
 	insCounter map[string]uint = map[string]uint{}
 	opCounter  map[string]uint = map[string]uint{}
@@ -52,8 +50,9 @@ func writeInsCounter() {
 }
 
 // pushHistory CPUのログを追加する
-func (cpu *CPU) pushHistory(eip uint16, opcode byte, instruction, operand1, operand2 string) {
-	log := fmt.Sprintf("eip:0x%04x   opcode:%02x   %s %s,%s", eip, opcode, instruction, operand1, operand2)
+func (cpu *CPU) pushHistory(eip uint16, opcode byte) {
+	instruction, operand1, operand2 := opcodeToString[opcode][0], opcodeToString[opcode][1], opcodeToString[opcode][2]
+	log := fmt.Sprintf("eip:0x%04x   opcode:%02x	%s %s %s", eip, opcode, instruction, operand1, operand2)
 
 	cpu.history = append(cpu.history, log)
 
@@ -67,30 +66,6 @@ func (cpu *CPU) writeHistory() {
 	for i, log := range cpu.history {
 		fmt.Printf("%d: %s\n", i, log)
 	}
-}
-
-// Debug Ctrl + C handler
-func (cpu *CPU) Debug(mode int) {
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
-
-	<-quit
-
-	switch mode {
-	case 0:
-	case 1:
-		println("\n ============== Debug mode ==============\n")
-		cpu.writeHistory()
-	case 2:
-		cpu.mutex.Lock()
-		println("\n ============== Opcode counter ==============\n")
-		writeOpCounter()
-		println("\n ============== Instruction counter ==============\n")
-		writeInsCounter()
-		cpu.mutex.Unlock()
-	}
-
-	os.Exit(1)
 }
 
 func (cpu *CPU) exit(message string, breakPoint uint16) {
@@ -109,4 +84,17 @@ func (cpu *CPU) debugPC(delta int) {
 		fmt.Printf("%02x ", cpu.RAM[cpu.Reg.PC+uint16(i)])
 	}
 	fmt.Println()
+}
+
+func (cpu *CPU) dumpRegister() {
+	A, F := byte(cpu.Reg.AF>>8), byte(cpu.Reg.AF)
+	B, C := byte(cpu.Reg.BC>>8), byte(cpu.Reg.BC)
+	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
+	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
+
+	fmt.Println("-- register --")
+	fmt.Printf("A: %02x    F: %02x\n", A, F)
+	fmt.Printf("B: %02x    C: %02x\n", B, C)
+	fmt.Printf("D: %02x    E: %02x\n", D, E)
+	fmt.Printf("H: %02x    L: %02x\n", H, L)
 }

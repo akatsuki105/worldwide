@@ -60,6 +60,7 @@ type CPU struct {
 	startOAMDMA uint16
 	ptrOAMDMA   uint16
 	IMESwitch
+	debug bool // デバッグモードかどうか
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -240,7 +241,7 @@ func (cpu *CPU) transferROM(bankNum int, rom *[]byte) {
 }
 
 // Init CPU・メモリの初期化
-func (cpu *CPU) Init(romdir string) {
+func (cpu *CPU) Init(romdir string, debug bool) {
 	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
 	cpu.Reg.BC = 0x0013
 	cpu.Reg.DE = 0x00d8
@@ -341,12 +342,20 @@ func (cpu *CPU) Init(romdir string) {
 
 	// Init RTC
 	go cpu.RTC.Init()
+
+	cpu.debug = debug
 }
 
 // Exit 後始末を行う
 func (cpu *CPU) Exit() {
 	cpu.save()
 	cpu.Serial.Exit()
+
+	if cpu.debug {
+		cpu.writeHistory()
+		fmt.Println()
+		cpu.dumpRegister()
+	}
 }
 
 // Exec 1サイクル
@@ -357,6 +366,10 @@ func (cpu *CPU) exec() {
 	cycle := cycle1
 
 	if !cpu.halt {
+		if cpu.debug {
+			cpu.pushHistory(cpu.Reg.PC, cpu.FetchMemory8(cpu.Reg.PC))
+		}
+
 		switch instruction {
 		case INS_HALT:
 			cpu.HALT(operand1, operand2)
