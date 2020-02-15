@@ -75,9 +75,8 @@ func (cpu *CPU) compareLYC(LY uint8) {
 		STAT := cpu.FetchMemory8(LCDSTATIO) | 0x04
 		cpu.SetMemory8(LCDSTATIO, STAT)
 
-		enable := cpu.getLCDSTATEnable()
-		if enable && (STAT>>6)&0x01 == 1 {
-			cpu.triggerLCDC()
+		if (STAT>>6)&0x01 == 1 {
+			cpu.setLCDSTATFlag()
 		}
 	}
 }

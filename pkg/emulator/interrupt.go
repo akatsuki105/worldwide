@@ -135,7 +135,7 @@ func (cpu *CPU) timer(cycle int) {
 		return
 	}
 
-	TAC := cpu.FetchMemory8(TACIO)
+	TAC := cpu.RAM[TACIO]
 	tickFlag := false
 
 	// DI,EIの遅延処理
@@ -200,11 +200,11 @@ func (cpu *CPU) timer(cycle int) {
 	}
 
 	if tickFlag {
-		TIMABefore := uint8(cpu.FetchMemory8(TIMAIO))
+		TIMABefore := cpu.RAM[TIMAIO]
 		TIMAAfter := TIMABefore + 1
 		if TIMAAfter < TIMABefore {
 			// オーバーフローしたとき
-			TIMAAfter = uint8(cpu.FetchMemory8(TMAIO))
+			TIMAAfter = uint8(cpu.RAM[TMAIO])
 			cpu.RAM[TIMAIO] = TIMAAfter
 			cpu.setTimerFlag()
 		} else {
@@ -214,7 +214,7 @@ func (cpu *CPU) timer(cycle int) {
 
 	// OAMDMA
 	if cpu.ptrOAMDMA > 0 {
-		for i := 0; i < cycle; i++ {
+		for i := 0; i < cycle*cpu.boost; i++ {
 			if cpu.ptrOAMDMA == 160 {
 				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
 				cpu.RAM[OAM] = 0xff

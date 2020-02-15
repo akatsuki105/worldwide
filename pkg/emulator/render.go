@@ -84,27 +84,29 @@ func (cpu *CPU) Render() {
 		for y := 0; y < iterY; y++ {
 
 			scrollX, scrollY = cpu.GPU.ReadScroll()
-			scrollTileX = scrollX / 8
-			scrollPixelX = scrollX % 8
-			scrollTileY = scrollY / 8
-			scrollPixelY = scrollY % 8
+			scrollTileX, scrollPixelX = scrollX/8, scrollX%8
+			scrollTileY, scrollPixelY = scrollY/8, scrollY%8
 
 			if y < height {
-				cpu.cycleLine = 0
-				// HBlank mode0
+
 				// OAM mode2
+				cpu.cycleLine = 0
 				cpu.setOAMRAMMode()
-				for cpu.cycleLine < 20 {
+				for cpu.cycleLine <= 20*cpu.boost {
 					cpu.exec()
 				}
+
 				// LCD Driver mode3
+				cpu.cycleLine = 0
 				cpu.setLCDMode()
-				for cpu.cycleLine < 20+43 {
+				for cpu.cycleLine <= 42*cpu.boost {
 					cpu.exec()
 				}
+
 				// HBlank mode0
+				cpu.cycleLine = 0
 				cpu.setHBlankMode()
-				for cpu.cycleLine < cyclePerLine*cpu.boost {
+				for cpu.cycleLine <= (cyclePerLine-(20+42))*cpu.boost {
 					cpu.exec()
 				}
 				cpu.incrementLY()
@@ -124,7 +126,7 @@ func (cpu *CPU) Render() {
 				var entryX, entryY int
 
 				if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
-					tileX = (uint(x) - WX) / 8 % 32
+					tileX = ((uint(x) - WX) / 8) % 32
 					tileY = ((uint(y) - WY) / 8) % 32
 					useWindow = true
 

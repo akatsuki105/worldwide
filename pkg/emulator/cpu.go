@@ -454,6 +454,8 @@ func (cpu *CPU) exec() {
 			errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
 			panic(errMsg)
 		}
+	} else {
+		cycle = 1
 	}
 
 	// incrementDebugCounter(instruction, operand1, operand2)
