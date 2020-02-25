@@ -168,7 +168,7 @@ func (cpu *CPU) timer(cycle int) {
 
 	// DIVレジスタ
 	cpu.cycleDIV += cycle
-	if cpu.cycleDIV >= 64*cpu.boost {
+	if cpu.cycleDIV >= 64 {
 		cpu.RAM[DIVIO]++
 		cpu.cycleDIV -= 64
 	}
@@ -214,7 +214,7 @@ func (cpu *CPU) timer(cycle int) {
 
 	// OAMDMA
 	if cpu.ptrOAMDMA > 0 {
-		for i := 0; i < cycle*cpu.boost; i++ {
+		for i := 0; i < cycle; i++ {
 			if cpu.ptrOAMDMA == 160 {
 				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
 				cpu.RAM[OAM] = 0xff

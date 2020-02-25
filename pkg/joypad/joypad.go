@@ -1,7 +1,7 @@
 package joypad
 
 import (
-	"github.com/faiface/pixel/pixelgl"
+	"github.com/hajimehoshi/ebiten"
 )
 
 // Joypad Joypadの入力を管理する
@@ -14,10 +14,6 @@ type Joypad struct {
 type keyList struct {
 	A, B, Start, Select, Horizontal, Vertical, Expand, Collapse uint
 }
-
-const (
-	player0 = 0
-)
 
 const (
 	Pressed = iota + 1
@@ -52,11 +48,10 @@ func (pad *Joypad) Output() byte {
 }
 
 // Input ジョイパッド入力処理
-func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
-	joystickName := win.JoystickName(player0)
+func (pad *Joypad) Input() (result int) {
 
 	// A
-	if btnA(win, joystickName) {
+	if btnA() {
 		pad.Button[0] = true
 		result = Pressed
 	} else {
@@ -64,7 +59,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// B
-	if btnB(win, joystickName) {
+	if btnB() {
 		pad.Button[1] = true
 		result = Pressed
 	} else {
@@ -72,7 +67,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// select
-	if btnSelect(win, joystickName) {
+	if btnSelect() {
 		pad.Button[2] = true
 		result = Pressed
 	} else {
@@ -80,7 +75,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// start
-	if btnStart(win, joystickName) {
+	if btnStart() {
 		pad.Button[3] = true
 		result = Pressed
 	} else {
@@ -88,7 +83,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// 右
-	if keyRight(win, joystickName) {
+	if keyRight() {
 		pad.Direction[0] = true
 		result = Pressed
 	} else {
@@ -96,7 +91,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// 左
-	if keyLeft(win, joystickName) {
+	if keyLeft() {
 		pad.Direction[1] = true
 		result = Pressed
 	} else {
@@ -104,7 +99,7 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// 上
-	if keyUp(win, joystickName) {
+	if keyUp() {
 		pad.Direction[2] = true
 		result = Pressed
 	} else {
@@ -112,25 +107,25 @@ func (pad *Joypad) Input(win *pixelgl.Window) (result int) {
 	}
 
 	// 下
-	if keyDown(win, joystickName) {
+	if keyDown() {
 		pad.Direction[3] = true
 		result = Pressed
 	} else {
 		pad.Direction[3] = false
 	}
 
-	if btnSaveData(win, joystickName) {
+	if btnSaveData() {
 		result = Save
 	}
-	if btnLoadData(win, joystickName) {
+	if btnLoadData() {
 		result = Load
 	}
 
 	// expand
-	if btnExpandDisplay(win, joystickName) {
+	if btnExpandDisplay() {
 		result = Expand
 	}
-	if btnCollapseDisplay(win, joystickName) {
+	if btnCollapseDisplay() {
 		result = Collapse
 	}
 
@@ -153,128 +148,50 @@ func (pad *Joypad) getP15() bool {
 	return false
 }
 
-func btnA(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickPressed(player0, Xbox360Controller["A"])
-	case "Logitech Gamepad F310":
-		return win.JoystickPressed(player0, LogitechGamepadF310["A"])
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickPressed(player0, HORIPAD["A"])
-	default:
-		return win.Pressed(pixelgl.KeyX) || win.Pressed(pixelgl.KeyS)
-	}
+func btnA() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyX) || ebiten.IsKeyPressed(ebiten.KeyS)
 }
 
-func btnB(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickPressed(player0, Xbox360Controller["B"])
-	case "Logitech Gamepad F310":
-		return win.JoystickPressed(player0, LogitechGamepadF310["B"])
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickPressed(player0, HORIPAD["B"])
-	default:
-		return win.Pressed(pixelgl.KeyZ) || win.Pressed(pixelgl.KeyA)
-	}
+func btnB() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyZ) || ebiten.IsKeyPressed(ebiten.KeyA)
 }
 
-func btnStart(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickPressed(player0, Xbox360Controller["Start"])
-	case "Logitech Gamepad F310":
-		return win.JoystickPressed(player0, LogitechGamepadF310["Start"])
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickPressed(player0, HORIPAD["Start"])
-	default:
-		return win.Pressed(pixelgl.KeyEnter)
-	}
+func btnStart() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyEnter)
 }
 
-func btnSelect(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickPressed(player0, Xbox360Controller["Select"])
-	case "Logitech Gamepad F310":
-		return win.JoystickPressed(player0, LogitechGamepadF310["Select"])
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickPressed(player0, HORIPAD["Select"])
-	default:
-		return win.Pressed(pixelgl.KeyRightShift)
-	}
+func btnSelect() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyShift)
 }
 
-func keyUp(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickAxis(player0, Xbox360Controller["Vertical"]) >= 1
-	case "Logitech Gamepad F310":
-		return win.JoystickAxis(player0, LogitechGamepadF310["Vertical"]) <= -1
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickAxis(player0, HORIPAD["Vertical"]) <= -1
-	default:
-		return win.Pressed(pixelgl.KeyUp)
-	}
+func keyUp() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyUp)
 }
 
-func keyDown(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickAxis(player0, Xbox360Controller["Vertical"]) <= -1
-	case "Logitech Gamepad F310":
-		return win.JoystickAxis(player0, LogitechGamepadF310["Vertical"]) >= 1
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickAxis(player0, HORIPAD["Vertical"]) >= 1
-	default:
-		return win.Pressed(pixelgl.KeyDown)
-	}
+func keyDown() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyDown)
 }
 
-func keyRight(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickAxis(player0, Xbox360Controller["Horizontal"]) >= 1
-	case "Logitech Gamepad F310":
-		return win.JoystickAxis(player0, LogitechGamepadF310["Horizontal"]) >= 1
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickAxis(player0, HORIPAD["Horizontal"]) >= 1
-	default:
-		return win.Pressed(pixelgl.KeyRight)
-	}
+func keyRight() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyRight)
 }
 
-func keyLeft(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	case "Xbox 360 Controller":
-		return win.JoystickAxis(player0, Xbox360Controller["Horizontal"]) <= -1
-	case "Logitech Gamepad F310":
-		return win.JoystickAxis(player0, LogitechGamepadF310["Horizontal"]) <= -1
-	case "HORI CO.,LTD HORIPAD S":
-		return win.JoystickAxis(player0, HORIPAD["Horizontal"]) <= -1
-	default:
-		return win.Pressed(pixelgl.KeyLeft)
-	}
+func keyLeft() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyLeft)
 }
 
-func btnExpandDisplay(win *pixelgl.Window, joystickName string) bool {
-	return win.Pressed(pixelgl.KeyE)
+func btnExpandDisplay() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyE)
 }
 
-func btnCollapseDisplay(win *pixelgl.Window, joystickName string) bool {
-	return win.Pressed(pixelgl.KeyR)
+func btnCollapseDisplay() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyR)
 }
 
-func btnSaveData(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	default:
-		return win.Pressed(pixelgl.KeyD) && win.Pressed(pixelgl.KeyS)
-	}
+func btnSaveData() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyD) && ebiten.IsKeyPressed(ebiten.KeyS)
 }
 
-func btnLoadData(win *pixelgl.Window, joystickName string) bool {
-	switch joystickName {
-	default:
-		return win.Pressed(pixelgl.KeyL)
-	}
+func btnLoadData() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyL)
 }

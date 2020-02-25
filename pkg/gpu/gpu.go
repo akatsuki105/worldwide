@@ -5,18 +5,18 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/faiface/pixel"
+	"github.com/hajimehoshi/ebiten"
 )
 
 // GPU Graphic Processor Unit
 type GPU struct {
-	display       *pixel.PictureData // 160*144のイメージデータ
-	LCDC          byte               // LCD Control
-	LCDSTAT       byte               // LCD Status
-	Scroll        [2]byte            // Scrollの座標
-	displayColor  [144][160]byte     // 160*144の色番号(背景色を記録)
-	DMGPallte     [3]byte            // DMGのパレットデータ {BGP, OGP0, OGP1}
-	CGBPallte     [2]byte            // CGBのパレットデータ {BCPSIO, OCPSIO}
+	display       *ebiten.Image  // 160*144のイメージデータ
+	LCDC          byte           // LCD Control
+	LCDSTAT       byte           // LCD Status
+	Scroll        [2]byte        // Scrollの座標
+	displayColor  [144][160]byte // 160*144の色番号(背景色を記録)
+	DMGPallte     [3]byte        // DMGのパレットデータ {BGP, OGP0, OGP1}
+	CGBPallte     [2]byte        // CGBのパレットデータ {BCPSIO, OCPSIO}
 	BGPallete     [64]byte
 	SPRPallete    [64]byte
 	BGPriorPixels [][5]byte
@@ -35,7 +35,7 @@ var (
 
 // Init GPU
 func (gpu *GPU) Init() {
-	gpu.display = pixel.MakePictureData(pixel.R(0, 0, 160, 144))
+	gpu.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
 }
 
 // InitPallete init gameboy pallete color
@@ -47,12 +47,12 @@ func (gpu *GPU) InitPallete(color0, color1, color2, color3 []int) {
 }
 
 // GetDisplay getter for display data
-func (gpu *GPU) GetDisplay() *pixel.PictureData {
+func (gpu *GPU) GetDisplay() *ebiten.Image {
 	return gpu.display
 }
 
 func (gpu *GPU) set(x, y int, c color.RGBA) {
-	gpu.display.Pix[160*144-(y*160+(160-x))] = c
+	gpu.display.Set(x, y, c)
 }
 
 // --------------------------------------------- Render -----------------------------------------------------

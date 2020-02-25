@@ -30,255 +30,455 @@ func (cpu *CPU) d16Fetch() uint16 {
 	return value
 }
 
+// ------ LD A, *
+
+// LD A,(BC)
+func op0x0a(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.FetchMemory8(cpu.Reg.BC))
+	cpu.Reg.PC++
+}
+
+// LD A,(DE)
+func op0x1a(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.FetchMemory8(cpu.Reg.DE))
+	cpu.Reg.PC++
+}
+
+// LD A,(HL+)
+func op0x2a(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.FetchMemory8(cpu.Reg.HL))
+	cpu.Reg.HL++
+	cpu.Reg.PC++
+}
+
+// LD A,(HL-)
+func op0x3a(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.FetchMemory8(cpu.Reg.HL))
+	cpu.Reg.HL--
+	cpu.Reg.PC++
+}
+
+// LD A,u8
+func op0x3e(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.FetchMemory8(cpu.Reg.PC + 1))
+	cpu.Reg.PC += 2
+}
+
+// LD A, B
+func op0x78(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD A, C
+func op0x79(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD A, D
+func op0x7a(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD A, E
+func op0x7b(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD A, H
+func op0x7c(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD A, L
+func op0x7d(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD A, (HL)
+func op0x7e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setAReg(value)
+	cpu.Reg.PC++
+}
+
+// LD A, A
+func op0x7f(cpu *CPU, operand1, operand2 int) {
+	cpu.setAReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// LD A, (u16)
+func op0xfa(cpu *CPU, operand1, operand2 int) {
+	addr := cpu.a16FetchJP()
+	cpu.setAReg(cpu.FetchMemory8(addr))
+	cpu.Reg.PC += 3
+	cpu.timer(2)
+}
+
+// LD A,(FF00+C)
+func op0xf2(cpu *CPU, operand1, operand2 int) {
+	addr := 0xff00 + uint16(cpu.getCReg())
+	cpu.setAReg(cpu.fetchIO(addr))
+	cpu.Reg.PC++ // 誤植(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
+}
+
+// ------ LD B, *
+
+// LD B,u8
+func op0x06(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.setBReg(value)
+	cpu.Reg.PC += 2
+}
+
+// LD B,B
+func op0x40(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD B,C
+func op0x41(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD B,D
+func op0x42(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD B,E
+func op0x43(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD B,H
+func op0x44(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD B,L
+func op0x45(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD B,(HL)
+func op0x46(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setBReg(value)
+	cpu.Reg.PC++
+}
+
+// LD B,A
+func op0x47(cpu *CPU, operand1, operand2 int) {
+	cpu.setBReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// ------ LD C, *
+
+// LD C,u8
+func op0x0e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.setCReg(value)
+	cpu.Reg.PC += 2
+}
+
+// LD C,B
+func op0x48(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD C,C
+func op0x49(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD C,D
+func op0x4a(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD C,E
+func op0x4b(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD C,H
+func op0x4c(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD C,L
+func op0x4d(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD C,(HL)
+func op0x4e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setCReg(value)
+	cpu.Reg.PC++
+}
+
+// LD C,A
+func op0x4f(cpu *CPU, operand1, operand2 int) {
+	cpu.setCReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// ------ LD D, *
+
+// LD D,u8
+func op0x16(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.setDReg(value)
+	cpu.Reg.PC += 2
+}
+
+// LD D,B
+func op0x50(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD D,C
+func op0x51(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD D,D
+func op0x52(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD D,E
+func op0x53(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD D,H
+func op0x54(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD D,L
+func op0x55(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD D,(HL)
+func op0x56(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setDReg(value)
+	cpu.Reg.PC++
+}
+
+// LD D,A
+func op0x57(cpu *CPU, operand1, operand2 int) {
+	cpu.setDReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// ------ LD E, *
+
+// LD E,u8
+func op0x1e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.setEReg(value)
+	cpu.Reg.PC += 2
+}
+
+// LD E,B
+func op0x58(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD E,C
+func op0x59(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD E,D
+func op0x5a(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD E,E
+func op0x5b(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD E,H
+func op0x5c(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD E,L
+func op0x5d(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD E,(HL)
+func op0x5e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setEReg(value)
+	cpu.Reg.PC++
+}
+
+// LD E,A
+func op0x5f(cpu *CPU, operand1, operand2 int) {
+	cpu.setEReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// ------ LD H, *
+
+// LD H,u8
+func op0x26(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.setHReg(value)
+	cpu.Reg.PC += 2
+}
+
+// LD H,B
+func op0x60(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD H,C
+func op0x61(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD H,D
+func op0x62(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD H,E
+func op0x63(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD H,H
+func op0x64(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD H,L
+func op0x65(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD H,(HL)
+func op0x66(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setHReg(value)
+	cpu.Reg.PC++
+}
+
+// LD H,A
+func op0x67(cpu *CPU, operand1, operand2 int) {
+	cpu.setHReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// ------ LD L, *
+
+// LD L,u8
+func op0x2e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.setLReg(value)
+	cpu.Reg.PC += 2
+}
+
+// LD L,B
+func op0x68(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD L,C
+func op0x69(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD L,D
+func op0x6a(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD L,E
+func op0x6b(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD L,H
+func op0x6c(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD L,L
+func op0x6d(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD L,(HL)
+func op0x6e(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL)
+	cpu.setLReg(value)
+	cpu.Reg.PC++
+}
+
+// LD L,A
+func op0x6f(cpu *CPU, operand1, operand2 int) {
+	cpu.setLReg(cpu.getAReg())
+	cpu.Reg.PC++
+}
+
 // LD Load
-func (cpu *CPU) LD(operand1, operand2 int) {
+func LD(cpu *CPU, operand1, operand2 int) {
 	switch operand1 {
-	case OPERAND_A:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setAReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setAReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setAReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setAReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setAReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setAReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setAReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			cpu.Reg.PC += 2
-		case OPERAND_C_PAREN:
-			addr := 0xff00 + uint16(cpu.getCReg())
-			cpu.setAReg(cpu.FetchMemory8(addr))
-			cpu.Reg.PC++ // 誤植(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
-		case OPERAND_BC_PAREN:
-			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.BC))
-			cpu.Reg.PC++
-		case OPERAND_DE_PAREN:
-			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.DE))
-			cpu.Reg.PC++
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setAReg(value)
-			cpu.Reg.PC++
-		case OPERAND_HLPLUS_PAREN:
-			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.HL))
-			cpu.Reg.HL++
-			cpu.Reg.PC++
-		case OPERAND_HLMINUS_PAREN:
-			cpu.setAReg(cpu.FetchMemory8(cpu.Reg.HL))
-			cpu.Reg.HL--
-			cpu.Reg.PC++
-		case OPERAND_a16_PAREN:
-			addr := cpu.a16FetchJP()
-			cpu.setAReg(cpu.FetchMemory8(addr))
-			cpu.Reg.PC += 3
-			cpu.timer(2)
-		}
-	case OPERAND_B:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setBReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setBReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setBReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setBReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setBReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setBReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setBReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.setBReg(value)
-			cpu.Reg.PC += 2
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setBReg(value)
-			cpu.Reg.PC++
-		}
-	case OPERAND_C:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setCReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setCReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setCReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setCReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setCReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setCReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setCReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.setCReg(value)
-			cpu.Reg.PC += 2
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setCReg(value)
-			cpu.Reg.PC++
-		}
-	case OPERAND_D:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setDReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setDReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setDReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setDReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setDReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setDReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setDReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.setDReg(value)
-			cpu.Reg.PC += 2
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setDReg(value)
-			cpu.Reg.PC++
-		}
-	case OPERAND_E:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setEReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setEReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setEReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setEReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setEReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setEReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setEReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.setEReg(value)
-			cpu.Reg.PC += 2
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setEReg(value)
-			cpu.Reg.PC++
-		}
-	case OPERAND_H:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setHReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setHReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setHReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setHReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setHReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setHReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setHReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.setHReg(value)
-			cpu.Reg.PC += 2
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setHReg(value)
-			cpu.Reg.PC++
-		}
-	case OPERAND_L:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.setLReg(cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.setLReg(cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.setLReg(cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.setLReg(cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.setLReg(cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.setLReg(cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.setLReg(cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.setLReg(value)
-			cpu.Reg.PC += 2
-		case OPERAND_HL_PAREN:
-			value := cpu.FetchMemory8(cpu.Reg.HL)
-			cpu.setLReg(value)
-			cpu.Reg.PC++
-		}
 	case OPERAND_BC:
 		switch operand2 {
 		case OPERAND_d16:
@@ -406,12 +606,12 @@ func (cpu *CPU) LD(operand1, operand2 int) {
 }
 
 // LDH Load High Byte
-func (cpu *CPU) LDH(operand1, operand2 int) {
+func LDH(cpu *CPU, operand1, operand2 int) {
 	if operand1 == OPERAND_A && operand2 == OPERAND_a8_PAREN {
 		// LD A,($FF00+a8)
 		addr := 0xff00 + uint16(cpu.FetchMemory8(cpu.Reg.PC+1))
 		cpu.timer(1)
-		value := cpu.FetchMemory8(addr)
+		value := cpu.fetchIO(addr)
 
 		cpu.setAReg(value)
 		cpu.Reg.PC += 2
@@ -420,7 +620,7 @@ func (cpu *CPU) LDH(operand1, operand2 int) {
 		// LD ($FF00+a8),A
 		addr := 0xff00 + uint16(cpu.FetchMemory8(cpu.Reg.PC+1))
 		cpu.timer(1)
-		cpu.SetMemory8(addr, cpu.getAReg())
+		cpu.setIO(addr, cpu.getAReg())
 		cpu.Reg.PC += 2
 		cpu.timer(2)
 	} else {
@@ -555,9 +755,71 @@ func (cpu *CPU) DEC(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
+// --------- JR ---------
+
+// JR i8
+func op0x18(cpu *CPU, operand1, operand2 int) {
+	delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
+	destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
+	cpu.Reg.PC = destination
+	cpu.timer(3)
+}
+
+// JR NZ,i8
+func op0x20(cpu *CPU, operand1, operand2 int) {
+	if !cpu.getZFlag() {
+		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
+		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
+		cpu.Reg.PC = destination
+		cpu.timer(3)
+	} else {
+		cpu.Reg.PC += 2
+		cpu.timer(2)
+	}
+}
+
+// JR Z,i8
+func op0x28(cpu *CPU, operand1, operand2 int) {
+	if cpu.getZFlag() {
+		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
+		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
+		cpu.Reg.PC = destination
+		cpu.timer(3)
+	} else {
+		cpu.Reg.PC += 2
+		cpu.timer(2)
+	}
+}
+
+// JR NC,i8
+func op0x30(cpu *CPU, operand1, operand2 int) {
+	if !cpu.getCFlag() {
+		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
+		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
+		cpu.Reg.PC = destination
+		cpu.timer(3)
+	} else {
+		cpu.Reg.PC += 2
+		cpu.timer(2)
+	}
+}
+
+// JR C,i8
+func op0x38(cpu *CPU, operand1, operand2 int) {
+	if cpu.getCFlag() {
+		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
+		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // この時点でのPCは命令フェッチ後のPCなので+2してあげる必要あり
+		cpu.Reg.PC = destination
+		cpu.timer(3)
+	} else {
+		cpu.Reg.PC += 2
+		cpu.timer(2)
+	}
+}
+
 // JR Jump relatively
-func (cpu *CPU) JR(operand1, operand2 int) (result bool) {
-	result = true
+func JR(cpu *CPU, operand1, operand2 int) {
+	result := true
 	switch operand1 {
 	case OPERAND_r8:
 		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
@@ -604,11 +866,15 @@ func (cpu *CPU) JR(operand1, operand2 int) (result bool) {
 		panic(errMsg)
 	}
 
-	return result
+	if result {
+		cpu.timer(3)
+	} else {
+		cpu.timer(2)
+	}
 }
 
 // HALT Halt
-func (cpu *CPU) HALT(operand1, operand2 int) {
+func HALT(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.PC++
 	cpu.halt = true
 }
@@ -672,7 +938,7 @@ func (cpu *CPU) XOR(operand1, operand2 int) {
 }
 
 // JP Jump
-func (cpu *CPU) JP(operand1, operand2 int) {
+func JP(cpu *CPU, operand1, operand2 int) {
 	cycle := 1
 
 	switch operand1 {
@@ -774,8 +1040,7 @@ func (cpu *CPU) RETI(operand1, operand2 int) {
 }
 
 // CALL Call subroutine
-func (cpu *CPU) CALL(operand1, operand2 int) (result bool) {
-	result = true
+func CALL(cpu *CPU, operand1, operand2 int) {
 
 	switch operand1 {
 	case OPERAND_a16:
@@ -795,7 +1060,6 @@ func (cpu *CPU) CALL(operand1, operand2 int) (result bool) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
-			result = false
 			cpu.timer(3)
 		}
 	case OPERAND_C:
@@ -808,7 +1072,6 @@ func (cpu *CPU) CALL(operand1, operand2 int) (result bool) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
-			result = false
 			cpu.timer(3)
 		}
 	case OPERAND_NZ:
@@ -821,7 +1084,6 @@ func (cpu *CPU) CALL(operand1, operand2 int) (result bool) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
-			result = false
 			cpu.timer(3)
 		}
 	case OPERAND_NC:
@@ -834,15 +1096,12 @@ func (cpu *CPU) CALL(operand1, operand2 int) (result bool) {
 			cpu.Reg.PC = destination
 		} else {
 			cpu.Reg.PC += 3
-			result = false
 			cpu.timer(3)
 		}
 	default:
 		errMsg := fmt.Sprintf("Error: CALL %s %s", operand1, operand2)
 		panic(errMsg)
 	}
-
-	return result
 }
 
 // DI Disable Interrupt
@@ -1866,7 +2125,7 @@ func (cpu *CPU) SRA(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
-// SWAP Swap n[4:8] and n[0:4]
+// SWAP Swap n[5:8] and n[0:4]
 func (cpu *CPU) SWAP(operand1, operand2 int) {
 	var value byte
 

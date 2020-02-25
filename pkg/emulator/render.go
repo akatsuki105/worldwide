@@ -2,13 +2,14 @@ package emulator
 
 import (
 	"bytes"
+	"fmt"
 	"gbc/pkg/joypad"
+	"image"
 	"image/png"
 	"sync"
 	"time"
 
-	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/pixelgl"
+	"github.com/hajimehoshi/ebiten"
 )
 
 const (
@@ -20,151 +21,120 @@ const (
 var (
 	wait      sync.WaitGroup
 	lineMutex sync.Mutex
+	frames    = 0
+	second    = time.Tick(time.Second)
 )
 
 // Render レンダリングを行う
-func (cpu *CPU) Render() {
+func (cpu *CPU) Render(screen *ebiten.Image) error {
 
-	var title string
-	if cpu.Cartridge.Title != "" {
-		title = cpu.Cartridge.Title
-	} else {
-		title = "Worldwide"
+	if frames == 0 {
+		setIcon()
 	}
 
-	icon, err := loadIcon()
-	if err != nil {
-		panic(err)
+	LCDC := cpu.FetchMemory8(LCDCIO)
+	scrollX, scrollY := cpu.GPU.ReadScroll()
+	scrollTileX := scrollX / 8
+	scrollPixelX := scrollX % 8
+	scrollTileY := scrollY / 8
+	scrollPixelY := scrollY % 8
+
+	iterX := width
+	iterY := height
+	if scrollPixelX > 0 {
+		iterX += 8
+	}
+	if scrollPixelY > 0 {
+		iterY += 8
 	}
 
-	cfg := pixelgl.WindowConfig{
-		Title:  title,
-		Icon:   []pixel.Picture{icon},
-		Bounds: pixel.R(0, 0, float64(width*cpu.expand), float64(height*cpu.expand)),
-		VSync:  true,
-	}
-	win, err := pixelgl.NewWindow(cfg)
-	if err != nil {
-		panic(err)
-	}
+	// 背景描画 + CPU稼働
+	for y := 0; y < iterY; y++ {
 
-	var (
-		frames = 0
-	)
+		scrollX, scrollY = cpu.GPU.ReadScroll()
+		scrollTileX, scrollPixelX = scrollX/8, scrollX%8
+		scrollTileY, scrollPixelY = scrollY/8, scrollY%8
 
-	win.SetSmooth(cpu.smooth)
+		if y < height {
 
-	for !win.Closed() {
-
-		if !win.Focused() && !cpu.network {
-			cpu.Sound.Off()
-			frames++
-			win.Update()
-			continue
-		}
-		cpu.Sound.On()
-
-		LCDC := cpu.FetchMemory8(LCDCIO)
-		scrollX, scrollY := cpu.GPU.ReadScroll()
-		scrollTileX := scrollX / 8
-		scrollPixelX := scrollX % 8
-		scrollTileY := scrollY / 8
-		scrollPixelY := scrollY % 8
-
-		iterX := width
-		iterY := height
-		if scrollPixelX > 0 {
-			iterX += 8
-		}
-		if scrollPixelY > 0 {
-			iterY += 8
-		}
-
-		// 背景描画 + CPU稼働
-		for y := 0; y < iterY; y++ {
-
-			scrollX, scrollY = cpu.GPU.ReadScroll()
-			scrollTileX, scrollPixelX = scrollX/8, scrollX%8
-			scrollTileY, scrollPixelY = scrollY/8, scrollY%8
-
-			if y < height {
-
-				// OAM mode2
-				cpu.cycleLine = 0
-				cpu.setOAMRAMMode()
-				for cpu.cycleLine <= 20*cpu.boost {
-					cpu.exec()
-				}
-
-				// LCD Driver mode3
-				cpu.cycleLine = 0
-				cpu.setLCDMode()
-				for cpu.cycleLine <= 42*cpu.boost {
-					cpu.exec()
-				}
-
-				// HBlank mode0
-				cpu.cycleLine = 0
-				cpu.setHBlankMode()
-				for cpu.cycleLine <= (cyclePerLine-(20+42))*cpu.boost {
-					cpu.exec()
-				}
-				cpu.incrementLY()
+			// OAM mode2
+			cpu.cycleLine = 0
+			cpu.setOAMRAMMode()
+			for cpu.cycleLine <= 20*cpu.boost {
+				cpu.exec()
 			}
 
-			LCDC = cpu.FetchMemory8(LCDCIO)
-			WY := uint(cpu.FetchMemory8(WYIO))
-			WX := uint(cpu.FetchMemory8(WXIO)) - 7
+			// LCD Driver mode3
+			cpu.cycleLine = 0
+			cpu.setLCDMode()
+			for cpu.cycleLine <= 42*cpu.boost {
+				cpu.exec()
+			}
 
-			// 背景(ウィンドウ)描画
-			for x := 0; x < iterX; x += 8 {
-				blockX := x / 8
-				blockY := y / 8
+			// HBlank mode0
+			cpu.cycleLine = 0
+			cpu.setHBlankMode()
+			for cpu.cycleLine <= (cyclePerLine-(20+42))*cpu.boost {
+				cpu.exec()
+			}
+			cpu.incrementLY()
+		}
 
-				var tileX, tileY uint
-				var useWindow bool
-				var entryX, entryY int
+		LCDC = cpu.FetchMemory8(LCDCIO)
+		WY := uint(cpu.FetchMemory8(WYIO))
+		WX := uint(cpu.FetchMemory8(WXIO)) - 7
 
-				if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
-					tileX = ((uint(x) - WX) / 8) % 32
-					tileY = ((uint(y) - WY) / 8) % 32
-					useWindow = true
+		// 背景(ウィンドウ)描画
+		for x := 0; x < iterX; x += 8 {
+			blockX := x / 8
+			blockY := y / 8
 
-					entryX = blockX * 8
-					entryY = blockY * 8
-				} else {
-					tileX = (scrollTileX + uint(x/8)) % 32
-					tileY = (scrollTileY + uint(y/8)) % 32
-					useWindow = false
+			var tileX, tileY uint
+			var useWindow bool
+			var entryX, entryY int
 
-					entryX = blockX*8 - int(scrollPixelX)
-					entryY = blockY*8 - int(scrollPixelY)
-				}
+			if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
+				tileX = ((uint(x) - WX) / 8) % 32
+				tileY = ((uint(y) - WY) / 8) % 32
+				useWindow = true
 
-				if LCDC>>7%2 == 1 {
-					if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
-						break
-					}
+				entryX = blockX * 8
+				entryY = blockY * 8
+			} else {
+				tileX = (scrollTileX + uint(x/8)) % 32
+				tileY = (scrollTileY + uint(y/8)) % 32
+				useWindow = false
+
+				entryX = blockX*8 - int(scrollPixelX)
+				entryY = blockY*8 - int(scrollPixelY)
+			}
+
+			if LCDC>>7%2 == 1 {
+				if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
+					break
 				}
 			}
 		}
+	}
 
-		// スプライト描画
-		for i := 0; i < 40; i++ {
-			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
-			if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
-				Y -= 16
-				X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
-				tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
-				attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
-				cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
-			}
+	// スプライト描画
+	for i := 0; i < 40; i++ {
+		Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
+		if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
+			Y -= 16
+			X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
+			tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
+			attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
+			cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
 		}
+	}
 
-		// 背景優先のpixelを描画していく
-		cpu.GPU.SetBGPriorPixels()
+	// 背景優先のpixelを描画していく
+	cpu.GPU.SetBGPriorPixels()
 
-		// VBlank
+	// VBlank
+	wait.Add(1)
+	go func() {
 		for {
 			cpu.cycleLine = 0
 
@@ -177,56 +147,59 @@ func (cpu *CPU) Render() {
 				break
 			}
 		}
+		wait.Done()
+	}()
 
-		pic := cpu.GPU.GetDisplay()
-		matrix := pixel.IM.Moved(win.Bounds().Center())
-		matrix = matrix.ScaledXY(win.Bounds().Center(), pixel.V(float64(cpu.expand), float64(cpu.expand)))
-		sprite := pixel.NewSprite(pic, pic.Bounds())
-		sprite.Draw(win, matrix)
+	screen.DrawImage(cpu.GPU.GetDisplay(), nil)
 
-		win.Update()
+	frames++
 
-		frames++
-
-		if frames%3 == 0 {
-			result := cpu.joypad.Input(win)
-			if result != 0 {
-				switch result {
-				case joypad.Pressed:
-					// Joypad Interrupt
-					if cpu.Reg.IME && cpu.getJoypadEnable() {
-						cpu.setJoypadFlag()
-					}
-				case joypad.Save:
-					cpu.Sound.Off()
-					cpu.dumpData()
-					cpu.Sound.On()
-				case joypad.Load:
-					cpu.Sound.Off()
-					cpu.loadData()
-					cpu.Sound.On()
-				case joypad.Expand:
-					cpu.expand *= 2
+	if frames%3 == 0 {
+		result := cpu.joypad.Input()
+		if result != 0 {
+			switch result {
+			case joypad.Pressed:
+				// Joypad Interrupt
+				if cpu.Reg.IME && cpu.getJoypadEnable() {
+					cpu.setJoypadFlag()
+				}
+			case joypad.Save:
+				cpu.Sound.Off()
+				cpu.dumpData()
+				cpu.Sound.On()
+			case joypad.Load:
+				cpu.Sound.Off()
+				cpu.loadData()
+				cpu.Sound.On()
+			case joypad.Expand:
+				cpu.Expand *= 2
+				time.Sleep(time.Millisecond * 400)
+				ebiten.SetScreenScale(float64(cpu.Expand))
+			case joypad.Collapse:
+				if cpu.Expand >= 2 {
+					cpu.Expand /= 2
 					time.Sleep(time.Millisecond * 400)
-					win.SetBounds(pixel.R(0, 0, float64(width*cpu.expand), float64(height*cpu.expand)))
-				case joypad.Collapse:
-					if cpu.expand >= 2 {
-						cpu.expand /= 2
-						time.Sleep(time.Millisecond * 400)
-						win.SetBounds(pixel.R(0, 0, float64(width*cpu.expand), float64(height*cpu.expand)))
-					}
+					ebiten.SetScreenScale(float64(cpu.Expand))
 				}
 			}
 		}
 	}
-}
 
-func loadIcon() (pixel.Picture, error) {
-	buf := bytes.NewBuffer(icon)
-	img, err := png.Decode(buf)
-	if err != nil {
-		return nil, err
+	if cpu.debug {
+		select {
+		case <-second:
+			fmt.Printf("FPS: %d\n", frames)
+			frames = 0
+		default:
+		}
 	}
 
-	return pixel.PictureDataFromImage(img), nil
+	wait.Wait()
+	return nil
+}
+
+func setIcon() {
+	buf := bytes.NewBuffer(icon)
+	img, _ := png.Decode(buf)
+	ebiten.SetWindowIcon([]image.Image{img})
 }

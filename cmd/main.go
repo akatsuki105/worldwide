@@ -11,7 +11,7 @@ import (
 
 	"gbc/pkg/emulator"
 
-	"github.com/faiface/pixel/pixelgl"
+	"github.com/hajimehoshi/ebiten"
 	"github.com/sqweek/dialog"
 )
 
@@ -57,7 +57,10 @@ func Run() int {
 		cpu.Exit()
 	}()
 
-	pixelgl.Run(cpu.Render)
+	ebiten.SetRunnableInBackground(true)
+	if err := ebiten.Run(cpu.Render, 160, 144, float64(cpu.Expand), "Worldwide"); err != nil {
+		return 1
+	}
 	return 0
 }
 
