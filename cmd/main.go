@@ -15,6 +15,8 @@ import (
 	"github.com/sqweek/dialog"
 )
 
+var version string
+
 func main() {
 	os.Exit(Run())
 }
@@ -22,10 +24,18 @@ func main() {
 // Run - エミュレータを実行する
 func Run() int {
 	var (
-		debug = flag.Bool("debug", false, "enable debug mode")
+		showVersion = flag.Bool("v", false, "show version")
+		debug       = flag.Bool("debug", false, "enable debug mode")
 	)
 
 	flag.Parse()
+
+	// バージョンオプションが指定されたときはバージョンを表示して終了する
+	if *showVersion {
+		fmt.Println("Worldwide: ", version)
+		return 0
+	}
+
 	fp := flag.Arg(0)
 	cur, _ := os.Getwd()
 

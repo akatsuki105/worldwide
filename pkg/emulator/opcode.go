@@ -476,133 +476,165 @@ func op0x6f(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
+// ------ LD (HL), *
+
+// LD (HL),u8
+func op0x36(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d8Fetch()
+	cpu.timer(1)
+	cpu.SetMemory8(cpu.Reg.HL, value)
+	cpu.Reg.PC += 2
+	cpu.timer(2)
+}
+
+// LD (HL),B
+func op0x70(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getBReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL),C
+func op0x71(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getCReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL),D
+func op0x72(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getDReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL),E
+func op0x73(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getEReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL),H
+func op0x74(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getHReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL),L
+func op0x75(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getLReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL),A
+func op0x77(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// ------ その他のLD
+
+// LD (u16),SP
+func op0x08(cpu *CPU, operand1, operand2 int) {
+	// Store SP into addresses n16 (LSB) and n16 + 1 (MSB).
+	addr := cpu.a16Fetch()
+	upper := byte(cpu.Reg.SP >> 8)     // MSB
+	lower := byte(cpu.Reg.SP & 0x00ff) // LSB
+	cpu.SetMemory8(addr, lower)
+	cpu.SetMemory8(addr+1, upper)
+	cpu.Reg.PC += 3
+	cpu.timer(5)
+}
+
+// LD (u16),A
+func op0xea(cpu *CPU, operand1, operand2 int) {
+	addr := cpu.a16FetchJP()
+	cpu.SetMemory8(addr, cpu.getAReg())
+	cpu.Reg.PC += 3
+	cpu.timer(2)
+}
+
+// LD BC,u16
+func op0x01(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d16Fetch()
+	cpu.Reg.BC = value
+	cpu.Reg.PC += 3
+}
+
+// LD DE,u16
+func op0x11(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d16Fetch()
+	cpu.Reg.DE = value
+	cpu.Reg.PC += 3
+}
+
+// LD HL,u16
+func op0x21(cpu *CPU, operand1, operand2 int) {
+	cpu.Reg.HL = cpu.d16Fetch()
+	cpu.Reg.PC += 3
+}
+
+// LD SP,u16
+func op0x31(cpu *CPU, operand1, operand2 int) {
+	value := cpu.d16Fetch()
+	cpu.Reg.SP = value
+	cpu.Reg.PC += 3
+}
+
+// LD HL,SP+i8
+func op0xf8(cpu *CPU, operand1, operand2 int) {
+	delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
+	value := int32(cpu.Reg.SP) + int32(delta)
+	carryBits := uint32(cpu.Reg.SP) ^ uint32(delta) ^ uint32(value)
+	cpu.Reg.HL = uint16(value)
+	cpu.clearZFlag()
+	cpu.flagN(false)
+	cpu.flagC8(uint16(carryBits))
+	cpu.flagH8(byte(carryBits))
+	cpu.Reg.PC += 2
+}
+
+// LD SP,HL
+func op0xf9(cpu *CPU, operand1, operand2 int) {
+	cpu.Reg.SP = cpu.Reg.HL
+	cpu.Reg.PC++
+}
+
+// LD (FF00+C),A
+func op0xe2(cpu *CPU, operand1, operand2 int) {
+	addr := 0xff00 + uint16(cpu.getCReg())
+	cpu.SetMemory8(addr, cpu.getAReg())
+	cpu.Reg.PC++ // 誤植(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
+}
+
+// LD (BC),A
+func op0x02(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.BC, cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// LD (DE),A
+func op0x12(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.DE, cpu.getAReg())
+	cpu.Reg.PC++
+}
+
+// LD (HL+),A
+func op0x22(cpu *CPU, operand1, operand2 int) {
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
+	cpu.Reg.HL++
+	cpu.Reg.PC++
+}
+
+// LD (HL-),A
+func op0x32(cpu *CPU, operand1, operand2 int) {
+	// (HL)=A, HL=HL-1
+	cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
+	cpu.Reg.HL--
+	cpu.Reg.PC++
+}
+
 // LD Load
 func LD(cpu *CPU, operand1, operand2 int) {
-	switch operand1 {
-	case OPERAND_BC:
-		switch operand2 {
-		case OPERAND_d16:
-			value := cpu.d16Fetch()
-			cpu.Reg.BC = value
-			cpu.Reg.PC += 3
-		}
-	case OPERAND_DE:
-		switch operand2 {
-		case OPERAND_d16:
-			value := cpu.d16Fetch()
-			cpu.Reg.DE = value
-			cpu.Reg.PC += 3
-		}
-	case OPERAND_HL:
-		switch operand2 {
-		case OPERAND_d16:
-			cpu.Reg.HL = cpu.d16Fetch()
-			cpu.Reg.PC += 3
-		case OPERAND_SP_PLUS_r8:
-			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			value := int32(cpu.Reg.SP) + int32(delta)
-			carryBits := uint32(cpu.Reg.SP) ^ uint32(delta) ^ uint32(value)
-			cpu.Reg.HL = uint16(value)
-			cpu.clearZFlag()
-			cpu.flagN(false)
-			cpu.flagC8(uint16(carryBits))
-			cpu.flagH8(byte(carryBits))
-			cpu.Reg.PC += 2
-		}
-	case OPERAND_SP:
-		switch operand2 {
-		case OPERAND_d16:
-			value := cpu.d16Fetch()
-			cpu.Reg.SP = value
-			cpu.Reg.PC += 3
-		case OPERAND_HL:
-			cpu.Reg.SP = cpu.Reg.HL
-			cpu.Reg.PC++
-		}
-	case OPERAND_C_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			addr := 0xff00 + uint16(cpu.getCReg())
-			cpu.SetMemory8(addr, cpu.getAReg())
-			cpu.Reg.PC++ // 誤植(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
-		}
-	case OPERAND_BC_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.SetMemory8(cpu.Reg.BC, cpu.getAReg())
-			cpu.Reg.PC++
-		}
-	case OPERAND_DE_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.SetMemory8(cpu.Reg.DE, cpu.getAReg())
-			cpu.Reg.PC++
-		}
-	case OPERAND_HL_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
-			cpu.Reg.PC++
-		case OPERAND_B:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getBReg())
-			cpu.Reg.PC++
-		case OPERAND_C:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getCReg())
-			cpu.Reg.PC++
-		case OPERAND_D:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getDReg())
-			cpu.Reg.PC++
-		case OPERAND_E:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getEReg())
-			cpu.Reg.PC++
-		case OPERAND_H:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getHReg())
-			cpu.Reg.PC++
-		case OPERAND_L:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getLReg())
-			cpu.Reg.PC++
-		case OPERAND_d8:
-			value := cpu.d8Fetch()
-			cpu.timer(1)
-			cpu.SetMemory8(cpu.Reg.HL, value)
-			cpu.Reg.PC += 2
-			cpu.timer(2)
-		}
-	case OPERAND_HLPLUS_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
-			cpu.Reg.HL++
-			cpu.Reg.PC++
-		}
-	case OPERAND_HLMINUS_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			// (HL)=A, HL=HL-1
-			cpu.SetMemory8(cpu.Reg.HL, cpu.getAReg())
-			cpu.Reg.HL--
-			cpu.Reg.PC++
-		}
-	case OPERAND_a16_PAREN:
-		switch operand2 {
-		case OPERAND_A:
-			addr := cpu.a16FetchJP()
-			cpu.SetMemory8(addr, cpu.getAReg())
-			cpu.Reg.PC += 3
-			cpu.timer(2)
-		case OPERAND_SP:
-			// Store SP into addresses n16 (LSB) and n16 + 1 (MSB).
-			addr := cpu.a16Fetch()
-			upper := byte(cpu.Reg.SP >> 8)     // MSB
-			lower := byte(cpu.Reg.SP & 0x00ff) // LSB
-			cpu.SetMemory8(addr, lower)
-			cpu.SetMemory8(addr+1, upper)
-			cpu.Reg.PC += 3
-		}
-	default:
-		errMsg := fmt.Sprintf("Error: LD %s %s", operand1, operand2)
-		panic(errMsg)
-	}
+	errMsg := fmt.Sprintf("Error: LD %d %d", operand1, operand2)
+	panic(errMsg)
 }
 
 // LDH Load High Byte
