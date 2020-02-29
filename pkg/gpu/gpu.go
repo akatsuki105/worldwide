@@ -3,7 +3,6 @@ package gpu
 import (
 	"fmt"
 	"image/color"
-	"math"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -331,8 +330,8 @@ func (gpu *GPU) parseCGBPallete(name string, palleteNumber, colorNumber byte) (R
 	}
 
 	// 内部の色番号をRGB値に変換する
-	R = R*8 + 10*byte(math.Log2(32-float64(R)))
-	G = G*8 + 10*byte(math.Log2(32-float64(G)))
-	B = B*8 + 10*byte(math.Log2(32-float64(B)))
+	R = R * 8
+	G = G * 8
+	B = B * 8
 	return R, G, B, transparent
 }
