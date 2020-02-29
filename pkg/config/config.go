@@ -1,14 +1,16 @@
 package config
 
-import "os"
+import (
+	"os"
 
-import "gopkg.in/ini.v1"
+	"gopkg.in/ini.v1"
+)
 
 // Init init config
 func Init() *ini.File {
 	exist := checkConfigFileExist()
 	if exist {
-		cfg, _ := ini.Load("gbc.ini")
+		cfg, _ := ini.Load("worldwide.ini")
 		return cfg
 	}
 
@@ -31,14 +33,14 @@ func Init() *ini.File {
 	cfg.Section("network").Key("peer").SetValue("localhost:9999")
 
 	// save config
-	cfg.SaveTo("gbc.ini")
+	cfg.SaveTo("worldwide.ini")
 
 	return cfg
 }
 
 // check ini file exists
 func checkConfigFileExist() bool {
-	filename := "gbc.ini"
+	filename := "worldwide.ini"
 	_, err := os.Stat(filename)
 	if err != nil {
 		return false

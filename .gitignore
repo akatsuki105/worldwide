@@ -1,11 +1,9 @@
-*.nes
 *.exe
 *.sav
 *.ini
 public/
 game/
 dump/
-gbc-emulator
-gbc
+worldwide
 sav/
 .DS_store

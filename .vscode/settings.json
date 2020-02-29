@@ -1,0 +1,16 @@
+{
+    "go.useLanguageServer": true,
+    "go.alternateTools": {
+        "go-langserver": "gopls"
+    },
+    "[go]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "go.autocompleteUnimportedPackages": true,
+    "gopls": {
+        "usePlaceholders": true
+    }
+}

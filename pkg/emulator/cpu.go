@@ -360,7 +360,6 @@ func (cpu *CPU) Exit() {
 
 // Exec 1サイクル
 func (cpu *CPU) exec() {
-	cpu.mutex.Lock()
 	opcode := opcodes[cpu.FetchMemory8(cpu.Reg.PC)]
 	instruction, operand1, operand2, cycle1, cycle2, exec := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Exec
 	cycle := cycle1
@@ -459,8 +458,6 @@ func (cpu *CPU) exec() {
 	}
 
 	// incrementDebugCounter(instruction, operand1, operand2)
-
-	cpu.mutex.Unlock()
 
 	cpu.timer(cycle)
 
