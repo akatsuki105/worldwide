@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"runtime"
 	"time"
-
-	"github.com/sqweek/dialog"
 )
 
 func (cpu *CPU) gobEncode() ([]byte, error) {
@@ -106,69 +103,40 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 }
 
 func (cpu *CPU) dumpData() {
-
 	time.Sleep(time.Millisecond * 200)
-	var dumpname string
-	if runtime.GOOS == "windows" {
-		tmp, err := dialog.File().Filter("save file(.dmp)", "dmp").Title("Save data into file").Save()
-		if err != nil {
-			dialog.Message("%s", "dump data failed.").Title("Error").Error()
-			return
-		}
-		dumpname = tmp
-	} else {
-		dumpname = fmt.Sprintf("./dump/%s.dmp", cpu.Cartridge.Title)
-	}
-
+	dumpname := fmt.Sprintf("%s/%s.dmp", cpu.romdir, cpu.Cartridge.Title)
 	dumpfile, err := os.Create(dumpname)
 	if err != nil {
-		dialog.Message("%s", err.Error()).Title("Error").Error()
+		fmt.Println("Failed to dump: ", err.Error())
 		return
 	}
 	defer dumpfile.Close()
 
 	data, err := cpu.gobEncode()
 	if err != nil {
-		dialog.Message("%s", err.Error()).Title("Error").Error()
+		fmt.Println("Failed to dump: ", err.Error())
 		return
 	}
 
 	_, err = dumpfile.Write(data)
 	if err != nil {
-		dialog.Message("%s", err.Error()).Title("Error").Error()
+		fmt.Println("Failed to dump: ", err.Error())
+		return
 	}
 }
 
 func (cpu *CPU) loadData() {
 	time.Sleep(time.Millisecond * 200)
-	dumpname := cpu.selectData()
-	if dumpname == "" {
-		return
-	}
+	dumpname := fmt.Sprintf("%s/%s.sav", cpu.romdir, cpu.Cartridge.Title)
 
 	data, err := ioutil.ReadFile(dumpname)
 	if err != nil {
-		dialog.Message("%s", "load dumpfile failed.").Title("Error").Error()
+		fmt.Println("Failed to load: ", err.Error())
 		return
 	}
 
 	if err = cpu.gobDecode(data); err != nil {
-		dialog.Message("%s", err.Error()).Title("Error").Error()
+		fmt.Println("Failed to load: ", err.Error())
 		return
 	}
-}
-
-func (cpu *CPU) selectData() string {
-	var filepath string
-	switch runtime.GOOS {
-	case "windows":
-		tmp, err := dialog.File().Filter("GameBoy Dump File", "dmp").Load()
-		if err != nil {
-			return ""
-		}
-		filepath = tmp
-	default:
-		filepath = fmt.Sprintf("./dump/%s.dmp", cpu.Cartridge.Title)
-	}
-	return filepath
 }
