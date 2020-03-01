@@ -7,12 +7,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"gbc/pkg/emulator"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/sqweek/dialog"
 )
 
 var version string
@@ -76,18 +74,19 @@ func Run() int {
 
 func selectROM(p string) (string, error) {
 	if p == "" {
-		switch runtime.GOOS {
-		case "windows":
-			cd, _ := os.Getwd()
-			tmp, err := dialog.File().Filter("GameBoy ROM File", "gb*").Load()
-			if err != nil {
-				return p, fmt.Errorf("failed to read ROM file: %s", err)
-			}
-			p = tmp
-			os.Chdir(cd)
-		default:
-			return p, fmt.Errorf("ROM file is nil")
-		}
+		return p, fmt.Errorf("please input ROM file path")
+		// switch runtime.GOOS {
+		// case "windows":
+		// 	cd, _ := os.Getwd()
+		// 	tmp, err := dialog.File().Filter("GameBoy ROM File", "gb*").Load()
+		// 	if err != nil {
+		// 		return p, fmt.Errorf("Failed to read ROM file: %s", err)
+		// 	}
+		// 	p = tmp
+		// 	os.Chdir(cd)
+		// default:
+		// 	return p, fmt.Errorf("please input ROM file path")
+		// }
 	}
 	return p, nil
 }
