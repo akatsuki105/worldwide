@@ -57,8 +57,12 @@ type CPU struct {
 
 	romdir string // ロムがあるところのディレクトリパス
 
-	startOAMDMA uint16
-	ptrOAMDMA   uint16
+	// OAMDMA情報
+	startOAMDMA   uint16
+	ptrOAMDMA     uint16
+	restartOAMDMA uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+	reptrOAMDMA   uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+
 	IMESwitch
 	debug bool // デバッグモードかどうか
 }

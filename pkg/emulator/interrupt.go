@@ -221,8 +221,19 @@ func (cpu *CPU) timer(cycle int) {
 			} else if cpu.ptrOAMDMA < 160 {
 				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
 			}
+
+			// OAMDMAを1カウント進める(重複しているときはそっちのカウントも進める)
 			cpu.ptrOAMDMA--
+			if cpu.reptrOAMDMA > 0 {
+				cpu.reptrOAMDMA--
+			}
+
 			if cpu.ptrOAMDMA == 0 {
+				if cpu.reptrOAMDMA > 0 {
+					cpu.startOAMDMA = cpu.restartOAMDMA
+					cpu.ptrOAMDMA = cpu.reptrOAMDMA
+					cpu.reptrOAMDMA = 0
+				}
 				break
 			}
 		}
