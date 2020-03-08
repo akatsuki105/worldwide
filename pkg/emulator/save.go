@@ -14,6 +14,7 @@ func (cpu *CPU) save() {
 	}
 	defer savfile.Close()
 
+	// GameBoyのセーブデータはExternal RAM(0xa000-0xbfff)の単純なコアダンプ
 	var savdata []byte
 	switch cpu.Cartridge.RAMSize {
 	case 1:
@@ -64,6 +65,7 @@ func (cpu *CPU) load() {
 		return
 	}
 
+	// GameBoyのセーブデータはExternal RAM(0xa000-0xbfff)の単純なコアダンプ
 	switch cpu.Cartridge.RAMSize {
 	case 1:
 		for index := 0; index < 0x800; index++ {
@@ -81,7 +83,7 @@ func (cpu *CPU) load() {
 			}
 		}
 	case 5:
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
 				cpu.RAMBank[i][j] = savdata[index]

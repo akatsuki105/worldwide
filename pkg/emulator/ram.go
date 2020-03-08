@@ -247,8 +247,13 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == DMAIO:
 		// DMA転送
 		start := uint16(cpu.getAReg()) << 8
-		cpu.startOAMDMA = start
-		cpu.ptrOAMDMA = 160 + 2 // 転送開始までにラグがある
+		if cpu.ptrOAMDMA > 0 {
+			cpu.restartOAMDMA = start
+			cpu.reptrOAMDMA = 160 + 2 // 転送開始までにラグがある
+		} else {
+			cpu.startOAMDMA = start
+			cpu.ptrOAMDMA = 160 + 2 // 転送開始までにラグがある
+		}
 
 	case addr >= 0xff10 && addr <= 0xff26:
 		// サウンドアクセス
