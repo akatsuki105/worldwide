@@ -226,14 +226,15 @@ func (cpu *CPU) timer(cycle int) {
 			cpu.ptrOAMDMA--
 			if cpu.reptrOAMDMA > 0 {
 				cpu.reptrOAMDMA--
+
+				if cpu.reptrOAMDMA == 160 {
+					cpu.startOAMDMA = cpu.restartOAMDMA
+					cpu.ptrOAMDMA = 160
+					cpu.reptrOAMDMA = 0
+				}
 			}
 
 			if cpu.ptrOAMDMA == 0 {
-				if cpu.reptrOAMDMA > 0 {
-					cpu.startOAMDMA = cpu.restartOAMDMA
-					cpu.ptrOAMDMA = cpu.reptrOAMDMA
-					cpu.reptrOAMDMA = 0
-				}
 				break
 			}
 		}

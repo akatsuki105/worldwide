@@ -249,10 +249,10 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		start := uint16(cpu.getAReg()) << 8
 		if cpu.ptrOAMDMA > 0 {
 			cpu.restartOAMDMA = start
-			cpu.reptrOAMDMA = 160 + 3 // 転送開始までにラグがある
+			cpu.reptrOAMDMA = 160 + 2 // 転送開始までにラグがある
 		} else {
 			cpu.startOAMDMA = start
-			cpu.ptrOAMDMA = 160 + 3 // 転送開始までにラグがある
+			cpu.ptrOAMDMA = 160 + 2 // 転送開始までにラグがある
 		}
 
 	case addr >= 0xff10 && addr <= 0xff26:
