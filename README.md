@@ -1,4 +1,4 @@
-# Worldwide
+# 🌏 Worldwide
 [![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/Worldwide)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
 
@@ -11,7 +11,7 @@ Almost all ROMs work without problems, and have a wide range of functions, inclu
 
 <img src="https://imgur.com/rCduRUc.gif">
 
-## Features & TODO list
+## 🚩 Features & TODO list
 - [x] 60fps
 - [x] pass [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) and [instr_timing](https://github.com/retrio/gb-test-roms/tree/master/instr_timing)
 - [x] Low CPU consumption
@@ -30,27 +30,39 @@ Almost all ROMs work without problems, and have a wide range of functions, inclu
 - [x] Resizable window
 - [x] Pallete color change in DMG
 - [x] Serial DMG communication in local network
+- [x] RaspberryPi support
 - [ ] Serial CGB communication in local network
 - [ ] Serial communication with remote network
 - [ ] GUI Menu 
 - [ ] WebAssembly Audio support
-- [ ] RaspberryPi support
 - [ ] SuperGameBoy support
 
-## Usage
+## 🎮 Usage
 
-- go 1.13
+Download worldwide.exe from [here](https://github.com/Akatsuki-py/Worldwide/releases).
 
 ```sh
-go run ./cmd/main.go "xxx.gb"
-go run ./cmd/main.go --debug "xxx.gb" // debug mode
+./worldwide.exe "***.gb" # or ***.gbc
 ```
 
-## Download
+## 🔨 Build
+
+For those who want to build from source code.
+
+requirements
+- go 1.13
+- make
+
+```sh
+make
+./worldwide "***.gb" # ./worldwide.exe on Windows
+```
+
+## 📥 Download
 
 Please download [here](https://github.com/Akatsuki-py/Worldwide/releases).
 
-## Command 
+## 📄 Command 
 
 | keyboard             | game pad      |
 | -------------------- | ------------- |
@@ -67,7 +79,7 @@ Please download [here](https://github.com/Akatsuki-py/Worldwide/releases).
 | <kbd>D + S</kbd>     | Memory Dump  |
 | <kbd>L</kbd>         | Memory Load |
 
-## web version
+## 💻 Web version
 
 You can play [my emulator on website](https://akatsuki-py.github.io/Worldwide/).
 
