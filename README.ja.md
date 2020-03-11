@@ -1,4 +1,4 @@
-# Worldwide
+# 🌏 Worldwide
 [![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/Worldwide)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
 
@@ -8,7 +8,7 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 
 <img src="https://imgur.com/rCduRUc.gif">
 
-## このエミュレータの特徴 & 今後実装予定の機能
+## 🚩 このエミュレータの特徴 & 今後実装予定の機能
 - [x] 60fpsで動作
 - [x] [cpu_instrs](https://github.com/retrio/gb-test-roms/tree/master/cpu_instrs) と [instr_timing](https://github.com/retrio/gb-test-roms/tree/master/instr_timing)というテストROMをクリアしています
 - [x] 少ないCPU使用率
@@ -27,27 +27,39 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 - [x] ウィンドウの縮小拡大が可能
 - [x] ゲームボーイモードでパレットカラーの変更をサポート
 - [x] ローカルネットワーク内のゲームボーイの通信機能をサポート(未対応のROMもあります テトリス、ポケモン赤などが動作します)
+- [x] ラズパイ対応
 - [ ] ローカルネットワーク内のゲームボーイカラーの通信機能をサポート
 - [ ] ネットワークをまたいだ通信機能のサポート
 - [ ] GUIの操作メニュー
 - [ ] wasm版のサウンドのサポート
-- [ ] ラズパイ対応
 - [ ] スーパーゲームボーイのエミュレーション機能
 
-## 実行方法
+## 🎮 使い方
 
-- go 1.13 以上で動作します。
+[ここ](https://github.com/Akatsuki-py/Worldwide/releases)からダウンロードした後次のように起動します。
 
 ```sh
-go run ./cmd/main.go "xxx.gb"
-go run ./cmd/main.go --debug "xxx.gb" // debug mode
+./worldwide.exe "***.gb" # or ***.gbc
 ```
 
-## ダウンロード
+## 🔨 ビルド
+
+ソースコードからビルドしたい方向けです。
+
+requirements
+- go 1.13
+- make
+
+```sh
+make
+./worldwide "***.gb" # ./worldwide.exe on Windows
+```
+
+## 📥 ダウンロード
 
 [ここ](https://github.com/Akatsuki-py/Worldwide/releases)からダウンロードできます。最新版をダウンロードすることをお勧めします。
 
-## コマンド
+## 📄 コマンド
 
 | キー入力             | コマンド      |
 | -------------------- | ------------- |
@@ -64,7 +76,7 @@ go run ./cmd/main.go --debug "xxx.gb" // debug mode
 | <kbd>D + S</kbd>     | クイックセーブ  |
 | <kbd>L</kbd>         | クイックロード |
 
-## Webバージョンの紹介
+## 💻 Web版の紹介
 
 Goのwasmビルド機能を利用して作成した[Webアプリ版](https://akatsuki-py.github.io/Worldwide/)もあります。
 
