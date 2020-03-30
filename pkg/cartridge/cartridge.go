@@ -19,17 +19,17 @@ type Cartridge struct {
 }
 
 // ParseCartridge - カートリッジ情報を読み取る
-func (cart *Cartridge) ParseCartridge(rom *[]byte) {
+func (cart *Cartridge) ParseCartridge(rom []byte) {
 	var titleBuf []byte
 	for i := 0x0134; i < 0x0143; i++ {
-		if (*rom)[i] == 0 {
+		if rom[i] == 0 {
 			break
 		}
-		titleBuf = append(titleBuf, (*rom)[i])
+		titleBuf = append(titleBuf, rom[i])
 	}
 	cart.Title = string(titleBuf)
-	cart.IsCGB = (uint8((*rom)[0x0143]) == 0x80 || uint8((*rom)[0x0143]) == 0xc0)
-	cart.Type = uint8((*rom)[0x0147])
-	cart.ROMSize = uint8((*rom)[0x0148])
-	cart.RAMSize = uint8((*rom)[0x0149])
+	cart.IsCGB = (uint8(rom[0x0143]) == 0x80 || uint8(rom[0x0143]) == 0xc0)
+	cart.Type = uint8(rom[0x0147])
+	cart.ROMSize = uint8(rom[0x0148])
+	cart.RAMSize = uint8(rom[0x0149])
 }

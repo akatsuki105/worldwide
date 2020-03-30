@@ -68,9 +68,9 @@ type CPU struct {
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
-func (cpu *CPU) TransferROM(rom *[]byte) {
+func (cpu *CPU) TransferROM(rom []byte) {
 	for i := 0x0000; i <= 0x7fff; i++ {
-		cpu.RAM[i] = (*rom)[i]
+		cpu.RAM[i] = rom[i]
 	}
 
 	// カードリッジタイプで場合分け
@@ -236,10 +236,10 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 	}
 }
 
-func (cpu *CPU) transferROM(bankNum int, rom *[]byte) {
+func (cpu *CPU) transferROM(bankNum int, rom []byte) {
 	for bank := 0; bank < bankNum; bank++ {
 		for i := 0x0000; i <= 0x3fff; i++ {
-			cpu.ROMBank[bank][i] = (*rom)[bank*0x4000+i]
+			cpu.ROMBank[bank][i] = rom[bank*0x4000+i]
 		}
 	}
 }

@@ -55,8 +55,8 @@ func Run() int {
 		return 1
 	}
 
-	cpu.Cartridge.ParseCartridge(&romData)
-	cpu.TransferROM(&romData)
+	cpu.Cartridge.ParseCartridge(romData)
+	cpu.TransferROM(romData)
 
 	os.Chdir(cur)
 	cpu.Init(romDir, *debug)
