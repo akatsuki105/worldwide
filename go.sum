@@ -1,5 +1,7 @@
 github.com/Akatsuki-py/hq2xgo v0.0.2 h1:tadQR3gIc8Lt+u/dx6Cr6kgoatj6SPxdJbD5+uw138Q=
 github.com/Akatsuki-py/hq2xgo v0.0.2/go.mod h1:vwdOKAYUMVSx+1QqAFmWxZ9i0jf5YJrrDn2YswJEleU=
+github.com/Akatsuki-py/hq2xgo v0.0.3 h1:iX/SGCxv0341hkhh+cnsEqErR/pi7yOdelxxKnutBpo=
+github.com/Akatsuki-py/hq2xgo v0.0.3/go.mod h1:vwdOKAYUMVSx+1QqAFmWxZ9i0jf5YJrrDn2YswJEleU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1 h1:QbL/5oDUmRBzO9/Z7Seo6zf912W/a6Sr4Eu0G/3Jho0=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
