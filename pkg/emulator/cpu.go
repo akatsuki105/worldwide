@@ -65,6 +65,8 @@ type CPU struct {
 
 	IMESwitch
 	debug bool // デバッグモードかどうか
+
+	HQ2x bool // エミュレータのハイレゾ化が有効かどうか
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -296,6 +298,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	} else {
 		cpu.Expand = expand
 	}
+	cpu.HQ2x = cpu.config.Section("display").Key("hq2x").MustBool(false)
 
 	smooth, err := cpu.config.Section("display").Key("smooth").Bool()
 	if err != nil {

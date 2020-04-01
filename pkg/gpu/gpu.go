@@ -2,6 +2,7 @@ package gpu
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
@@ -10,6 +11,7 @@ import (
 // GPU Graphic Processor Unit
 type GPU struct {
 	display       *ebiten.Image  // 160*144のイメージデータ
+	original      *image.RGBA    // 160*144のイメージデータ
 	LCDC          byte           // LCD Control
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scrollの座標
@@ -35,6 +37,7 @@ var (
 // Init GPU
 func (gpu *GPU) Init() {
 	gpu.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
+	gpu.original = image.NewRGBA(image.Rect(0, 0, 160, 144))
 }
 
 // InitPallete init gameboy pallete color
@@ -46,12 +49,13 @@ func (gpu *GPU) InitPallete(color0, color1, color2, color3 []int) {
 }
 
 // GetDisplay getter for display data
-func (gpu *GPU) GetDisplay() *ebiten.Image {
-	return gpu.display
+func (gpu *GPU) GetDisplay() (*ebiten.Image, *image.RGBA) {
+	return gpu.display, gpu.original
 }
 
 func (gpu *GPU) set(x, y int, c color.RGBA) {
 	gpu.display.Set(x, y, c)
+	gpu.original.SetRGBA(x, y, c)
 }
 
 // --------------------------------------------- Render -----------------------------------------------------
