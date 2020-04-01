@@ -65,12 +65,14 @@ type CPU struct {
 
 	IMESwitch
 	debug bool // デバッグモードかどうか
+
+	HQ2x bool // エミュレータのハイレゾ化が有効かどうか
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
-func (cpu *CPU) TransferROM(rom *[]byte) {
+func (cpu *CPU) TransferROM(rom []byte) {
 	for i := 0x0000; i <= 0x7fff; i++ {
-		cpu.RAM[i] = (*rom)[i]
+		cpu.RAM[i] = rom[i]
 	}
 
 	// カードリッジタイプで場合分け
@@ -236,10 +238,10 @@ func (cpu *CPU) TransferROM(rom *[]byte) {
 	}
 }
 
-func (cpu *CPU) transferROM(bankNum int, rom *[]byte) {
+func (cpu *CPU) transferROM(bankNum int, rom []byte) {
 	for bank := 0; bank < bankNum; bank++ {
 		for i := 0x0000; i <= 0x3fff; i++ {
-			cpu.ROMBank[bank][i] = (*rom)[bank*0x4000+i]
+			cpu.ROMBank[bank][i] = rom[bank*0x4000+i]
 		}
 	}
 }
@@ -296,6 +298,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	} else {
 		cpu.Expand = expand
 	}
+	cpu.HQ2x = cpu.config.Section("display").Key("hq2x").MustBool(false)
 
 	smooth, err := cpu.config.Section("display").Key("smooth").Bool()
 	if err != nil {

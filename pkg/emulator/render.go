@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	hq2x "github.com/Akatsuki-py/hq2xgo"
 	"github.com/hajimehoshi/ebiten"
 )
 
@@ -150,7 +151,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		wait.Done()
 	}()
 
-	screen.DrawImage(cpu.GPU.GetDisplay(), nil)
+	display, original := cpu.GPU.GetDisplay()
+	if cpu.HQ2x {
+		tmp, _ := hq2x.HQ2x(original)
+		display, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
+	}
+	screen.DrawImage(display, nil)
 
 	frames++
 
