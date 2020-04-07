@@ -19,8 +19,8 @@ func Init() *ini.File {
 
 	// display config
 	cfg.Section("display").Key("expand").SetValue("2")
-	cfg.Section("display").Key("smooth").SetValue("true")
 	cfg.Section("display").Key("hq2x").SetValue("false")
+	cfg.Section("display").Key("fps30").SetValue("true")
 
 	// DMG pallete color
 	cfg.Section("pallete").Key("color0").SetValue("175,197,160")

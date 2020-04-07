@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	hq2x "github.com/Akatsuki-py/hq2xgo"
 	"github.com/hajimehoshi/ebiten"
 )
 
@@ -20,10 +19,11 @@ const (
 )
 
 var (
-	wait      sync.WaitGroup
-	lineMutex sync.Mutex
-	frames    = 0
-	second    = time.Tick(time.Second)
+	wait       sync.WaitGroup
+	lineMutex  sync.Mutex
+	frames     = 0
+	second     = time.Tick(time.Second)
+	skipRender bool
 )
 
 // Render レンダリングを行う
@@ -32,6 +32,8 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	if frames == 0 {
 		setIcon()
 	}
+
+	skipRender = (cpu.fps30) && (frames%2 == 1)
 
 	LCDC := cpu.FetchMemory8(LCDCIO)
 	scrollX, scrollY := cpu.GPU.ReadScroll()
@@ -85,53 +87,57 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		WY := uint(cpu.FetchMemory8(WYIO))
 		WX := uint(cpu.FetchMemory8(WXIO)) - 7
 
-		// 背景(ウィンドウ)描画
-		for x := 0; x < iterX; x += 8 {
-			blockX := x / 8
-			blockY := y / 8
+		if !skipRender {
+			// 背景(ウィンドウ)描画
+			for x := 0; x < iterX; x += 8 {
+				blockX := x / 8
+				blockY := y / 8
 
-			var tileX, tileY uint
-			var useWindow bool
-			var entryX, entryY int
+				var tileX, tileY uint
+				var useWindow bool
+				var entryX, entryY int
 
-			if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
-				tileX = ((uint(x) - WX) / 8) % 32
-				tileY = ((uint(y) - WY) / 8) % 32
-				useWindow = true
+				if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
+					tileX = ((uint(x) - WX) / 8) % 32
+					tileY = ((uint(y) - WY) / 8) % 32
+					useWindow = true
 
-				entryX = blockX * 8
-				entryY = blockY * 8
-			} else {
-				tileX = (scrollTileX + uint(x/8)) % 32
-				tileY = (scrollTileY + uint(y/8)) % 32
-				useWindow = false
+					entryX = blockX * 8
+					entryY = blockY * 8
+				} else {
+					tileX = (scrollTileX + uint(x/8)) % 32
+					tileY = (scrollTileY + uint(y/8)) % 32
+					useWindow = false
 
-				entryX = blockX*8 - int(scrollPixelX)
-				entryY = blockY*8 - int(scrollPixelY)
-			}
+					entryX = blockX*8 - int(scrollPixelX)
+					entryY = blockY*8 - int(scrollPixelY)
+				}
 
-			if LCDC>>7%2 == 1 {
-				if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
-					break
+				if LCDC>>7%2 == 1 {
+					if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
+						break
+					}
 				}
 			}
 		}
 	}
 
-	// スプライト描画
-	for i := 0; i < 40; i++ {
-		Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
-		if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
-			Y -= 16
-			X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
-			tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
-			attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
-			cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+	if !skipRender {
+		// スプライト描画
+		for i := 0; i < 40; i++ {
+			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
+			if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
+				Y -= 16
+				X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
+				tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
+				attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
+				cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+			}
 		}
-	}
 
-	// 背景優先のpixelを描画していく
-	cpu.GPU.SetBGPriorPixels()
+		// 背景優先のpixelを描画していく
+		cpu.GPU.SetBGPriorPixels()
+	}
 
 	// VBlank
 	wait.Add(1)
@@ -151,10 +157,9 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		wait.Done()
 	}()
 
-	display, original := cpu.GPU.GetDisplay()
-	if cpu.HQ2x {
-		tmp, _ := hq2x.HQ2x(original)
-		display, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
+	display := cpu.GPU.GetDisplay(cpu.HQ2x)
+	if !skipRender && cpu.HQ2x {
+		display = cpu.GPU.HQ2x()
 	}
 	screen.DrawImage(display, nil)
 
@@ -178,11 +183,13 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				cpu.loadData()
 				cpu.Sound.On()
 			case joypad.Expand:
-				cpu.Expand *= 2
-				time.Sleep(time.Millisecond * 400)
-				ebiten.SetScreenScale(float64(cpu.Expand))
+				if !cpu.HQ2x {
+					cpu.Expand *= 2
+					time.Sleep(time.Millisecond * 400)
+					ebiten.SetScreenScale(float64(cpu.Expand))
+				}
 			case joypad.Collapse:
-				if cpu.Expand >= 2 {
+				if !cpu.HQ2x && cpu.Expand >= 2 {
 					cpu.Expand /= 2
 					time.Sleep(time.Millisecond * 400)
 					ebiten.SetScreenScale(float64(cpu.Expand))

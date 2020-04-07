@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 
+	hq2x "github.com/Akatsuki-py/hq2xgo"
 	"github.com/hajimehoshi/ebiten"
 )
 
@@ -12,6 +13,7 @@ import (
 type GPU struct {
 	display       *ebiten.Image  // 160*144のイメージデータ
 	original      *image.RGBA    // 160*144のイメージデータ
+	hq2x          *ebiten.Image  // 320*288のイメージデータ(HQ2xかつ30fpsで使用)
 	LCDC          byte           // LCD Control
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scrollの座標
@@ -34,10 +36,17 @@ var (
 	}
 )
 
+const (
+	BGP = iota
+	OBP0
+	OBP1
+)
+
 // Init GPU
 func (gpu *GPU) Init() {
 	gpu.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
 	gpu.original = image.NewRGBA(image.Rect(0, 0, 160, 144))
+	gpu.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
 }
 
 // InitPallete init gameboy pallete color
@@ -49,8 +58,18 @@ func (gpu *GPU) InitPallete(color0, color1, color2, color3 []int) {
 }
 
 // GetDisplay getter for display data
-func (gpu *GPU) GetDisplay() (*ebiten.Image, *image.RGBA) {
-	return gpu.display, gpu.original
+func (gpu *GPU) GetDisplay(hq2x bool) *ebiten.Image {
+	if hq2x {
+		return gpu.hq2x
+	}
+	return gpu.display
+}
+
+// HQ2x - scaling display data using HQ2x
+func (gpu *GPU) HQ2x() *ebiten.Image {
+	tmp, _ := hq2x.HQ2x(gpu.original)
+	gpu.hq2x, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
+	return gpu.hq2x
 }
 
 func (gpu *GPU) set(x, y int, c color.RGBA) {
@@ -96,7 +115,7 @@ func (gpu *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCG
 
 	index16 := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 	addr = uint16(baseAddr + 2*index16)
-	return gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, "BGP", attr, 8, isCGB)
+	return gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, BGP, attr, 8, isCGB)
 }
 
 // SetSPRTile スプライトを出力する
@@ -106,7 +125,7 @@ func (gpu *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB 
 		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
 			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, "OBP1", attr, spriteYSize, isCGB)
+			continueFlag := gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP1, attr, spriteYSize, isCGB)
 			if !continueFlag {
 				break
 			}
@@ -115,7 +134,7 @@ func (gpu *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB 
 		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
 			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, "OBP0", attr, spriteYSize, isCGB)
+			continueFlag := gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP0, attr, spriteYSize, isCGB)
 			if !continueFlag {
 				break
 			}
@@ -199,7 +218,7 @@ func (gpu *GPU) fetchSPRYSize() int {
 }
 
 // ディスプレイにpixelデータをタイルの行単位でセットする 描画範囲外に出たときはfalseを返して描画を切り上げるべき旨を呼び出し元に伝える
-func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType string, attr byte, spriteYSize int, isCGB bool) bool {
+func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType int, attr byte, spriteYSize int, isCGB bool) bool {
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	VRAMBankPtr := (attr >> 3) & 0x01
@@ -246,7 +265,7 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 			}
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {
-				if tileType == "BGP" {
+				if tileType == BGP {
 					gpu.displayColor[y][x] = colorNumber
 
 					if (attr>>7)&0x01 == 1 {
@@ -275,17 +294,17 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 	return true
 }
 
-func (gpu *GPU) parsePallete(name string, colorNumber byte) (RGB byte, transparent bool) {
+func (gpu *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transparent bool) {
 	var pallete byte
-	switch name {
-	case "BGP":
+	switch tileType {
+	case BGP:
 		pallete = gpu.DMGPallte[0]
-	case "OBP0":
+	case OBP0:
 		pallete = gpu.DMGPallte[1]
-	case "OBP1":
+	case OBP1:
 		pallete = gpu.DMGPallte[2]
 	default:
-		errMsg := fmt.Sprintf("Error: BG Pallete name is invalid. %s", name)
+		errMsg := fmt.Sprintf("parsePallete Error: BG Pallete tile type is invalid. %d", tileType)
 		panic(errMsg)
 	}
 
@@ -294,7 +313,7 @@ func (gpu *GPU) parsePallete(name string, colorNumber byte) (RGB byte, transpare
 	switch colorNumber {
 	case 0:
 		RGB = (pallete >> 0) % 4
-		if name == "OBP0" || name == "OBP1" {
+		if tileType == OBP0 || tileType == OBP1 {
 			transparent = true
 		}
 	case 1:
@@ -304,23 +323,23 @@ func (gpu *GPU) parsePallete(name string, colorNumber byte) (RGB byte, transpare
 	case 3:
 		RGB = (pallete >> 6) % 4
 	default:
-		errMsg := fmt.Sprintf("Error: BG Pallete number is invalid. %d", colorNumber)
+		errMsg := fmt.Sprintf("parsePallete Error: BG Pallete number is invalid. %d", colorNumber)
 		panic(errMsg)
 	}
 	return RGB, transparent
 }
 
-func (gpu *GPU) parseCGBPallete(name string, palleteNumber, colorNumber byte) (R, G, B byte, transparent bool) {
+func (gpu *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R, G, B byte, transparent bool) {
 	transparent = false
-	switch name {
-	case "BGP":
+	switch tileType {
+	case BGP:
 		i := palleteNumber*8 + colorNumber*2
 		RGBLower, RGBUpper := uint16(gpu.BGPallete[i]), uint16(gpu.BGPallete[i+1])
 		RGB := (RGBUpper << 8) | RGBLower
 		R = byte(RGB & 0b11111)                 // bit 0-4
 		G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9
 		B = byte((RGB & (0b11111 << 10)) >> 10) // bit 10-14
-	case "OBP0", "OBP1":
+	case OBP0, OBP1:
 		if colorNumber == 0 {
 			transparent = true
 		} else {

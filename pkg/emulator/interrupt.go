@@ -10,7 +10,7 @@ type IMESwitch struct {
 // ------------ VBlank --------------------
 
 func (cpu *CPU) getVBlankEnable() bool {
-	IE := cpu.FetchMemory8(IEIO)
+	IE := cpu.fetchIO(IEIO)
 	VBlankEnable := IE % 2
 	if VBlankEnable == 1 {
 		return true
@@ -19,17 +19,17 @@ func (cpu *CPU) getVBlankEnable() bool {
 }
 
 func (cpu *CPU) setVBlankEnable() {
-	IE := cpu.FetchMemory8(IEIO) | 0x01
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) | 0x01
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) clearVBlankEnable() {
-	IE := cpu.FetchMemory8(IEIO) & 0xfe
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) & 0xfe
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) getVBlankFlag() bool {
-	IF := cpu.FetchMemory8(IFIO)
+	IF := cpu.fetchIO(IFIO)
 	VBlankFlag := IF % 2
 	if VBlankFlag == 1 {
 		return true
@@ -38,20 +38,20 @@ func (cpu *CPU) getVBlankFlag() bool {
 }
 
 func (cpu *CPU) setVBlankFlag() {
-	IF := cpu.FetchMemory8(IFIO) | 0x01
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) | 0x01
+	cpu.setIO(IFIO, IF)
 	cpu.halt = false
 }
 
 func (cpu *CPU) clearVBlankFlag() {
-	IF := cpu.FetchMemory8(IFIO) & 0xfe
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) & 0xfe
+	cpu.setIO(IFIO, IF)
 }
 
 // ------------ LCD STAT ------------------
 
 func (cpu *CPU) getLCDSTATEnable() bool {
-	IE := cpu.FetchMemory8(IEIO)
+	IE := cpu.fetchIO(IEIO)
 	LCDSTATEnable := (IE >> 1) % 2
 	if LCDSTATEnable == 1 {
 		return true
@@ -60,17 +60,17 @@ func (cpu *CPU) getLCDSTATEnable() bool {
 }
 
 func (cpu *CPU) setLCDSTATEnable() {
-	IE := cpu.FetchMemory8(IEIO) | 0x02
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) | 0x02
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) clearLCDSTATEnable() {
-	IE := cpu.FetchMemory8(IEIO) & 0xfd
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) & 0xfd
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) getLCDSTATFlag() bool {
-	IF := cpu.FetchMemory8(IFIO)
+	IF := cpu.fetchIO(IFIO)
 	LCDSTATFlag := (IF >> 1) % 2
 	if LCDSTATFlag == 1 {
 		return true
@@ -79,20 +79,20 @@ func (cpu *CPU) getLCDSTATFlag() bool {
 }
 
 func (cpu *CPU) setLCDSTATFlag() {
-	IF := cpu.FetchMemory8(IFIO) | 0x02
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) | 0x02
+	cpu.setIO(IFIO, IF)
 	cpu.halt = false
 }
 
 func (cpu *CPU) clearLCDSTATFlag() {
-	IF := cpu.FetchMemory8(IFIO) & 0xfd
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) & 0xfd
+	cpu.setIO(IFIO, IF)
 }
 
 // ------------ timer --------------------
 
 func (cpu *CPU) getTimerEnable() bool {
-	IE := cpu.FetchMemory8(IEIO)
+	IE := cpu.fetchIO(IEIO)
 	TimerEnable := (IE >> 2) % 2
 	if TimerEnable == 1 {
 		return true
@@ -101,17 +101,17 @@ func (cpu *CPU) getTimerEnable() bool {
 }
 
 func (cpu *CPU) setTimerEnable() {
-	IE := cpu.FetchMemory8(IEIO) | 0x04
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) | 0x04
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) clearTimerEnable() {
-	IE := cpu.FetchMemory8(IEIO) & 0xfb
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) & 0xfb
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) getTimerFlag() bool {
-	IF := cpu.FetchMemory8(IFIO)
+	IF := cpu.fetchIO(IFIO)
 	LCDSTATFlag := (IF >> 2) % 2
 	if LCDSTATFlag == 1 {
 		return true
@@ -120,14 +120,14 @@ func (cpu *CPU) getTimerFlag() bool {
 }
 
 func (cpu *CPU) setTimerFlag() {
-	IF := cpu.FetchMemory8(IFIO) | 0x04
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) | 0x04
+	cpu.setIO(IFIO, IF)
 	cpu.halt = false
 }
 
 func (cpu *CPU) clearTimerFlag() {
-	IF := cpu.FetchMemory8(IFIO) & 0xfb
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) & 0xfb
+	cpu.setIO(IFIO, IF)
 }
 
 func (cpu *CPU) timer(cycle int) {
@@ -244,7 +244,7 @@ func (cpu *CPU) timer(cycle int) {
 // ------------ Serial --------------------
 
 func (cpu *CPU) getSerialEnable() bool {
-	IE := cpu.FetchMemory8(IEIO)
+	IE := cpu.fetchIO(IEIO)
 	SerialEnable := (IE >> 3) % 2
 	if SerialEnable == 1 {
 		return true
@@ -253,17 +253,17 @@ func (cpu *CPU) getSerialEnable() bool {
 }
 
 func (cpu *CPU) setSerialEnable() {
-	IE := cpu.FetchMemory8(IEIO) | 0x08
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) | 0x08
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) clearSerialEnable() {
-	IE := cpu.FetchMemory8(IEIO) & 0xf7
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) & 0xf7
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) getSerialFlag() bool {
-	IF := cpu.FetchMemory8(IFIO)
+	IF := cpu.fetchIO(IFIO)
 	serialFlag := (IF >> 3) % 2
 	if serialFlag == 1 {
 		return true
@@ -272,20 +272,20 @@ func (cpu *CPU) getSerialFlag() bool {
 }
 
 func (cpu *CPU) setSerialFlag() {
-	IF := cpu.FetchMemory8(IFIO) | 0x08
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) | 0x08
+	cpu.setIO(IFIO, IF)
 	cpu.halt = false
 }
 
 func (cpu *CPU) clearSerialFlag() {
-	IF := cpu.FetchMemory8(IFIO) & 0xf7
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) & 0xf7
+	cpu.setIO(IFIO, IF)
 }
 
 // ------------ Joypad --------------------
 
 func (cpu *CPU) getJoypadEnable() bool {
-	IE := cpu.FetchMemory8(IEIO)
+	IE := cpu.fetchIO(IEIO)
 	JoypadEnable := (IE >> 4) % 2
 	if JoypadEnable == 1 {
 		return true
@@ -294,17 +294,17 @@ func (cpu *CPU) getJoypadEnable() bool {
 }
 
 func (cpu *CPU) setJoypadEnable() {
-	IE := cpu.FetchMemory8(IEIO) | 0x10
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) | 0x10
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) clearJoypadEnable() {
-	IE := cpu.FetchMemory8(IEIO) & 0xef
-	cpu.SetMemory8(IEIO, IE)
+	IE := cpu.fetchIO(IEIO) & 0xef
+	cpu.setIO(IEIO, IE)
 }
 
 func (cpu *CPU) getJoypadFlag() bool {
-	IF := cpu.FetchMemory8(IFIO)
+	IF := cpu.fetchIO(IFIO)
 	JoypadFlag := (IF >> 4) % 2
 	if JoypadFlag == 1 {
 		return true
@@ -313,14 +313,14 @@ func (cpu *CPU) getJoypadFlag() bool {
 }
 
 func (cpu *CPU) setJoypadFlag() {
-	IF := cpu.FetchMemory8(IFIO) | 0x10
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) | 0x10
+	cpu.setIO(IFIO, IF)
 	cpu.halt = false
 }
 
 func (cpu *CPU) clearJoypadFlag() {
-	IF := cpu.FetchMemory8(IFIO) & 0xef
-	cpu.SetMemory8(IFIO, IF)
+	IF := cpu.fetchIO(IFIO) & 0xef
+	cpu.setIO(IFIO, IF)
 }
 
 // ------------ trigger --------------------
@@ -333,7 +333,7 @@ func (cpu *CPU) triggerInterrupt() {
 }
 
 func (cpu *CPU) triggerVBlank() {
-	LCDActive := (cpu.FetchMemory8(LCDCIO) >> 7) == 1
+	LCDActive := (cpu.fetchIO(LCDCIO) >> 7) == 1
 	if LCDActive {
 		cpu.clearVBlankFlag()
 		cpu.triggerInterrupt()

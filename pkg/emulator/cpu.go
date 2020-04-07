@@ -47,7 +47,6 @@ type CPU struct {
 	// 画面
 	GPU    gpu.GPU
 	Expand uint
-	smooth bool // pixelglのsmoothモードの有無
 	// RTC
 	RTC   rtc.RTC
 	boost int // 倍速か
@@ -66,7 +65,8 @@ type CPU struct {
 	IMESwitch
 	debug bool // デバッグモードかどうか
 
-	HQ2x bool // エミュレータのハイレゾ化が有効かどうか
+	fps30 bool // fpsを30に下げるモードかどうか
+	HQ2x  bool // エミュレータのハイレゾ化が有効かどうか
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -248,41 +248,45 @@ func (cpu *CPU) transferROM(bankNum int, rom []byte) {
 
 // Init CPU・メモリの初期化
 func (cpu *CPU) Init(romdir string, debug bool) {
-	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
-	cpu.Reg.BC = 0x0013
-	cpu.Reg.DE = 0x00d8
-	cpu.Reg.HL = 0x014d
-	cpu.Reg.PC = 0x0100
-	cpu.Reg.SP = 0xfffe
+	{
+		cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
+		cpu.Reg.BC = 0x0013
+		cpu.Reg.DE = 0x00d8
+		cpu.Reg.HL = 0x014d
+		cpu.Reg.PC = 0x0100
+		cpu.Reg.SP = 0xfffe
+	}
 
-	cpu.RAM[0xff04] = 0x1e
-	cpu.RAM[0xff05] = 0x00
-	cpu.RAM[0xff06] = 0x00
-	cpu.RAM[0xff07] = 0xf8
-	cpu.RAM[0xff0f] = 0xe1
-	cpu.RAM[0xff10] = 0x80
-	cpu.RAM[0xff11] = 0xbf
-	cpu.RAM[0xff12] = 0xf3
-	cpu.RAM[0xff14] = 0xbf
-	cpu.RAM[0xff16] = 0x3f
-	cpu.RAM[0xff17] = 0x00
-	cpu.RAM[0xff19] = 0xbf
-	cpu.RAM[0xff1a] = 0x7f
-	cpu.RAM[0xff1b] = 0xff
-	cpu.RAM[0xff1c] = 0x9f
-	cpu.RAM[0xff1e] = 0xbf
-	cpu.RAM[0xff20] = 0xff
-	cpu.RAM[0xff21] = 0x00
-	cpu.RAM[0xff22] = 0x00
-	cpu.RAM[0xff23] = 0xbf
-	cpu.RAM[0xff24] = 0x77
-	cpu.RAM[0xff25] = 0xf3
-	cpu.RAM[0xff26] = 0xf1
-	cpu.SetMemory8(LCDCIO, 0x91)
-	cpu.SetMemory8(LCDSTATIO, 0x85)
-	cpu.RAM[BGPIO] = 0xfc
-	cpu.RAM[OBP0IO] = 0xff
-	cpu.RAM[OBP1IO] = 0xff
+	{
+		cpu.RAM[0xff04] = 0x1e
+		cpu.RAM[0xff05] = 0x00
+		cpu.RAM[0xff06] = 0x00
+		cpu.RAM[0xff07] = 0xf8
+		cpu.RAM[0xff0f] = 0xe1
+		cpu.RAM[0xff10] = 0x80
+		cpu.RAM[0xff11] = 0xbf
+		cpu.RAM[0xff12] = 0xf3
+		cpu.RAM[0xff14] = 0xbf
+		cpu.RAM[0xff16] = 0x3f
+		cpu.RAM[0xff17] = 0x00
+		cpu.RAM[0xff19] = 0xbf
+		cpu.RAM[0xff1a] = 0x7f
+		cpu.RAM[0xff1b] = 0xff
+		cpu.RAM[0xff1c] = 0x9f
+		cpu.RAM[0xff1e] = 0xbf
+		cpu.RAM[0xff20] = 0xff
+		cpu.RAM[0xff21] = 0x00
+		cpu.RAM[0xff22] = 0x00
+		cpu.RAM[0xff23] = 0xbf
+		cpu.RAM[0xff24] = 0x77
+		cpu.RAM[0xff25] = 0xf3
+		cpu.RAM[0xff26] = 0xf1
+		cpu.SetMemory8(LCDCIO, 0x91)
+		cpu.SetMemory8(LCDSTATIO, 0x85)
+		cpu.RAM[BGPIO] = 0xfc
+		cpu.RAM[OBP0IO] = 0xff
+		cpu.RAM[OBP1IO] = 0xff
+	}
 
 	cpu.ROMBankPtr = 1
 	cpu.WRAMBankPtr = 1
@@ -299,12 +303,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 		cpu.Expand = expand
 	}
 	cpu.HQ2x = cpu.config.Section("display").Key("hq2x").MustBool(false)
-
-	smooth, err := cpu.config.Section("display").Key("smooth").Bool()
-	if err != nil {
-		smooth = false
-	}
-	cpu.smooth = smooth
+	cpu.fps30 = cpu.config.Section("display").Key("fps30").MustBool(false)
 
 	network, err := cpu.config.Section("network").Key("network").Bool()
 	if err != nil {
@@ -367,7 +366,8 @@ func (cpu *CPU) Exit() {
 
 // Exec 1サイクル
 func (cpu *CPU) exec() {
-	opcode := opcodes[cpu.FetchMemory8(cpu.Reg.PC)]
+	bytecode := cpu.FetchMemory8(cpu.Reg.PC)
+	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle1, cycle2, exec := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Exec
 	cycle := cycle1
 
@@ -456,7 +456,7 @@ func (cpu *CPU) exec() {
 			default:
 				cpu.writeHistory()
 
-				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, opcode)
+				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)
 			}
 		}
