@@ -1,8 +1,0 @@
-language: go
-
-os: windows
-
-go:
-  - "1.13"
-
-script: go build ./cmd/main.go

@@ -151,7 +151,7 @@ func (cpu *CPU) timer(cycle int) {
 	}
 
 	// シリアル通信のクロック管理
-	if cpu.network && cpu.Serial.TransferFlag > 0 {
+	if cpu.Config.Network.Network && cpu.Serial.TransferFlag > 0 {
 		cpu.cycleSerial += cycle
 		if cpu.cycleSerial > 128*8 {
 			cpu.Serial.TransferFlag = 0

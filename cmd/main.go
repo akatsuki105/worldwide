@@ -66,7 +66,7 @@ func Run() int {
 	}()
 
 	ebiten.SetRunnableInBackground(true)
-	if cpu.HQ2x {
+	if cpu.Config.Display.HQ2x {
 		if err := ebiten.Run(cpu.Render, 160*2, 144*2, 1, "Worldwide"); err != nil {
 			return 1
 		}

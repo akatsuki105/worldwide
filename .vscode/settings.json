@@ -9,6 +9,9 @@
             "source.organizeImports": true
         }
     },
+    "[toml]": {
+        "editor.formatOnSave": true,
+    },
     "go.autocompleteUnimportedPackages": true,
     "gopls": {
         "usePlaceholders": true

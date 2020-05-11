@@ -2,6 +2,7 @@
 worldwide.wasm
 *.sav
 *.ini
+*.toml
 public/
 game/
 dump/

@@ -33,7 +33,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		setIcon()
 	}
 
-	skipRender = (cpu.fps30) && (frames%2 == 1)
+	skipRender = (cpu.Config.Display.FPS30) && (frames%2 == 1)
 
 	LCDC := cpu.FetchMemory8(LCDCIO)
 	scrollX, scrollY := cpu.GPU.ReadScroll()
@@ -157,8 +157,8 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		wait.Done()
 	}()
 
-	display := cpu.GPU.GetDisplay(cpu.HQ2x)
-	if !skipRender && cpu.HQ2x {
+	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
+	if !skipRender && cpu.Config.Display.HQ2x {
 		display = cpu.GPU.HQ2x()
 	}
 	screen.DrawImage(display, nil)
@@ -166,7 +166,8 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	frames++
 
 	if frames%3 == 0 {
-		result := cpu.joypad.Input()
+		pad := cpu.Config.Joypad
+		result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
 		if result != 0 {
 			switch result {
 			case joypad.Pressed:
@@ -183,13 +184,13 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				cpu.loadData()
 				cpu.Sound.On()
 			case joypad.Expand:
-				if !cpu.HQ2x {
+				if !cpu.Config.Display.HQ2x {
 					cpu.Expand *= 2
 					time.Sleep(time.Millisecond * 400)
 					ebiten.SetScreenScale(float64(cpu.Expand))
 				}
 			case joypad.Collapse:
-				if !cpu.HQ2x && cpu.Expand >= 2 {
+				if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 {
 					cpu.Expand /= 2
 					time.Sleep(time.Millisecond * 400)
 					ebiten.SetScreenScale(float64(cpu.Expand))

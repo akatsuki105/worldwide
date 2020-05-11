@@ -5,8 +5,6 @@ import (
 	"net"
 	"sync"
 
-	"gopkg.in/ini.v1"
-
 	"gbc/pkg/apu"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
@@ -25,7 +23,7 @@ type CPU struct {
 	history   []string
 	joypad    joypad.Joypad
 	halt      bool // Halt状態か
-	config    *ini.File
+	Config    *config.Config
 	// timer関連
 	cycle       int // タイマー用
 	cycleDIV    int // DIVタイマー用
@@ -51,8 +49,7 @@ type CPU struct {
 	RTC   rtc.RTC
 	boost int // 倍速か
 	// シリアル通信
-	Serial  serial.Serial
-	network bool
+	Serial serial.Serial
 
 	romdir string // ロムがあるところのディレクトリパス
 
@@ -64,9 +61,6 @@ type CPU struct {
 
 	IMESwitch
 	debug bool // デバッグモードかどうか
-
-	fps30 bool // fpsを30に下げるモードかどうか
-	HQ2x  bool // エミュレータのハイレゾ化が有効かどうか
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -292,27 +286,14 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	cpu.WRAMBankPtr = 1
 
 	cpu.GPU.Init()
-	cpu.config = config.Init()
+	cpu.Config = config.Init()
+	cpu.Expand = uint(cpu.Config.Display.Expand)
 
 	cpu.boost = 1
 
-	expand, err := cpu.config.Section("display").Key("expand").Uint()
-	if err != nil {
-		cpu.Expand = 1
-	} else {
-		cpu.Expand = expand
-	}
-	cpu.HQ2x = cpu.config.Section("display").Key("hq2x").MustBool(false)
-	cpu.fps30 = cpu.config.Section("display").Key("fps30").MustBool(false)
-
-	network, err := cpu.config.Section("network").Key("network").Bool()
-	if err != nil {
-		network = false
-	}
-	cpu.network = network
-	if network {
-		your := cpu.config.Section("network").Key("your").MustString("127.0.0.1:8888")
-		peer := cpu.config.Section("network").Key("peer").MustString("127.0.0.1:9999")
+	if cpu.Config.Network.Network {
+		your := cpu.Config.Network.Your
+		peer := cpu.Config.Network.Peer
 		myIP, myPort, _ := net.SplitHostPort(your)
 		peerIP, peerPort, _ := net.SplitHostPort(peer)
 		received := make(chan int)
@@ -332,10 +313,10 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	}
 
 	if !cpu.Cartridge.IsCGB {
-		color0 := cpu.config.Section("pallete").Key("color0").Ints(",")
-		color1 := cpu.config.Section("pallete").Key("color1").Ints(",")
-		color2 := cpu.config.Section("pallete").Key("color2").Ints(",")
-		color3 := cpu.config.Section("pallete").Key("color3").Ints(",")
+		color0 := cpu.Config.Pallete.Color0
+		color1 := cpu.Config.Pallete.Color1
+		color2 := cpu.Config.Pallete.Color2
+		color3 := cpu.Config.Pallete.Color3
 		cpu.GPU.InitPallete(color0, color1, color2, color3)
 	}
 

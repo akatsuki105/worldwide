@@ -1,50 +1,88 @@
 package config
 
 import (
-	"os"
+	"io/ioutil"
 
-	"gopkg.in/ini.v1"
+	"github.com/BurntSushi/toml"
 )
 
-// Init init config
-func Init() *ini.File {
-	exist := checkConfigFileExist()
-	if exist {
-		cfg, _ := ini.Load("worldwide.ini")
+const (
+	tomlName = "worldwide.toml"
+)
+
+// Config for emulator
+type Config struct {
+	Display Display `toml:"display"`
+	Pallete Pallete `toml:"pallete"`
+	Network Network `toml:"network"`
+	Joypad  Joypad  `toml:"joypad"`
+}
+
+// Display config
+type Display struct {
+	Expand int  `toml:"expand"`
+	HQ2x   bool `toml:"hq2x"`  // エミュレータのハイレゾ化が有効かどうか
+	FPS30  bool `toml:"fps30"` // fpsを30に下げるモードかどうか
+}
+
+// Pallete for DMG
+type Pallete struct {
+	Color0 [3]int `toml:"color0"`
+	Color1 [3]int `toml:"color1"`
+	Color2 [3]int `toml:"color2"`
+	Color3 [3]int `toml:"color3"`
+}
+
+// Network config
+type Network struct {
+	Network bool   `toml:"network"`
+	Your    string `toml:"your"`
+	Peer    string `toml:"peer"`
+}
+
+// Joypad config
+type Joypad struct {
+	A         uint    `toml:"A"`
+	B         uint    `toml:"B"`
+	Start     uint    `toml:"Start"`
+	Select    uint    `toml:"Select"`
+	Threshold float64 `toml:"threshold"`
+}
+
+func Init() *Config {
+	cfg := &Config{}
+
+	// load config
+	if _, err := toml.DecodeFile(tomlName, cfg); err == nil {
 		return cfg
 	}
 
-	// create new config file
-	cfg := ini.Empty()
+	// create config
+	cfgText := `[display]
+expand = 2 # window expansion
+hq2x = false # use HQ2x scaling mode
+fps30 = true # reduce fps 30
 
-	// display config
-	cfg.Section("display").Key("expand").SetValue("2")
-	cfg.Section("display").Key("hq2x").SetValue("false")
-	cfg.Section("display").Key("fps30").SetValue("true")
+[pallete]
+# DMG Color Pallete [R, G, B]
+color0 = [175, 197, 160]
+color1 = [93, 147, 66]
+color2 = [22, 63, 48]
+color3 = [0, 40, 0]
 
-	// DMG pallete color
-	cfg.Section("pallete").Key("color0").SetValue("175,197,160")
-	cfg.Section("pallete").Key("color1").SetValue("93,147,66")
-	cfg.Section("pallete").Key("color2").SetValue("22,63,48")
-	cfg.Section("pallete").Key("color3").SetValue("0,40,0")
+[network]
+network = false
+your = "127.0.0.1:8888"
+peer = "127.0.0.1:9999"
 
-	// network config
-	cfg.Section("network").Key("network").SetValue("false")
-	cfg.Section("network").Key("your").SetValue("localhost:8888")
-	cfg.Section("network").Key("peer").SetValue("localhost:9999")
-
-	// save config
-	cfg.SaveTo("worldwide.ini")
-
+[joypad]
+A = 1
+B = 0
+Start = 7
+Select = 6
+threshold = 0.7 # How reactive axis is
+`
+	ioutil.WriteFile(tomlName, []byte(cfgText), 0666)
+	toml.Decode(cfgText, cfg)
 	return cfg
-}
-
-// check ini file exists
-func checkConfigFileExist() bool {
-	filename := "worldwide.ini"
-	_, err := os.Stat(filename)
-	if err != nil {
-		return false
-	}
-	return true
 }

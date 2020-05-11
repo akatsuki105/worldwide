@@ -23,9 +23,30 @@ const (
 	Collapse
 )
 
-var Xbox360Controller map[string]int = map[string]int{"A": 1, "B": 0, "Start": 7, "Select": 6, "Horizontal": 0, "Vertical": 1}
-var LogitechGamepadF310 map[string]int = map[string]int{"A": 1, "B": 0, "Start": 8, "Select": 7, "Horizontal": 0, "Vertical": 1}
-var HORIPAD map[string]int = map[string]int{"A": 2, "B": 1, "Start": 3, "Select": 0, "Horizontal": 0, "Vertical": 1}
+func gamepad(n uint) ebiten.GamepadButton {
+	switch n {
+	case 0:
+		return ebiten.GamepadButton0
+	case 1:
+		return ebiten.GamepadButton1
+	case 2:
+		return ebiten.GamepadButton2
+	case 3:
+		return ebiten.GamepadButton3
+	case 4:
+		return ebiten.GamepadButton4
+	case 5:
+		return ebiten.GamepadButton5
+	case 6:
+		return ebiten.GamepadButton6
+	case 7:
+		return ebiten.GamepadButton7
+	case 8:
+		return ebiten.GamepadButton8
+	}
+
+	return ebiten.GamepadButton0
+}
 
 // Output Joypadの状態をbyteにして返す
 func (pad *Joypad) Output() byte {
@@ -48,10 +69,10 @@ func (pad *Joypad) Output() byte {
 }
 
 // Input ジョイパッド入力処理
-func (pad *Joypad) Input() (result int) {
+func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64) (result int) {
 
 	// A
-	if btnA() {
+	if btnA(padA) {
 		pad.Button[0] = true
 		result = Pressed
 	} else {
@@ -59,7 +80,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// B
-	if btnB() {
+	if btnB(padB) {
 		pad.Button[1] = true
 		result = Pressed
 	} else {
@@ -67,7 +88,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// select
-	if btnSelect() {
+	if btnSelect(padSelect) {
 		pad.Button[2] = true
 		result = Pressed
 	} else {
@@ -75,7 +96,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// start
-	if btnStart() {
+	if btnStart(padStart) {
 		pad.Button[3] = true
 		result = Pressed
 	} else {
@@ -83,7 +104,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// 右
-	if keyRight() {
+	if keyRight(threshold) {
 		pad.Direction[0] = true
 		result = Pressed
 	} else {
@@ -91,7 +112,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// 左
-	if keyLeft() {
+	if keyLeft(threshold) {
 		pad.Direction[1] = true
 		result = Pressed
 	} else {
@@ -99,7 +120,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// 上
-	if keyUp() {
+	if keyUp(threshold) {
 		pad.Direction[2] = true
 		result = Pressed
 	} else {
@@ -107,7 +128,7 @@ func (pad *Joypad) Input() (result int) {
 	}
 
 	// 下
-	if keyDown() {
+	if keyDown(threshold) {
 		pad.Direction[3] = true
 		result = Pressed
 	} else {
@@ -148,35 +169,51 @@ func (pad *Joypad) getP15() bool {
 	return false
 }
 
-func btnA() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyX) || ebiten.IsKeyPressed(ebiten.KeyS)
+func btnA(pad uint) bool {
+	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyX) || ebiten.IsKeyPressed(ebiten.KeyS)
 }
 
-func btnB() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyZ) || ebiten.IsKeyPressed(ebiten.KeyA)
+func btnB(pad uint) bool {
+	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyZ) || ebiten.IsKeyPressed(ebiten.KeyA)
 }
 
-func btnStart() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyEnter)
+func btnStart(pad uint) bool {
+	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyEnter)
 }
 
-func btnSelect() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyShift)
+func btnSelect(pad uint) bool {
+	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyShift)
 }
 
-func keyUp() bool {
+func keyUp(threshold float64) bool {
+	if ebiten.GamepadAxis(0, 1) > threshold {
+		return true
+	}
+
 	return ebiten.IsKeyPressed(ebiten.KeyUp)
 }
 
-func keyDown() bool {
+func keyDown(threshold float64) bool {
+	if ebiten.GamepadAxis(0, 1) < -threshold {
+		return true
+	}
+
 	return ebiten.IsKeyPressed(ebiten.KeyDown)
 }
 
-func keyRight() bool {
+func keyRight(threshold float64) bool {
+	if ebiten.GamepadAxis(0, 0) > threshold {
+		return true
+	}
+
 	return ebiten.IsKeyPressed(ebiten.KeyRight)
 }
 
-func keyLeft() bool {
+func keyLeft(threshold float64) bool {
+	if ebiten.GamepadAxis(0, 0) < -threshold {
+		return true
+	}
+
 	return ebiten.IsKeyPressed(ebiten.KeyLeft)
 }
 

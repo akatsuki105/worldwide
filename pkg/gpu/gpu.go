@@ -50,7 +50,7 @@ func (gpu *GPU) Init() {
 }
 
 // InitPallete init gameboy pallete color
-func (gpu *GPU) InitPallete(color0, color1, color2, color3 []int) {
+func (gpu *GPU) InitPallete(color0, color1, color2, color3 [3]int) {
 	colors[0] = [3]uint8{uint8(color0[0]), uint8(color0[1]), uint8(color0[2])}
 	colors[1] = [3]uint8{uint8(color1[0]), uint8(color1[1]), uint8(color1[2])}
 	colors[2] = [3]uint8{uint8(color2[0]), uint8(color2[1]), uint8(color2[2])}
