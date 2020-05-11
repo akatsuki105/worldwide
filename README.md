@@ -1,6 +1,7 @@
 ![logo](./logo.png)
 
 # 🌏 Worldwide
+![Go](https://github.com/Akatsuki-py/Worldwide/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
 
 日本語のドキュメントは[こちら](./README.ja.md)
