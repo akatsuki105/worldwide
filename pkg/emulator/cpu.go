@@ -331,6 +331,8 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	go cpu.RTC.Init()
 
 	cpu.debug = debug
+
+	cpu.GPU.InitTiles()
 }
 
 // Exit 後始末を行う

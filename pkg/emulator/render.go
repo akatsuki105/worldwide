@@ -126,10 +126,16 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 	}
 
-	// デバッグモードのときはBGマップを保存
+	// デバッグモードのときはBGマップとタイルデータを保存
 	if cpu.debug {
 		bg := cpu.GPU.GetDisplay(false)
 		bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
+
+		if frames%4 == 0 {
+			go func() {
+				cpu.GPU.UpdateTiles(cpu.Cartridge.IsCGB)
+			}()
+		}
 	}
 
 	if !skipRender {
@@ -173,7 +179,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		{
 			// debug screen
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(1.5, 1.5)
+			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(10), float64(25))
 			screen.DrawImage(display, op)
 		}
@@ -183,14 +189,24 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		ebitenutil.DebugPrintAt(screen, title, 10, 5)
 
 		// debug register
-		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 270, 5)
+		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
 
 		{
 			// debug BG
+			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(10), float64(270))
+			op.GeoM.Translate(float64(10), float64(340))
 			screen.DrawImage(bgMap, op)
-			ebitenutil.DebugPrintAt(screen, "BG map", 10, 250)
+		}
+
+		{
+			// debug tiles
+			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
+			tile := cpu.GPU.GetTileData()
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(200), float64(340))
+			screen.DrawImage(tile, op)
 		}
 
 	} else {

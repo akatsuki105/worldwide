@@ -67,7 +67,7 @@ func Run() int {
 
 	ebiten.SetRunnableInBackground(true)
 	if *debug {
-		if err := ebiten.Run(cpu.Render, 1120, 630, 1, "Worldwide(debug)"); err != nil {
+		if err := ebiten.Run(cpu.Render, 1280, 810, 1, "Worldwide(debug)"); err != nil {
 			return 1
 		}
 	} else if cpu.Config.Display.HQ2x {

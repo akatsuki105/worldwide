@@ -14,6 +14,7 @@ type GPU struct {
 	display       *ebiten.Image  // 160*144のイメージデータ
 	original      *image.RGBA    // 160*144のイメージデータ
 	hq2x          *ebiten.Image  // 320*288のイメージデータ(HQ2xかつ30fpsで使用)
+	tileData      tileData       // タイルデータ
 	LCDC          byte           // LCD Control
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scrollの座標
@@ -27,6 +28,11 @@ type GPU struct {
 	VRAMBankPtr     uint8
 	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
 	HBlankDMALength int
+}
+
+type tileData struct {
+	overall *ebiten.Image         // タイルデータをいちまいの画像にまとめたもの
+	tiles   [2][384]*ebiten.Image // 8*8のタイルデータの一覧
 }
 
 var (
@@ -356,4 +362,64 @@ func (g *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R,
 	G = G * 8
 	B = B * 8
 	return R, G, B, transparent
+}
+
+// --------------------------------------------- tiles method -----------------------------------------------------
+
+func (g *GPU) InitTiles() {
+	g.tileData.overall, _ = ebiten.NewImage(32*8+2, 24*8, ebiten.FilterDefault)
+	g.tileData.overall.Fill(color.RGBA{255, 255, 255, 255})
+
+	// gridを引く
+	gridColor := color.RGBA{0xbf, 0xbf, 0xbf, 0xff}
+	for y := 0; y < 24*8; y++ {
+		g.tileData.overall.Set(16*8, y, gridColor)
+		g.tileData.overall.Set(16*8+1, y, gridColor)
+	}
+
+	for bank := 0; bank < 2; bank++ {
+		for i := 0; i < 384; i++ {
+			g.tileData.tiles[bank][i], _ = ebiten.NewImage(8, 8, ebiten.FilterDefault)
+		}
+	}
+}
+
+func (g *GPU) GetTileData() *ebiten.Image {
+	return g.tileData.overall
+}
+
+func (g *GPU) UpdateTiles(isCGB bool) {
+	itr := 1
+	if isCGB {
+		itr = 2
+	}
+
+	for bank := 0; bank < itr; bank++ {
+		for i := 0; i < 384; i++ {
+
+			tileAddr := 0x8000 + 16*i
+			for y := 0; y < 8; y++ {
+				addr := tileAddr + 2*y
+				lowerByte, upperByte := g.VRAMBank[bank][addr-0x8000], g.VRAMBank[bank][addr-0x8000+1]
+
+				for x := 0; x < 8; x++ {
+					bitCtr := (7 - uint(x)) // 上位何ビット目を取り出すか
+					upperColor := (upperByte >> bitCtr) & 0x01
+					lowerColor := (lowerByte >> bitCtr) & 0x01
+					colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
+
+					// 色番号からRGB値を算出する
+					RGB, _ := g.parsePallete(OBP0, colorNumber)
+					R, G, B := colors[RGB][0], colors[RGB][1], colors[RGB][2]
+					c := color.RGBA{R, G, B, 0xff}
+
+					// overall と 各タイルに対して
+					overallX := bank*(16*8+2) + (i%16)*8
+					overallY := (i / 16) * 8
+					g.tileData.overall.Set(overallX+x, overallY+y, c)
+					g.tileData.tiles[bank][i].Set(x, y, c)
+				}
+			}
+		}
+	}
 }
