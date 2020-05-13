@@ -366,15 +366,28 @@ func (g *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R,
 
 // --------------------------------------------- tiles method -----------------------------------------------------
 
+const (
+	gridWidthX = 2
+	gridWidthY = 3
+)
+
 func (g *GPU) InitTiles() {
-	g.tileData.overall, _ = ebiten.NewImage(32*8+2, 24*8, ebiten.FilterDefault)
+	g.tileData.overall, _ = ebiten.NewImage(32*8+gridWidthY, 24*8+gridWidthX, ebiten.FilterDefault)
 	g.tileData.overall.Fill(color.RGBA{255, 255, 255, 255})
 
 	// gridを引く
-	gridColor := color.RGBA{0xbf, 0xbf, 0xbf, 0xff}
-	for y := 0; y < 24*8; y++ {
-		g.tileData.overall.Set(16*8, y, gridColor)
-		g.tileData.overall.Set(16*8+1, y, gridColor)
+	gridColor := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
+	for y := 0; y < 24*8+gridWidthX; y++ {
+		for i := 0; i < gridWidthY; i++ {
+			g.tileData.overall.Set(16*8+i, y, gridColor)
+		}
+	}
+	for x := 0; x < 32*8+gridWidthY; x++ {
+		for i := 0; i < gridWidthX; i++ {
+			// 横グリッドは2本
+			g.tileData.overall.Set(x, 8*8+i, gridColor)
+			g.tileData.overall.Set(x, 16*8+i, gridColor)
+		}
 	}
 
 	for bank := 0; bank < 2; bank++ {
@@ -414,8 +427,8 @@ func (g *GPU) UpdateTiles(isCGB bool) {
 					c := color.RGBA{R, G, B, 0xff}
 
 					// overall と 各タイルに対して
-					overallX := bank*(16*8+2) + (i%16)*8
-					overallY := (i / 16) * 8
+					overallX := bank*(16*8+gridWidthY) + (i%16)*8
+					overallY := (i/16)*8 + (i/16)*gridWidthX/16
 					g.tileData.overall.Set(overallX+x, overallY+y, c)
 					g.tileData.tiles[bank][i].Set(x, y, c)
 				}
