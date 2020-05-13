@@ -169,7 +169,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
 	if cpu.debug {
-		screen.Fill(color.RGBA{35, 27, 187, 255})
+		screen.Fill(color.RGBA{35, 27, 167, 255})
 		{
 			// debug screen
 			op := &ebiten.DrawImageOptions{}
