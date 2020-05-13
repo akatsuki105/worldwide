@@ -331,6 +331,10 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	go cpu.RTC.Init()
 
 	cpu.debug = debug
+	if debug {
+		cpu.Config.Display.HQ2x = false
+		cpu.Config.Display.FPS30 = true
+	}
 
 	cpu.GPU.InitTiles()
 }

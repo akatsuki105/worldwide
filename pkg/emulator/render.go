@@ -128,8 +128,10 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	// デバッグモードのときはBGマップとタイルデータを保存
 	if cpu.debug {
-		bg := cpu.GPU.GetDisplay(false)
-		bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
+		if !skipRender {
+			bg := cpu.GPU.GetDisplay(false)
+			bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
+		}
 
 		if frames%4 == 0 {
 			go func() {
