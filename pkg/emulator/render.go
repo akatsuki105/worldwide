@@ -27,6 +27,7 @@ var (
 	second     = time.Tick(time.Second)
 	skipRender bool
 	fps        = 0
+	bgMap      *ebiten.Image
 )
 
 // Render レンダリングを行う
@@ -125,6 +126,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 	}
 
+	// デバッグモードのときはBGマップを保存
+	if cpu.debug {
+		bg := cpu.GPU.GetDisplay(false)
+		bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
+	}
+
 	if !skipRender {
 		// スプライト描画
 		for i := 0; i < 40; i++ {
@@ -162,18 +169,30 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
 	if cpu.debug {
-		// debug screen
 		screen.Fill(color.RGBA{35, 27, 187, 255})
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(10), float64(25))
-		screen.DrawImage(display, op)
+		{
+			// debug screen
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(1.5, 1.5)
+			op.GeoM.Translate(float64(10), float64(25))
+			screen.DrawImage(display, op)
+		}
 
 		// debug FPS
 		title := fmt.Sprintf("GameBoy FPS: %d", fps)
 		ebitenutil.DebugPrintAt(screen, title, 10, 5)
 
 		// debug register
-		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 200, 5)
+		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 270, 5)
+
+		{
+			// debug BG
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(10), float64(270))
+			screen.DrawImage(bgMap, op)
+			ebitenutil.DebugPrintAt(screen, "BG map", 10, 250)
+		}
+
 	} else {
 		if !skipRender && cpu.Config.Display.HQ2x {
 			display = cpu.GPU.HQ2x()

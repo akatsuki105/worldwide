@@ -43,14 +43,14 @@ const (
 )
 
 // Init GPU
-func (gpu *GPU) Init() {
-	gpu.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
-	gpu.original = image.NewRGBA(image.Rect(0, 0, 160, 144))
-	gpu.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
+func (g *GPU) Init() {
+	g.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
+	g.original = image.NewRGBA(image.Rect(0, 0, 160, 144))
+	g.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
 }
 
 // InitPallete init gameboy pallete color
-func (gpu *GPU) InitPallete(color0, color1, color2, color3 [3]int) {
+func InitPallete(color0, color1, color2, color3 [3]int) {
 	colors[0] = [3]uint8{uint8(color0[0]), uint8(color0[1]), uint8(color0[2])}
 	colors[1] = [3]uint8{uint8(color1[0]), uint8(color1[1]), uint8(color1[2])}
 	colors[2] = [3]uint8{uint8(color2[0]), uint8(color2[1]), uint8(color2[2])}
@@ -58,34 +58,34 @@ func (gpu *GPU) InitPallete(color0, color1, color2, color3 [3]int) {
 }
 
 // GetDisplay getter for display data
-func (gpu *GPU) GetDisplay(hq2x bool) *ebiten.Image {
+func (g *GPU) GetDisplay(hq2x bool) *ebiten.Image {
 	if hq2x {
-		return gpu.hq2x
+		return g.hq2x
 	}
-	return gpu.display
+	return g.display
 }
 
 // HQ2x - scaling display data using HQ2x
-func (gpu *GPU) HQ2x() *ebiten.Image {
-	tmp, _ := hq2x.HQ2x(gpu.original)
-	gpu.hq2x, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
-	return gpu.hq2x
+func (g *GPU) HQ2x() *ebiten.Image {
+	tmp, _ := hq2x.HQ2x(g.original)
+	g.hq2x, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
+	return g.hq2x
 }
 
-func (gpu *GPU) set(x, y int, c color.RGBA) {
-	gpu.display.Set(x, y, c)
-	gpu.original.SetRGBA(x, y, c)
+func (g *GPU) set(x, y int, c color.RGBA) {
+	g.display.Set(x, y, c)
+	g.original.SetRGBA(x, y, c)
 }
 
 // --------------------------------------------- Render -----------------------------------------------------
 
 // SetBGLine 1タイルライン描画する
-func (gpu *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineIndex int) bool {
+func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineIndex int) bool {
 	index := tileX + tileY*32 // マップの何タイル目か
 
 	// タイル番号からタイルデータのあるアドレス取得
 	var addr uint16
-	LCDC := gpu.LCDC
+	LCDC := g.LCDC
 	if useWindow {
 		if LCDC&0x40 != 0 {
 			addr = 0x9c00 + uint16(index)
@@ -99,8 +99,8 @@ func (gpu *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCG
 			addr = 0x9800 + uint16(index)
 		}
 	}
-	tileIndex := uint8(gpu.VRAMBank[0][addr-0x8000])
-	baseAddr := gpu.fetchTileBaseAddr()
+	tileIndex := uint8(g.VRAMBank[0][addr-0x8000])
+	baseAddr := g.fetchTileBaseAddr()
 	if baseAddr == 0x8800 {
 		tileIndex = uint8(int(int8(tileIndex)) + 128)
 	}
@@ -108,24 +108,24 @@ func (gpu *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCG
 	// 背景属性取得
 	var attr byte
 	if isCGB {
-		attr = uint8(gpu.VRAMBank[1][addr-0x8000])
+		attr = uint8(g.VRAMBank[1][addr-0x8000])
 	} else {
 		attr = 0
 	}
 
 	index16 := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 	addr = uint16(baseAddr + 2*index16)
-	return gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, BGP, attr, 8, isCGB)
+	return g.setTileLine(entryX, entryY, uint(lineIndex), addr, BGP, attr, 8, isCGB)
 }
 
 // SetSPRTile スプライトを出力する
-func (gpu *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB bool) {
-	spriteYSize := gpu.fetchSPRYSize()
+func (g *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB bool) {
+	spriteYSize := g.fetchSPRYSize()
 	if (attr>>4)%2 == 1 {
 		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
 			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP1, attr, spriteYSize, isCGB)
+			continueFlag := g.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP1, attr, spriteYSize, isCGB)
 			if !continueFlag {
 				break
 			}
@@ -134,7 +134,7 @@ func (gpu *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB 
 		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
 			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := gpu.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP0, attr, spriteYSize, isCGB)
+			continueFlag := g.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP0, attr, spriteYSize, isCGB)
 			if !continueFlag {
 				break
 			}
@@ -143,74 +143,74 @@ func (gpu *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB 
 }
 
 // SetBGPriorPixels 背景優先の背景を描画するための関数
-func (gpu *GPU) SetBGPriorPixels() {
-	for _, pixel := range gpu.BGPriorPixels {
+func (g *GPU) SetBGPriorPixels() {
+	for _, pixel := range g.BGPriorPixels {
 		x, y := int(pixel[0]), int(pixel[1])
 		R, G, B := pixel[2], pixel[3], pixel[4]
 		c := color.RGBA{R, G, B, 0xff}
 		if x < 160 && y < 144 {
-			gpu.set(x, y, c)
+			g.set(x, y, c)
 		}
 	}
-	gpu.BGPriorPixels = [][5]byte{}
+	g.BGPriorPixels = [][5]byte{}
 }
 
 // --------------------------------------------- CGB pallete -----------------------------------------------------
 
 // FetchBGPalleteIndex CGBのパレットインデックスを取得する
-func (gpu *GPU) FetchBGPalleteIndex() byte {
-	BCPS := gpu.CGBPallte[0]
+func (g *GPU) FetchBGPalleteIndex() byte {
+	BCPS := g.CGBPallte[0]
 	return BCPS & 0x3f
 }
 
 // FetchBGPalleteIncrement CGBのパレットインデックスが書き込み後にインクリメントするかを取得する
-func (gpu *GPU) FetchBGPalleteIncrement() bool {
-	BCPS := gpu.CGBPallte[0]
+func (g *GPU) FetchBGPalleteIncrement() bool {
+	BCPS := g.CGBPallte[0]
 	return (BCPS >> 7) == 1
 }
 
 // FetchSPRPalleteIndex CGBのパレットインデックスを取得する
-func (gpu *GPU) FetchSPRPalleteIndex() byte {
-	OCPS := gpu.CGBPallte[1]
+func (g *GPU) FetchSPRPalleteIndex() byte {
+	OCPS := g.CGBPallte[1]
 	return OCPS & 0x3f
 }
 
 // FetchSPRPalleteIncrement CGBのパレットインデックスが書き込み後にインクリメントするかを取得する
-func (gpu *GPU) FetchSPRPalleteIncrement() bool {
-	OCPS := gpu.CGBPallte[1]
+func (g *GPU) FetchSPRPalleteIncrement() bool {
+	OCPS := g.CGBPallte[1]
 	return (OCPS >> 7) == 1
 }
 
 // --------------------------------------------- scroll method -----------------------------------------------------
 
 // ReadScroll - スクロール値を得る
-func (gpu *GPU) ReadScroll() (x, y uint) {
-	x, y = uint(gpu.Scroll[0]), uint(gpu.Scroll[1])
+func (g *GPU) ReadScroll() (x, y uint) {
+	x, y = uint(g.Scroll[0]), uint(g.Scroll[1])
 	return x, y
 }
 
 // WriteScrollX - スクロールのX座標を書き込む
-func (gpu *GPU) WriteScrollX(x byte) {
-	gpu.Scroll[0] = x
+func (g *GPU) WriteScrollX(x byte) {
+	g.Scroll[0] = x
 }
 
 // WriteScrollY - スクロールのY座標を書き込む
-func (gpu *GPU) WriteScrollY(y byte) {
-	gpu.Scroll[1] = y
+func (g *GPU) WriteScrollY(y byte) {
+	g.Scroll[1] = y
 }
 
 // --------------------------------------------- internal method -----------------------------------------------------
 
-func (gpu *GPU) fetchTileBaseAddr() uint16 {
-	LCDC := gpu.LCDC
+func (g *GPU) fetchTileBaseAddr() uint16 {
+	LCDC := g.LCDC
 	if LCDC&0x10 != 0 {
 		return 0x8000
 	}
 	return 0x8800
 }
 
-func (gpu *GPU) fetchSPRYSize() int {
-	LCDC := gpu.LCDC
+func (g *GPU) fetchSPRYSize() int {
+	LCDC := g.LCDC
 	if LCDC&0x04 != 0 {
 		return 16
 	}
@@ -218,11 +218,11 @@ func (gpu *GPU) fetchSPRYSize() int {
 }
 
 // ディスプレイにpixelデータをタイルの行単位でセットする 描画範囲外に出たときはfalseを返して描画を切り上げるべき旨を呼び出し元に伝える
-func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType int, attr byte, spriteYSize int, isCGB bool) bool {
+func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType int, attr byte, spriteYSize int, isCGB bool) bool {
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	VRAMBankPtr := (attr >> 3) & 0x01
-	lowerByte, upperByte := gpu.VRAMBank[VRAMBankPtr][addr-0x8000], gpu.VRAMBank[VRAMBankPtr][addr-0x8000+1]
+	lowerByte, upperByte := g.VRAMBank[VRAMBankPtr][addr-0x8000], g.VRAMBank[VRAMBankPtr][addr-0x8000+1]
 
 	for j := 0; j < 8; j++ {
 		bitCtr := (7 - uint(j)) // 上位何ビット目を取り出すか
@@ -238,9 +238,9 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 		// 色番号からRGB値を算出する
 		if isCGB {
 			palleteNumber := attr & 0x07 // パレット番号 OBPn
-			R, G, B, isTransparent = gpu.parseCGBPallete(tileType, palleteNumber, colorNumber)
+			R, G, B, isTransparent = g.parseCGBPallete(tileType, palleteNumber, colorNumber)
 		} else {
-			RGB, isTransparent = gpu.parsePallete(tileType, colorNumber)
+			RGB, isTransparent = g.parsePallete(tileType, colorNumber)
 			R, G, B = colors[RGB][0], colors[RGB][1], colors[RGB][2]
 		}
 
@@ -266,21 +266,20 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {
 				if tileType == BGP {
-					gpu.displayColor[y][x] = colorNumber
+					g.displayColor[y][x] = colorNumber
 
 					if (attr>>7)&0x01 == 1 {
-						gpu.BGPriorPixels = append(gpu.BGPriorPixels, [5]byte{byte(x), byte(y), R, G, B})
-					} else {
-						c = color.RGBA{R, G, B, 0xff}
-						gpu.set(x, y, c)
+						g.BGPriorPixels = append(g.BGPriorPixels, [5]byte{byte(x), byte(y), R, G, B})
 					}
+					c = color.RGBA{R, G, B, 0xff}
+					g.set(x, y, c)
 				} else {
-					if (attr>>7)&0x01 == 0 && gpu.displayColor[y][x] != 0 {
+					if (attr>>7)&0x01 == 0 && g.displayColor[y][x] != 0 {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.set(x, y, c)
-					} else if gpu.displayColor[y][x] == 0 {
+						g.set(x, y, c)
+					} else if g.displayColor[y][x] == 0 {
 						c = color.RGBA{R, G, B, 0xff}
-						gpu.set(x, y, c)
+						g.set(x, y, c)
 					}
 				}
 			} else if x >= 160 {
@@ -294,15 +293,15 @@ func (gpu *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, til
 	return true
 }
 
-func (gpu *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transparent bool) {
+func (g *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transparent bool) {
 	var pallete byte
 	switch tileType {
 	case BGP:
-		pallete = gpu.DMGPallte[0]
+		pallete = g.DMGPallte[0]
 	case OBP0:
-		pallete = gpu.DMGPallte[1]
+		pallete = g.DMGPallte[1]
 	case OBP1:
-		pallete = gpu.DMGPallte[2]
+		pallete = g.DMGPallte[2]
 	default:
 		errMsg := fmt.Sprintf("parsePallete Error: BG Pallete tile type is invalid. %d", tileType)
 		panic(errMsg)
@@ -329,12 +328,12 @@ func (gpu *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transpar
 	return RGB, transparent
 }
 
-func (gpu *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R, G, B byte, transparent bool) {
+func (g *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R, G, B byte, transparent bool) {
 	transparent = false
 	switch tileType {
 	case BGP:
 		i := palleteNumber*8 + colorNumber*2
-		RGBLower, RGBUpper := uint16(gpu.BGPallete[i]), uint16(gpu.BGPallete[i+1])
+		RGBLower, RGBUpper := uint16(g.BGPallete[i]), uint16(g.BGPallete[i+1])
 		RGB := (RGBUpper << 8) | RGBLower
 		R = byte(RGB & 0b11111)                 // bit 0-4
 		G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9
@@ -344,7 +343,7 @@ func (gpu *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (
 			transparent = true
 		} else {
 			i := palleteNumber*8 + colorNumber*2
-			RGBLower, RGBUpper := uint16(gpu.SPRPallete[i]), uint16(gpu.SPRPallete[i+1])
+			RGBLower, RGBUpper := uint16(g.SPRPallete[i]), uint16(g.SPRPallete[i+1])
 			RGB := (RGBUpper << 8) | RGBLower
 			R = byte(RGB & 0b11111)                 // bit 0-4
 			G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9
