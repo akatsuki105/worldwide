@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"gbc/pkg/joypad"
 	"image"
+	"image/color"
 	"image/png"
 	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 const (
@@ -24,6 +26,7 @@ var (
 	frames     = 0
 	second     = time.Tick(time.Second)
 	skipRender bool
+	fps        = 0
 )
 
 // Render レンダリングを行う
@@ -158,10 +161,25 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}()
 
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
-	if !skipRender && cpu.Config.Display.HQ2x {
-		display = cpu.GPU.HQ2x()
+	if cpu.debug {
+		// debug screen
+		screen.Fill(color.RGBA{35, 27, 187, 255})
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(10), float64(25))
+		screen.DrawImage(display, op)
+
+		// debug FPS
+		title := fmt.Sprintf("GameBoy FPS: %d", fps)
+		ebitenutil.DebugPrintAt(screen, title, 10, 5)
+
+		// debug register
+		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 200, 5)
+	} else {
+		if !skipRender && cpu.Config.Display.HQ2x {
+			display = cpu.GPU.HQ2x()
+		}
+		screen.DrawImage(display, nil)
 	}
-	screen.DrawImage(display, nil)
 
 	frames++
 
@@ -202,7 +220,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	if cpu.debug {
 		select {
 		case <-second:
-			fmt.Printf("FPS: %d\n", frames)
+			fps = frames
 			frames = 0
 		default:
 		}

@@ -340,8 +340,6 @@ func (cpu *CPU) Exit() {
 
 	if cpu.debug {
 		cpu.writeHistory()
-		fmt.Println()
-		cpu.dumpRegister()
 	}
 }
 
@@ -444,8 +442,6 @@ func (cpu *CPU) exec() {
 	} else {
 		cycle = 4 // TODO: check if cycle is 1
 	}
-
-	// incrementDebugCounter(instruction, operand1, operand2)
 
 	cpu.timer(cycle)
 
