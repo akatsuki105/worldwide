@@ -21,6 +21,7 @@ const (
 	Load
 	Expand
 	Collapse
+	Pause
 )
 
 func gamepad(n uint) ebiten.GamepadButton {
@@ -150,6 +151,10 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 		result = Collapse
 	}
 
+	if btnPause() {
+		result = Pause
+	}
+
 	return result
 }
 
@@ -231,4 +236,8 @@ func btnSaveData() bool {
 
 func btnLoadData() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyL)
+}
+
+func btnPause() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyP)
 }
