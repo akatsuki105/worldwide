@@ -28,6 +28,7 @@ type GPU struct {
 	VRAMBankPtr     uint8
 	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
 	HBlankDMALength int
+	OAM             *ebiten.Image // OAMをまとめたもの
 }
 
 type tileData struct {
@@ -121,17 +122,17 @@ func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB 
 
 	index16 := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 	addr = uint16(baseAddr + 2*index16)
-	return g.setTileLine(entryX, entryY, uint(lineIndex), addr, BGP, attr, 8, isCGB)
+	return g.setTileLine(entryX, entryY, uint(lineIndex), addr, BGP, attr, 8, isCGB, -1)
 }
 
 // SetSPRTile スプライトを出力する
-func (g *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB bool) {
+func (g *GPU) SetSPRTile(OAMindex, entryX, entryY int, tileIndex uint, attr byte, isCGB bool) {
 	spriteYSize := g.fetchSPRYSize()
 	if (attr>>4)%2 == 1 {
 		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
 			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := g.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP1, attr, spriteYSize, isCGB)
+			continueFlag := g.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP1, attr, spriteYSize, isCGB, OAMindex)
 			if !continueFlag {
 				break
 			}
@@ -140,7 +141,7 @@ func (g *GPU) SetSPRTile(entryX, entryY int, tileIndex uint, attr byte, isCGB bo
 		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
 			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
 			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := g.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP0, attr, spriteYSize, isCGB)
+			continueFlag := g.setTileLine(entryX, entryY, uint(lineIndex), addr, OBP0, attr, spriteYSize, isCGB, OAMindex)
 			if !continueFlag {
 				break
 			}
@@ -224,7 +225,7 @@ func (g *GPU) fetchSPRYSize() int {
 }
 
 // ディスプレイにpixelデータをタイルの行単位でセットする 描画範囲外に出たときはfalseを返して描画を切り上げるべき旨を呼び出し元に伝える
-func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType int, attr byte, spriteYSize int, isCGB bool) bool {
+func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileType int, attr byte, spriteYSize int, isCGB bool, OAMindex int) bool {
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	VRAMBankPtr := (attr >> 3) & 0x01
@@ -237,7 +238,6 @@ func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileT
 		colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
 
 		var x, y int
-		var c color.RGBA
 		var RGB, R, G, B byte
 		var isTransparent bool
 
@@ -249,42 +249,50 @@ func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileT
 			RGB, isTransparent = g.parsePallete(tileType, colorNumber)
 			R, G, B = colors[RGB][0], colors[RGB][1], colors[RGB][2]
 		}
+		c := color.RGBA{R, G, B, 0xff}
 
+		var deltaX, deltaY int
 		if !isTransparent {
 			// 反転を考慮してpixelをセット
 			if (attr>>6)&0x01 == 1 && (attr>>5)&0x01 == 1 {
 				// 上下左右
-				x = int(entryX + (7 - j))
-				y = int(entryY + ((spriteYSize - 1) - int(lineIndex)))
+				deltaX = int((7 - j))
+				deltaY = int(((spriteYSize - 1) - int(lineIndex)))
 			} else if (attr>>6)&0x01 == 1 {
 				// 上下
-				x = int(entryX + j)
-				y = int(entryY + ((spriteYSize - 1) - int(lineIndex)))
+				deltaX = int(j)
+				deltaY = int(((spriteYSize - 1) - int(lineIndex)))
 			} else if (attr>>5)&0x01 == 1 {
 				// 左右
-				x = int(entryX + (7 - j))
-				y = int(entryY + int(lineIndex))
+				deltaX = int((7 - j))
+				deltaY = int(int(lineIndex))
 			} else {
 				// 反転無し
-				x = int(entryX + j)
-				y = int(entryY + int(lineIndex))
+				deltaX = int(j)
+				deltaY = int(int(lineIndex))
+			}
+			x = entryX + deltaX
+			y = entryY + deltaY
+
+			// debug OAM
+			if OAMindex >= 0 {
+				col := OAMindex % 8
+				row := OAMindex / 8
+				g.OAM.Set(col*16+deltaX, row*20+deltaY, c)
 			}
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {
 				if tileType == BGP {
 					g.displayColor[y][x] = colorNumber
-
 					if (attr>>7)&0x01 == 1 {
 						g.BGPriorPixels = append(g.BGPriorPixels, [5]byte{byte(x), byte(y), R, G, B})
 					}
-					c = color.RGBA{R, G, B, 0xff}
 					g.set(x, y, c)
 				} else {
+					// スプライト
 					if (attr>>7)&0x01 == 0 && g.displayColor[y][x] != 0 {
-						c = color.RGBA{R, G, B, 0xff}
 						g.set(x, y, c)
 					} else if g.displayColor[y][x] == 0 {
-						c = color.RGBA{R, G, B, 0xff}
 						g.set(x, y, c)
 					}
 				}
@@ -364,7 +372,7 @@ func (g *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R,
 	return R, G, B, transparent
 }
 
-// --------------------------------------------- tiles method -----------------------------------------------------
+// --------------------------------------------- debug tiles -----------------------------------------------------
 
 const (
 	gridWidthX = 2

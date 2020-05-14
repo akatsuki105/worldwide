@@ -334,9 +334,8 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
+		cpu.GPU.InitTiles()
 	}
-
-	cpu.GPU.InitTiles()
 }
 
 // Exit 後始末を行う

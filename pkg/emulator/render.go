@@ -21,13 +21,14 @@ const (
 )
 
 var (
-	wait       sync.WaitGroup
-	lineMutex  sync.Mutex
-	frames     = 0
-	second     = time.Tick(time.Second)
-	skipRender bool
-	fps        = 0
-	bgMap      *ebiten.Image
+	wait        sync.WaitGroup
+	lineMutex   sync.Mutex
+	frames      = 0
+	second      = time.Tick(time.Second)
+	skipRender  bool
+	fps         = 0
+	bgMap       *ebiten.Image
+	OAMProperty = [40][4]byte{}
 )
 
 // Render レンダリングを行う
@@ -142,6 +143,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	if !skipRender {
 		// スプライト描画
+		cpu.GPU.OAM, _ = ebiten.NewImage(16*8, 20*5, ebiten.FilterDefault)
 		for i := 0; i < 40; i++ {
 			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
 			if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
@@ -149,7 +151,11 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
 				tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
 				attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
-				cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+				cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+
+				if cpu.debug {
+					OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
+				}
 			}
 		}
 
@@ -209,6 +215,25 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(200), float64(340))
 			screen.DrawImage(tile, op)
+		}
+
+		{
+			// debug OAM
+			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(4, 4)
+			op.GeoM.Translate(float64(750), float64(340))
+			screen.DrawImage(cpu.GPU.OAM, op)
+
+			for i := 0; i < 40; i++ {
+				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
+
+				col := i % 8
+				row := i / 8
+				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
+				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+32, 340+(row*80))
+			}
 		}
 
 	} else {
