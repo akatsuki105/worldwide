@@ -317,7 +317,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 		color1 := cpu.Config.Pallete.Color1
 		color2 := cpu.Config.Pallete.Color2
 		color3 := cpu.Config.Pallete.Color3
-		cpu.GPU.InitPallete(color0, color1, color2, color3)
+		gpu.InitPallete(color0, color1, color2, color3)
 	}
 
 	// load save data
@@ -331,6 +331,11 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	go cpu.RTC.Init()
 
 	cpu.debug = debug
+	if debug {
+		cpu.Config.Display.HQ2x = false
+		cpu.Config.Display.FPS30 = true
+		cpu.GPU.InitTiles()
+	}
 }
 
 // Exit 後始末を行う
@@ -340,8 +345,6 @@ func (cpu *CPU) Exit() {
 
 	if cpu.debug {
 		cpu.writeHistory()
-		fmt.Println()
-		cpu.dumpRegister()
 	}
 }
 
@@ -444,8 +447,6 @@ func (cpu *CPU) exec() {
 	} else {
 		cycle = 4 // TODO: check if cycle is 1
 	}
-
-	// incrementDebugCounter(instruction, operand1, operand2)
 
 	cpu.timer(cycle)
 

@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"gbc/pkg/joypad"
 	"image"
+	"image/color"
 	"image/png"
 	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 const (
@@ -19,11 +21,14 @@ const (
 )
 
 var (
-	wait       sync.WaitGroup
-	lineMutex  sync.Mutex
-	frames     = 0
-	second     = time.Tick(time.Second)
-	skipRender bool
+	wait        sync.WaitGroup
+	lineMutex   sync.Mutex
+	frames      = 0
+	second      = time.Tick(time.Second)
+	skipRender  bool
+	fps         = 0
+	bgMap       *ebiten.Image
+	OAMProperty = [40][4]byte{}
 )
 
 // Render レンダリングを行う
@@ -122,8 +127,25 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 	}
 
+	// デバッグモードのときはBGマップとタイルデータを保存
+	if cpu.debug {
+		if !skipRender {
+			bg := cpu.GPU.GetDisplay(false)
+			bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
+		}
+
+		if frames%4 == 0 {
+			go func() {
+				cpu.GPU.UpdateTiles(cpu.Cartridge.IsCGB)
+			}()
+		}
+	}
+
 	if !skipRender {
 		// スプライト描画
+		cpu.GPU.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
+		cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+
 		for i := 0; i < 40; i++ {
 			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
 			if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
@@ -131,7 +153,11 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
 				tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
 				attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
-				cpu.GPU.SetSPRTile(int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+				cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+
+				if cpu.debug {
+					OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
+				}
 			}
 		}
 
@@ -158,10 +184,66 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}()
 
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
-	if !skipRender && cpu.Config.Display.HQ2x {
-		display = cpu.GPU.HQ2x()
+	if cpu.debug {
+		screen.Fill(color.RGBA{35, 27, 167, 255})
+		{
+			// debug screen
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(10), float64(25))
+			screen.DrawImage(display, op)
+		}
+
+		// debug FPS
+		title := fmt.Sprintf("GameBoy FPS: %d", fps)
+		ebitenutil.DebugPrintAt(screen, title, 10, 5)
+
+		// debug register
+		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
+
+		{
+			// debug BG
+			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(10), float64(340))
+			screen.DrawImage(bgMap, op)
+		}
+
+		{
+			// debug tiles
+			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
+			tile := cpu.GPU.GetTileData()
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(200), float64(340))
+			screen.DrawImage(tile, op)
+		}
+
+		{
+			// debug OAM
+			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(4, 4)
+			op.GeoM.Translate(float64(750), float64(340))
+			screen.DrawImage(cpu.GPU.OAM, op)
+
+			for i := 0; i < 40; i++ {
+				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
+
+				col := i % 8
+				row := i / 8
+				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
+				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
+			}
+		}
+
+	} else {
+		if !skipRender && cpu.Config.Display.HQ2x {
+			display = cpu.GPU.HQ2x()
+		}
+		screen.DrawImage(display, nil)
 	}
-	screen.DrawImage(display, nil)
 
 	frames++
 
@@ -202,7 +284,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	if cpu.debug {
 		select {
 		case <-second:
-			fmt.Printf("FPS: %d\n", frames)
+			fps = frames
 			frames = 0
 		default:
 		}

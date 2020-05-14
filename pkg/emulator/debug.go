@@ -6,48 +6,7 @@ import (
 
 var (
 	maxHistory = 128
-
-	insCounter map[string]uint = map[string]uint{}
-	opCounter  map[string]uint = map[string]uint{}
 )
-
-func incrementDebugCounter(opcode, operand1, operand2 string) {
-	ins := fmt.Sprintf("%s %s,%s", opcode, operand1, operand2)
-
-	opctr := opCounter[opcode]
-	opCounter[opcode] = opctr + 1
-
-	insctr := insCounter[ins]
-	insCounter[ins] = insctr + 1
-}
-
-func writeOpCounter() {
-	sum := uint(0)
-	for _, counter := range opCounter {
-		sum += counter
-	}
-
-	for opcode, counter := range opCounter {
-		percent := float64(counter*100) / float64(sum)
-		if percent > 2.0 {
-			fmt.Println(opcode, " => ", percent, "%")
-		}
-	}
-}
-
-func writeInsCounter() {
-	sum := uint(0)
-	for _, counter := range insCounter {
-		sum += counter
-	}
-
-	for instruction, counter := range insCounter {
-		percent := float64(counter*100) / float64(sum)
-		if percent > 1.0 {
-			fmt.Println(instruction, " => ", percent, "%")
-		}
-	}
-}
 
 // pushHistory CPUのログを追加する
 func (cpu *CPU) pushHistory(eip uint16, opcode byte) {
@@ -68,33 +27,28 @@ func (cpu *CPU) writeHistory() {
 	}
 }
 
-func (cpu *CPU) exit(message string, breakPoint uint16) {
-	if breakPoint == 0 {
-		cpu.writeHistory()
-		panic(message)
-	} else if cpu.Reg.PC == breakPoint {
-		cpu.writeHistory()
-		panic(message)
-	}
-}
-
-func (cpu *CPU) debugPC(delta int) {
-	fmt.Printf("PC: 0x%04x\n", cpu.Reg.PC)
-	for i := 1; i < delta; i++ {
-		fmt.Printf("%02x ", cpu.RAM[cpu.Reg.PC+uint16(i)])
-	}
-	fmt.Println()
-}
-
-func (cpu *CPU) dumpRegister() {
+func (cpu *CPU) debugRegister() string {
 	A, F := byte(cpu.Reg.AF>>8), byte(cpu.Reg.AF)
 	B, C := byte(cpu.Reg.BC>>8), byte(cpu.Reg.BC)
 	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
 	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
+	return fmt.Sprintf(`Register
+A: %02x       F: %02x
+B: %02x       C: %02x
+D: %02x       E: %02x
+H: %02x       L: %02x
+PC: 0x%04x  SP: 0x%04x`, A, F, B, C, D, E, H, L, cpu.Reg.PC, cpu.Reg.SP)
+}
 
-	fmt.Println("-- register --")
-	fmt.Printf("A: %02x    F: %02x\n", A, F)
-	fmt.Printf("B: %02x    C: %02x\n", B, C)
-	fmt.Printf("D: %02x    E: %02x\n", D, E)
-	fmt.Printf("H: %02x    L: %02x\n", H, L)
+func (cpu *CPU) debugLCD() string {
+	LCDC := cpu.FetchMemory8(LCDCIO)
+	STAT := cpu.FetchMemory8(LCDSTATIO)
+	SCX, SCY := cpu.GPU.ReadScroll()
+	WY := cpu.FetchMemory8(WYIO)
+	WX := cpu.FetchMemory8(WXIO) - 7
+	return fmt.Sprintf(`-- LCD --
+LCDC: %02x
+STAT: %02x
+SCX: %02x    SCY: %02x
+WX: %02x     WY: %02x`, LCDC, STAT, SCX, SCY, WX, WY)
 }
