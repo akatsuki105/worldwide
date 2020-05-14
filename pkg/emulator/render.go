@@ -20,6 +20,11 @@ const (
 	cyclePerLine = 114
 )
 
+type Pause struct {
+	flag  bool
+	delay int
+}
+
 var (
 	wait        sync.WaitGroup
 	lineMutex   sync.Mutex
@@ -29,6 +34,7 @@ var (
 	fps         = 0
 	bgMap       *ebiten.Image
 	OAMProperty = [40][4]byte{}
+	pause       Pause
 )
 
 // Render レンダリングを行う
@@ -36,6 +42,122 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	if frames == 0 {
 		setIcon()
+	}
+
+	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
+	if cpu.debug {
+		screen.Fill(color.RGBA{35, 27, 167, 255})
+		{
+			// debug screen
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(10), float64(25))
+			screen.DrawImage(display, op)
+		}
+
+		// debug FPS
+		title := fmt.Sprintf("GameBoy FPS: %d", fps)
+		ebitenutil.DebugPrintAt(screen, title, 10, 5)
+
+		// debug register
+		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
+
+		if bgMap != nil {
+			// debug BG
+			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(10), float64(340))
+			screen.DrawImage(bgMap, op)
+		}
+
+		{
+			// debug tiles
+			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
+			tile := cpu.GPU.GetTileData()
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(200), float64(340))
+			screen.DrawImage(tile, op)
+		}
+
+		if cpu.GPU.OAM != nil {
+			// debug OAM
+			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(4, 4)
+			op.GeoM.Translate(float64(750), float64(340))
+			screen.DrawImage(cpu.GPU.OAM, op)
+
+			for i := 0; i < 40; i++ {
+				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
+
+				col := i % 8
+				row := i / 8
+				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
+				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
+			}
+		}
+	} else {
+		if !skipRender && cpu.Config.Display.HQ2x {
+			display = cpu.GPU.HQ2x()
+		}
+		screen.DrawImage(display, nil)
+	}
+
+	if frames%3 == 0 {
+		pad := cpu.Config.Joypad
+		result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
+		if result != 0 {
+			switch result {
+			case joypad.Pressed:
+				// Joypad Interrupt
+				if cpu.Reg.IME && cpu.getJoypadEnable() {
+					cpu.setJoypadFlag()
+				}
+			case joypad.Save:
+				cpu.Sound.Off()
+				cpu.dumpData()
+				cpu.Sound.On()
+			case joypad.Load:
+				cpu.Sound.Off()
+				cpu.loadData()
+				cpu.Sound.On()
+			case joypad.Expand:
+				if !cpu.Config.Display.HQ2x && !cpu.debug {
+					cpu.Expand *= 2
+					time.Sleep(time.Millisecond * 400)
+					ebiten.SetScreenScale(float64(cpu.Expand))
+				}
+			case joypad.Collapse:
+				if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 && !cpu.debug {
+					cpu.Expand /= 2
+					time.Sleep(time.Millisecond * 400)
+					ebiten.SetScreenScale(float64(cpu.Expand))
+				}
+			case joypad.Pause:
+				if cpu.debug && pause.delay <= 0 {
+					if pause.flag {
+						pause.flag = false
+						pause.delay = 30
+						cpu.Sound.On()
+					} else {
+						pause.flag = true
+						pause.delay = 30
+						cpu.Sound.Off()
+					}
+				}
+			}
+		}
+	}
+
+	frames++
+
+	if pause.delay > 0 {
+		pause.delay--
+	}
+	if pause.flag {
+		return nil
 	}
 
 	skipRender = (cpu.Config.Display.FPS30) && (frames%2 == 1)
@@ -182,104 +304,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 		wait.Done()
 	}()
-
-	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
-	if cpu.debug {
-		screen.Fill(color.RGBA{35, 27, 167, 255})
-		{
-			// debug screen
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(10), float64(25))
-			screen.DrawImage(display, op)
-		}
-
-		// debug FPS
-		title := fmt.Sprintf("GameBoy FPS: %d", fps)
-		ebitenutil.DebugPrintAt(screen, title, 10, 5)
-
-		// debug register
-		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
-
-		{
-			// debug BG
-			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(10), float64(340))
-			screen.DrawImage(bgMap, op)
-		}
-
-		{
-			// debug tiles
-			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
-			tile := cpu.GPU.GetTileData()
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(200), float64(340))
-			screen.DrawImage(tile, op)
-		}
-
-		{
-			// debug OAM
-			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
-
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(4, 4)
-			op.GeoM.Translate(float64(750), float64(340))
-			screen.DrawImage(cpu.GPU.OAM, op)
-
-			for i := 0; i < 40; i++ {
-				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
-
-				col := i % 8
-				row := i / 8
-				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
-				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
-			}
-		}
-
-	} else {
-		if !skipRender && cpu.Config.Display.HQ2x {
-			display = cpu.GPU.HQ2x()
-		}
-		screen.DrawImage(display, nil)
-	}
-
-	frames++
-
-	if frames%3 == 0 {
-		pad := cpu.Config.Joypad
-		result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
-		if result != 0 {
-			switch result {
-			case joypad.Pressed:
-				// Joypad Interrupt
-				if cpu.Reg.IME && cpu.getJoypadEnable() {
-					cpu.setJoypadFlag()
-				}
-			case joypad.Save:
-				cpu.Sound.Off()
-				cpu.dumpData()
-				cpu.Sound.On()
-			case joypad.Load:
-				cpu.Sound.Off()
-				cpu.loadData()
-				cpu.Sound.On()
-			case joypad.Expand:
-				if !cpu.Config.Display.HQ2x {
-					cpu.Expand *= 2
-					time.Sleep(time.Millisecond * 400)
-					ebiten.SetScreenScale(float64(cpu.Expand))
-				}
-			case joypad.Collapse:
-				if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 {
-					cpu.Expand /= 2
-					time.Sleep(time.Millisecond * 400)
-					ebiten.SetScreenScale(float64(cpu.Expand))
-				}
-			}
-		}
-	}
 
 	if cpu.debug {
 		select {
