@@ -278,7 +278,7 @@ func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileT
 			if OAMindex >= 0 {
 				col := OAMindex % 8
 				row := OAMindex / 8
-				g.OAM.Set(col*16+deltaX, row*20+deltaY, c)
+				g.OAM.Set(col*16+deltaX+2, row*20+deltaY, c)
 			}
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {

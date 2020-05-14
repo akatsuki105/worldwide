@@ -32,7 +32,7 @@ func (cpu *CPU) debugRegister() string {
 	B, C := byte(cpu.Reg.BC>>8), byte(cpu.Reg.BC)
 	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
 	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
-	return fmt.Sprintf(`--   Register   --
+	return fmt.Sprintf(`Register
 A: %02x       F: %02x
 B: %02x       C: %02x
 D: %02x       E: %02x

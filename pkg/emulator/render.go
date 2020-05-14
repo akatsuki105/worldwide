@@ -143,7 +143,9 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	if !skipRender {
 		// スプライト描画
-		cpu.GPU.OAM, _ = ebiten.NewImage(16*8, 20*5, ebiten.FilterDefault)
+		cpu.GPU.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
+		cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+
 		for i := 0; i < 40; i++ {
 			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
 			if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
@@ -232,7 +234,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				col := i % 8
 				row := i / 8
 				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
-				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+32, 340+(row*80))
+				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
 			}
 		}
 
