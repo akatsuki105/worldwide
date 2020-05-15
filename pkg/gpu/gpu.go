@@ -229,6 +229,10 @@ func (g *GPU) setTileLine(entryX, entryY int, lineIndex uint, addr uint16, tileT
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	VRAMBankPtr := (attr >> 3) & 0x01
+	if !isCGB {
+		VRAMBankPtr = 0
+	}
+
 	lowerByte, upperByte := g.VRAMBank[VRAMBankPtr][addr-0x8000], g.VRAMBank[VRAMBankPtr][addr-0x8000+1]
 
 	for j := 0; j < 8; j++ {
