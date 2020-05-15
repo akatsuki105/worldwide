@@ -179,6 +179,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}
 
 	// 背景描画 + CPU稼働
+	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
 
 		scrollX, scrollY = cpu.GPU.ReadScroll()
@@ -211,6 +212,10 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
+		if y < height {
+			LCDC1[y] = ((LCDC >> 1) % 2) == 1
+		}
+
 		WY := uint(cpu.FetchMemory8(WYIO))
 		WX := uint(cpu.FetchMemory8(WXIO)) - 7
 
@@ -270,12 +275,14 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 		for i := 0; i < 40; i++ {
 			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
-			if LCDC>>1%2 == 1 && Y != 0 && Y < 160 {
+			if Y != 0 && Y < 160 {
 				Y -= 16
 				X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
 				tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
 				attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
-				cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+				if Y >= 0 && LCDC1[Y] {
+					cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+				}
 
 				if cpu.debug {
 					OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
