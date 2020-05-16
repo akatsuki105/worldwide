@@ -18,10 +18,7 @@ type GPU struct {
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scrollの座標
 	displayColor  [144][160]byte // 160*144の色番号(背景色を記録)
-	DMGPallte     [3]byte        // DMGのパレットデータ {BGP, OGP0, OGP1}
-	CGBPallte     [2]byte        // CGBのパレットデータ {BCPSIO, OCPSIO}
-	BGPallete     [64]byte
-	SPRPallete    [64]byte
+	Palette       Palette
 	BGPriorPixels [][5]byte
 	// VRAM bank
 	VRAMBankPtr     uint8
