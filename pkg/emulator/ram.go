@@ -269,9 +269,9 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.GPU.LCDSTAT = value
 
 	case addr == 0xff42:
-		cpu.GPU.WriteScrollY(value)
+		cpu.GPU.SetScrollY(value)
 	case addr == 0xff43:
-		cpu.GPU.WriteScrollX(value)
+		cpu.GPU.SetScrollX(value)
 
 	case addr == BGPIO:
 		cpu.GPU.DMGPallte[0] = value
