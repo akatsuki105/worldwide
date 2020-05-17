@@ -52,11 +52,11 @@ func (cpu *CPU) fetchIO(addr uint16) (value byte) {
 	case addr == BCPDIO:
 		// 背景パレットデータ読み込み
 		index := cpu.GPU.FetchBGPalleteIndex()
-		value = cpu.GPU.BGPallete[index]
+		value = cpu.GPU.Palette.BGPallete[index]
 	case addr == OCPDIO:
 		// スプライトパレットデータ読み込み
 		index := cpu.GPU.FetchSPRPalleteIndex()
-		value = cpu.GPU.SPRPallete[index]
+		value = cpu.GPU.Palette.SPRPallete[index]
 	default:
 		value = cpu.RAM[addr]
 	}
@@ -269,16 +269,16 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.GPU.LCDSTAT = value
 
 	case addr == 0xff42:
-		cpu.GPU.WriteScrollY(value)
+		cpu.GPU.SetScrollY(value)
 	case addr == 0xff43:
-		cpu.GPU.WriteScrollX(value)
+		cpu.GPU.SetScrollX(value)
 
 	case addr == BGPIO:
-		cpu.GPU.DMGPallte[0] = value
+		cpu.GPU.Palette.DMGPallte[0] = value
 	case addr == OBP0IO:
-		cpu.GPU.DMGPallte[1] = value
+		cpu.GPU.Palette.DMGPallte[1] = value
 	case addr == OBP1IO:
-		cpu.GPU.DMGPallte[2] = value
+		cpu.GPU.Palette.DMGPallte[2] = value
 
 	// 以降はゲームボーイカラーのみ
 	case addr == VBKIO && cpu.GPU.HBlankDMALength == 0:
@@ -308,22 +308,22 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		}
 
 	case addr == BCPSIO:
-		cpu.GPU.CGBPallte[0] = value
+		cpu.GPU.Palette.CGBPallte[0] = value
 	case addr == OCPSIO:
-		cpu.GPU.CGBPallte[1] = value
+		cpu.GPU.Palette.CGBPallte[1] = value
 	case addr == BCPDIO:
 		// 背景パレットデータ書き込み
 		index := cpu.GPU.FetchBGPalleteIndex()
-		cpu.GPU.BGPallete[index] = value
+		cpu.GPU.Palette.BGPallete[index] = value
 		if cpu.GPU.FetchBGPalleteIncrement() {
-			cpu.GPU.CGBPallte[0]++
+			cpu.GPU.Palette.CGBPallte[0]++
 		}
 	case addr == OCPDIO:
 		// スプライトパレットデータ書き込み
 		index := cpu.GPU.FetchSPRPalleteIndex()
-		cpu.GPU.SPRPallete[index] = value
+		cpu.GPU.Palette.SPRPallete[index] = value
 		if cpu.GPU.FetchSPRPalleteIncrement() {
-			cpu.GPU.CGBPallte[1]++
+			cpu.GPU.Palette.CGBPallte[1]++
 		}
 
 	case addr == SVBKIO:

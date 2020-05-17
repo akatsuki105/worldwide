@@ -163,7 +163,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	skipRender = (cpu.Config.Display.FPS30) && (frames%2 == 1)
 
 	LCDC := cpu.FetchMemory8(LCDCIO)
-	scrollX, scrollY := cpu.GPU.ReadScroll()
+	scrollX, scrollY := cpu.GPU.GetScroll()
 	scrollTileX := scrollX / 8
 	scrollPixelX := scrollX % 8
 	scrollTileY := scrollY / 8
@@ -182,7 +182,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
 
-		scrollX, scrollY = cpu.GPU.ReadScroll()
+		scrollX, scrollY = cpu.GPU.GetScroll()
 		scrollTileX, scrollPixelX = scrollX/8, scrollX%8
 		scrollTileY, scrollPixelY = scrollY/8, scrollY%8
 

@@ -43,7 +43,7 @@ PC: 0x%04x  SP: 0x%04x`, A, F, B, C, D, E, H, L, cpu.Reg.PC, cpu.Reg.SP)
 func (cpu *CPU) debugLCD() string {
 	LCDC := cpu.FetchMemory8(LCDCIO)
 	STAT := cpu.FetchMemory8(LCDSTATIO)
-	SCX, SCY := cpu.GPU.ReadScroll()
+	SCX, SCY := cpu.GPU.GetScroll()
 	WY := cpu.FetchMemory8(WYIO)
 	WX := cpu.FetchMemory8(WXIO) - 7
 	return fmt.Sprintf(`-- LCD --
