@@ -107,49 +107,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}
 
 	if frames%3 == 0 {
-		pad := cpu.Config.Joypad
-		result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
-		if result != 0 {
-			switch result {
-			case joypad.Pressed:
-				// Joypad Interrupt
-				if cpu.Reg.IME && cpu.getJoypadEnable() {
-					cpu.setJoypadFlag()
-				}
-			case joypad.Save:
-				cpu.Sound.Off()
-				cpu.dumpData()
-				cpu.Sound.On()
-			case joypad.Load:
-				cpu.Sound.Off()
-				cpu.loadData()
-				cpu.Sound.On()
-			case joypad.Expand:
-				if !cpu.Config.Display.HQ2x && !cpu.debug {
-					cpu.Expand *= 2
-					time.Sleep(time.Millisecond * 400)
-					ebiten.SetScreenScale(float64(cpu.Expand))
-				}
-			case joypad.Collapse:
-				if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 && !cpu.debug {
-					cpu.Expand /= 2
-					time.Sleep(time.Millisecond * 400)
-					ebiten.SetScreenScale(float64(cpu.Expand))
-				}
-			case joypad.Pause:
-				if cpu.debug && pause.delay <= 0 {
-					if pause.on {
-						pause.on = false
-						pause.delay = 30
-						cpu.Sound.On()
-					} else {
-						pause.on = true
-						pause.delay = 30
-						cpu.Sound.Off()
-					}
-				}
-			}
-		}
+		cpu.handleJoypad()
 	}
 
 	frames++
@@ -330,4 +288,50 @@ func setIcon() {
 	buf := bytes.NewBuffer(icon)
 	img, _ := png.Decode(buf)
 	ebiten.SetWindowIcon([]image.Image{img})
+}
+
+func (cpu *CPU) handleJoypad() {
+	pad := cpu.Config.Joypad
+	result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
+	if result != 0 {
+		switch result {
+		case joypad.Pressed:
+			// Joypad Interrupt
+			if cpu.Reg.IME && cpu.getJoypadEnable() {
+				cpu.setJoypadFlag()
+			}
+		case joypad.Save:
+			cpu.Sound.Off()
+			cpu.dumpData()
+			cpu.Sound.On()
+		case joypad.Load:
+			cpu.Sound.Off()
+			cpu.loadData()
+			cpu.Sound.On()
+		case joypad.Expand:
+			if !cpu.Config.Display.HQ2x && !cpu.debug {
+				cpu.Expand *= 2
+				time.Sleep(time.Millisecond * 400)
+				ebiten.SetScreenScale(float64(cpu.Expand))
+			}
+		case joypad.Collapse:
+			if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 && !cpu.debug {
+				cpu.Expand /= 2
+				time.Sleep(time.Millisecond * 400)
+				ebiten.SetScreenScale(float64(cpu.Expand))
+			}
+		case joypad.Pause:
+			if cpu.debug && pause.delay <= 0 {
+				if pause.on {
+					pause.on = false
+					pause.delay = 30
+					cpu.Sound.On()
+				} else {
+					pause.on = true
+					pause.delay = 30
+					cpu.Sound.Off()
+				}
+			}
+		}
+	}
 }
