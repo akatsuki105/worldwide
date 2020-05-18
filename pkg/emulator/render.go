@@ -3,6 +3,7 @@ package emulator
 import (
 	"bytes"
 	"fmt"
+	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/util"
 	"image"
@@ -125,7 +126,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	scrollX, scrollY := cpu.GPU.GetScroll()
 	scrollTileX := scrollX / 8
 	scrollPixelX := scrollX % 8
-	scrollTileY := scrollY / 8
 	scrollPixelY := scrollY % 8
 
 	iterX := width
@@ -173,7 +173,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 		scrollX, scrollY = cpu.GPU.GetScroll()
 		scrollTileX, scrollPixelX = scrollX/8, scrollX%8
-		scrollTileY = scrollY / 8
 		scrollPixelY = scrollY % 8
 
 		WY := uint(cpu.FetchMemory8(WYIO))
@@ -187,23 +186,26 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 				var tileX, tileY uint
 				var useWindow bool
-				var entryX, entryY int
+				var entryX int
 
-				lineNumber := y % 8
+				lineNumber := y % 8 // タイルの何行目を描画するか
+				entryY := gpu.EntryY{}
 				if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
 					tileX = ((uint(x) - WX) / 8) % 32
 					tileY = ((uint(y) - WY) / 8) % 32
 					useWindow = true
 
 					entryX = blockX * 8
-					entryY = blockY * 8
+					entryY.Block = blockY * 8
+					entryY.Offset = y % 8
 				} else {
 					tileX = (scrollTileX + uint(x/8)) % 32
-					tileY = (scrollTileY + uint(y/8)) % 32
+					tileY = (scrollY + uint(y)) / 8 % 32
 					useWindow = false
 
 					entryX = blockX*8 - int(scrollPixelX)
-					entryY = blockY*8 - int(scrollPixelY)
+					entryY.Block = blockY * 8
+					entryY.Offset = y % 8
 					lineNumber = (int(scrollY) + y) % 8
 				}
 

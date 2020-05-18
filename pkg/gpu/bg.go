@@ -2,8 +2,13 @@ package gpu
 
 import "image/color"
 
+type EntryY struct {
+	Block  int
+	Offset int
+}
+
 // SetBGLine 1タイルライン描画する
-func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineNumber int) bool {
+func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, useWindow, isCGB bool, lineNumber int) bool {
 	index := tileX + tileY*32 // マップの何タイル目か
 
 	// タイル番号からタイルデータのあるアドレス取得
@@ -38,7 +43,7 @@ func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB 
 
 	tileDataOffset := uint16(tileNumber)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か = 描画対象のタイルデータのオフセット
 	tileDataAddr := baseAddr + 2*tileDataOffset                 // タイルデータのアドレス
-	return g.setBGLine(entryX, entryY, lineNumber, tileDataAddr, attr, isCGB)
+	return g.setBGLine(entryX, entryY.Block, entryY.Offset, tileDataAddr, attr, isCGB)
 }
 
 // SetBGPriorPixels 背景優先の背景を描画するための関数
