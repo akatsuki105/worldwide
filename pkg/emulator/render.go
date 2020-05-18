@@ -188,6 +188,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				var useWindow bool
 				var entryX, entryY int
 
+				lineNumber := y % 8
 				if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
 					tileX = ((uint(x) - WX) / 8) % 32
 					tileY = ((uint(y) - WY) / 8) % 32
@@ -205,7 +206,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				}
 
 				if util.Bit(LCDC, 7) == 1 {
-					if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
+					if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, lineNumber) {
 						break
 					}
 				}
