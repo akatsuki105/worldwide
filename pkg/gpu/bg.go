@@ -38,7 +38,7 @@ func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB 
 
 	tileDataOffset := uint16(tileNumber)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か = 描画対象のタイルデータのオフセット
 	tileDataAddr := uint16(baseAddr + 2*tileDataOffset)         // タイルデータのアドレス
-	return g.setBGLine(entryX, entryY, uint(lineNumber), tileDataAddr, attr, isCGB)
+	return g.setBGLine(entryX, entryY, lineNumber, tileDataAddr, attr, isCGB)
 }
 
 // SetBGPriorPixels 背景優先の背景を描画するための関数
@@ -54,7 +54,7 @@ func (g *GPU) SetBGPriorPixels() {
 	g.BGPriorPixels = [][5]byte{}
 }
 
-func (g *GPU) setBGLine(entryX, entryY int, lineIndex uint, addr uint16, attr byte, isCGB bool) bool {
+func (g *GPU) setBGLine(entryX, entryY int, lineNumber int, addr uint16, attr byte, isCGB bool) bool {
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	VRAMBankPtr := (attr >> 3) & 0x01
@@ -64,13 +64,12 @@ func (g *GPU) setBGLine(entryX, entryY int, lineIndex uint, addr uint16, attr by
 
 	lowerByte, upperByte := g.VRAMBank[VRAMBankPtr][addr-0x8000], g.VRAMBank[VRAMBankPtr][addr-0x8000+1]
 
-	for j := 0; j < 8; j++ {
-		bitCtr := (7 - uint(j)) // 上位何ビット目を取り出すか
+	for i := 0; i < 8; i++ {
+		bitCtr := (7 - uint(i)) // 上位何ビット目を取り出すか
 		upperColor := (upperByte >> bitCtr) & 0x01
 		lowerColor := (lowerByte >> bitCtr) & 0x01
 		colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
 
-		var x, y int
 		var RGB, R, G, B byte
 		var isTransparent bool
 
@@ -89,23 +88,23 @@ func (g *GPU) setBGLine(entryX, entryY int, lineIndex uint, addr uint16, attr by
 			// 反転を考慮してpixelをセット
 			if (attr>>6)&0x01 == 1 && (attr>>5)&0x01 == 1 {
 				// 上下左右
-				deltaX = int((7 - j))
-				deltaY = int((7 - int(lineIndex)))
+				deltaX = 7 - i
+				deltaY = 7 - lineNumber
 			} else if (attr>>6)&0x01 == 1 {
 				// 上下
-				deltaX = int(j)
-				deltaY = int((7 - int(lineIndex)))
+				deltaX = i
+				deltaY = 7 - lineNumber
 			} else if (attr>>5)&0x01 == 1 {
 				// 左右
-				deltaX = int((7 - j))
-				deltaY = int(lineIndex)
+				deltaX = 7 - i
+				deltaY = lineNumber
 			} else {
 				// 反転無し
-				deltaX = int(j)
-				deltaY = int(lineIndex)
+				deltaX = i
+				deltaY = lineNumber
 			}
-			x = entryX + deltaX
-			y = entryY + deltaY
+			x := entryX + deltaX
+			y := entryY + deltaY
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {
 				g.displayColor[y][x] = colorNumber
