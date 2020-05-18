@@ -172,7 +172,8 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 
 		scrollX, scrollY = cpu.GPU.GetScroll()
-		scrollTileX, scrollPixelX = scrollX/8, scrollX%8
+		scrollTileX = scrollX / 8
+		scrollPixelX = scrollX % 8
 		scrollPixelY = scrollY % 8
 
 		WY := uint(cpu.FetchMemory8(WYIO))
