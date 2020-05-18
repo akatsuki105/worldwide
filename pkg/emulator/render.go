@@ -124,7 +124,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	LCDC := cpu.FetchMemory8(LCDCIO)
 	scrollX, scrollY := cpu.GPU.GetScroll()
-	scrollTileX := scrollX / 8
 	scrollPixelX := scrollX % 8
 	scrollPixelY := scrollY % 8
 
@@ -172,7 +171,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		}
 
 		scrollX, scrollY = cpu.GPU.GetScroll()
-		scrollTileX = scrollX / 8
 		scrollPixelX = scrollX % 8
 		scrollPixelY = scrollY % 8
 
@@ -200,7 +198,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 					entryY.Block = blockY * 8
 					entryY.Offset = y % 8
 				} else {
-					tileX = (scrollTileX + uint(x/8)) % 32
+					tileX = (scrollX + uint(x)) / 8 % 32
 					tileY = (scrollY + uint(y)) / 8 % 32
 					useWindow = false
 
