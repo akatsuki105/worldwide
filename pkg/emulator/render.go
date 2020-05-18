@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"gbc/pkg/joypad"
+	"gbc/pkg/util"
 	"image"
 	"image/color"
 	"image/png"
@@ -213,7 +214,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
 		if y < height {
-			LCDC1[y] = ((LCDC >> 1) % 2) == 1
+			LCDC1[y] = util.Bit(LCDC, 1) == 1
 		}
 
 		WY := uint(cpu.FetchMemory8(WYIO))
@@ -229,9 +230,9 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				var useWindow bool
 				var entryX, entryY int
 
-				if (LCDC>>5)%2 == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
+				if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
 					tileX = ((uint(x) - WX) / 8) % 32
-					tileY = ((uint(y) - WY) / 8) % 32
+					tileY = ((uint(y)) / 8) % 32
 					useWindow = true
 
 					entryX = blockX * 8
@@ -245,7 +246,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 					entryY = blockY*8 - int(scrollPixelY)
 				}
 
-				if LCDC>>7%2 == 1 {
+				if util.Bit(LCDC, 7) == 1 {
 					if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, y%8) {
 						break
 					}
