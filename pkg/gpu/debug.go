@@ -13,7 +13,7 @@ const (
 	gridWidthY = 3
 )
 
-func (g *GPU) InitTiles() {
+func (g *GPU) initDebugTiles() {
 	g.tileData.overall, _ = ebiten.NewImage(32*8+gridWidthY, 24*8+gridWidthX, ebiten.FilterDefault)
 	g.tileData.overall.Fill(color.RGBA{255, 255, 255, 255})
 

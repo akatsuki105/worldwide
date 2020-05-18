@@ -285,7 +285,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	cpu.ROMBankPtr = 1
 	cpu.WRAMBankPtr = 1
 
-	cpu.GPU.Init()
+	cpu.GPU.Init(debug)
 	cpu.Config = config.Init()
 	cpu.Expand = uint(cpu.Config.Display.Expand)
 
@@ -334,7 +334,6 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
-		cpu.GPU.InitTiles()
 	}
 }
 

@@ -22,7 +22,7 @@ const (
 )
 
 type Pause struct {
-	flag  bool
+	on    bool
 	delay int
 }
 
@@ -138,12 +138,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 				}
 			case joypad.Pause:
 				if cpu.debug && pause.delay <= 0 {
-					if pause.flag {
-						pause.flag = false
+					if pause.on {
+						pause.on = false
 						pause.delay = 30
 						cpu.Sound.On()
 					} else {
-						pause.flag = true
+						pause.on = true
 						pause.delay = 30
 						cpu.Sound.Off()
 					}
@@ -157,7 +157,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	if pause.delay > 0 {
 		pause.delay--
 	}
-	if pause.flag {
+	if pause.on {
 		return nil
 	}
 
