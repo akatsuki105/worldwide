@@ -6,19 +6,19 @@ import "image/color"
 func (g *GPU) SetSPRTile(OAMindex, entryX, entryY int, tileIndex uint, attr byte, isCGB bool) {
 	spriteYSize := g.fetchSPRYSize()
 	if (attr>>4)%2 == 1 {
-		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
-			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
-			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := g.setSPRLine(entryX, entryY, uint(lineIndex), addr, OBP1, attr, isCGB, OAMindex)
+		for lineNumber := 0; lineNumber < spriteYSize; lineNumber++ {
+			index := uint16(tileIndex)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か
+			addr := uint16(0x8000 + 2*index)                  // スプライトは0x8000のみ
+			continueFlag := g.setSPRLine(entryX, entryY, lineNumber, addr, OBP1, attr, isCGB, OAMindex)
 			if !continueFlag {
 				break
 			}
 		}
 	} else {
-		for lineIndex := 0; lineIndex < spriteYSize; lineIndex++ {
-			index := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
-			addr := uint16(0x8000 + 2*index)                 // スプライトは0x8000のみ
-			continueFlag := g.setSPRLine(entryX, entryY, uint(lineIndex), addr, OBP0, attr, isCGB, OAMindex)
+		for lineNumber := 0; lineNumber < spriteYSize; lineNumber++ {
+			index := uint16(tileIndex)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か
+			addr := uint16(0x8000 + 2*index)                  // スプライトは0x8000のみ
+			continueFlag := g.setSPRLine(entryX, entryY, lineNumber, addr, OBP0, attr, isCGB, OAMindex)
 			if !continueFlag {
 				break
 			}
@@ -34,7 +34,7 @@ func (g *GPU) fetchSPRYSize() int {
 	return 8
 }
 
-func (g *GPU) setSPRLine(entryX, entryY int, lineIndex uint, addr uint16, tileType int, attr byte, isCGB bool, OAMindex int) bool {
+func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType int, attr byte, isCGB bool, OAMindex int) bool {
 	spriteYSize := g.fetchSPRYSize()
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
@@ -51,7 +51,6 @@ func (g *GPU) setSPRLine(entryX, entryY int, lineIndex uint, addr uint16, tileTy
 		lowerColor := (lowerByte >> bitCtr) & 0x01
 		colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
 
-		var x, y int
 		var RGB, R, G, B byte
 		var isTransparent bool
 
@@ -71,22 +70,22 @@ func (g *GPU) setSPRLine(entryX, entryY int, lineIndex uint, addr uint16, tileTy
 			if (attr>>6)&0x01 == 1 && (attr>>5)&0x01 == 1 {
 				// 上下左右
 				deltaX = int((7 - j))
-				deltaY = int(((spriteYSize - 1) - int(lineIndex)))
+				deltaY = (spriteYSize - 1) - lineNumber
 			} else if (attr>>6)&0x01 == 1 {
 				// 上下
 				deltaX = int(j)
-				deltaY = int(((spriteYSize - 1) - int(lineIndex)))
+				deltaY = (spriteYSize - 1) - lineNumber
 			} else if (attr>>5)&0x01 == 1 {
 				// 左右
 				deltaX = int((7 - j))
-				deltaY = int(lineIndex)
+				deltaY = lineNumber
 			} else {
 				// 反転無し
 				deltaX = int(j)
-				deltaY = int(lineIndex)
+				deltaY = lineNumber
 			}
-			x = entryX + deltaX
-			y = entryY + deltaY
+			x := entryX + deltaX
+			y := entryY + deltaY
 
 			// debug OAM
 			col := OAMindex % 8
