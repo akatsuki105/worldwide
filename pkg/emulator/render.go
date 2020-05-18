@@ -203,6 +203,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 					entryX = blockX*8 - int(scrollPixelX)
 					entryY = blockY*8 - int(scrollPixelY)
+					lineNumber = (int(scrollY) + y) % 8
 				}
 
 				if util.Bit(LCDC, 7) == 1 {
