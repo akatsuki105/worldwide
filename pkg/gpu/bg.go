@@ -3,42 +3,42 @@ package gpu
 import "image/color"
 
 // SetBGLine 1タイルライン描画する
-func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineIndex int) bool {
+func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineNumber int) bool {
 	index := tileX + tileY*32 // マップの何タイル目か
 
 	// タイル番号からタイルデータのあるアドレス取得
-	var addr uint16
+	var BGMapAddr uint16
 	LCDC := g.LCDC
 	if useWindow {
 		if LCDC&0x40 != 0 {
-			addr = 0x9c00 + uint16(index)
+			BGMapAddr = 0x9c00 + uint16(index)
 		} else {
-			addr = 0x9800 + uint16(index)
+			BGMapAddr = 0x9800 + uint16(index)
 		}
 	} else {
 		if LCDC&0x08 != 0 {
-			addr = 0x9c00 + uint16(index)
+			BGMapAddr = 0x9c00 + uint16(index)
 		} else {
-			addr = 0x9800 + uint16(index)
+			BGMapAddr = 0x9800 + uint16(index)
 		}
 	}
-	tileIndex := uint8(g.VRAMBank[0][addr-0x8000])
+	tileNumber := uint8(g.VRAMBank[0][BGMapAddr-0x8000]) // BG Mapから該当の画面の場所のタイル番号を取得
 	baseAddr := g.fetchTileBaseAddr()
 	if baseAddr == 0x8800 {
-		tileIndex = uint8(int(int8(tileIndex)) + 128)
+		tileNumber = uint8(int(int8(tileNumber)) + 128)
 	}
 
 	// 背景属性取得
 	var attr byte
 	if isCGB {
-		attr = uint8(g.VRAMBank[1][addr-0x8000])
+		attr = uint8(g.VRAMBank[1][BGMapAddr-0x8000])
 	} else {
 		attr = 0
 	}
 
-	index16 := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
-	addr = uint16(baseAddr + 2*index16)
-	return g.setBGLine(entryX, entryY, uint(lineIndex), addr, attr, isCGB)
+	tileDataOffset := uint16(tileNumber)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か = 描画対象のタイルデータのオフセット
+	tileDataAddr := uint16(baseAddr + 2*tileDataOffset)         // タイルデータのアドレス
+	return g.setBGLine(entryX, entryY, uint(lineNumber), tileDataAddr, attr, isCGB)
 }
 
 // SetBGPriorPixels 背景優先の背景を描画するための関数
