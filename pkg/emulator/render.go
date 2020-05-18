@@ -141,10 +141,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
 
-		scrollX, scrollY = cpu.GPU.GetScroll()
-		scrollTileX, scrollPixelX = scrollX/8, scrollX%8
-		scrollTileY, scrollPixelY = scrollY/8, scrollY%8
-
 		if y < height {
 
 			// OAM mode2
@@ -174,6 +170,10 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		if y < height {
 			LCDC1[y] = util.Bit(LCDC, 1) == 1
 		}
+
+		scrollX, scrollY = cpu.GPU.GetScroll()
+		scrollTileX, scrollPixelX = scrollX/8, scrollX%8
+		scrollTileY, scrollPixelY = scrollY/8, scrollY%8
 
 		WY := uint(cpu.FetchMemory8(WYIO))
 		WX := uint(cpu.FetchMemory8(WXIO)) - 7
