@@ -232,7 +232,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 				if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
 					tileX = ((uint(x) - WX) / 8) % 32
-					tileY = ((uint(y)) / 8) % 32
+					tileY = ((uint(y) - WY) / 8) % 32
 					useWindow = true
 
 					entryX = blockX * 8
