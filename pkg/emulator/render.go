@@ -78,15 +78,13 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	for y := 0; y < iterY; y++ {
 
 		// CPU works
-		cpu.execFrame()
+		scrollX, scrollY = cpu.execFrame()
+		scrollPixelX = scrollX % 8
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
 		if y < height {
 			LCDC1[y] = util.Bit(LCDC, 1) == 1
 		}
-
-		scrollX, scrollY = cpu.GPU.GetScroll()
-		scrollPixelX = scrollX % 8
 
 		WY := uint(cpu.FetchMemory8(WYIO))
 		WX := uint(cpu.FetchMemory8(WXIO)) - 7
@@ -317,7 +315,7 @@ func (cpu *CPU) handleJoypad() {
 	}
 }
 
-func (cpu *CPU) execFrame() {
+func (cpu *CPU) execFrame() (uint, uint) {
 	// OAM mode2
 	cpu.cycleLine = 0
 	cpu.setOAMRAMMode()
@@ -332,6 +330,8 @@ func (cpu *CPU) execFrame() {
 		cpu.exec()
 	}
 
+	scrollX, scrollY := cpu.GPU.GetScroll()
+
 	// HBlank mode0
 	cpu.cycleLine = 0
 	cpu.setHBlankMode()
@@ -339,4 +339,5 @@ func (cpu *CPU) execFrame() {
 		cpu.exec()
 	}
 	cpu.incrementLY()
+	return scrollX, scrollY
 }
