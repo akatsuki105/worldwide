@@ -1,6 +1,7 @@
 package emulator
 
 func (cpu *CPU) setHBlankMode() {
+	cpu.mode = HBlankMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
 	STAT &= 0xfc // bit0-1を00にする
 	cpu.SetMemory8(LCDSTATIO, STAT)
@@ -30,12 +31,14 @@ func (cpu *CPU) getVBlankMode() bool {
 }
 
 func (cpu *CPU) setVBlankMode() {
+	cpu.mode = VBlankMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
 	STAT = (STAT | 0x01) & 0xfd // bit0-1を01にする
 	cpu.SetMemory8(LCDSTATIO, STAT)
 }
 
 func (cpu *CPU) setOAMRAMMode() {
+	cpu.mode = OAMRAMMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
 	STAT = (STAT | 0x02) & 0xfe // bit0-1を10にする
 	cpu.SetMemory8(LCDSTATIO, STAT)
@@ -45,6 +48,7 @@ func (cpu *CPU) setOAMRAMMode() {
 }
 
 func (cpu *CPU) setLCDMode() {
+	cpu.mode = LCDMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
 	STAT |= 0x03 // bit0-1を11にする
 	cpu.SetMemory8(LCDSTATIO, STAT)

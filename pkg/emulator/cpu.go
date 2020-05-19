@@ -14,6 +14,13 @@ import (
 	"gbc/pkg/serial"
 )
 
+const (
+	HBlankMode = iota
+	VBlankMode
+	OAMRAMMode
+	LCDMode
+)
+
 // CPU Central Processing Unit
 type CPU struct {
 	Reg       Register
@@ -24,6 +31,7 @@ type CPU struct {
 	joypad    joypad.Joypad
 	halt      bool // Halt状態か
 	Config    *config.Config
+	mode      int
 	// timer関連
 	cycle       int // タイマー用
 	cycleDIV    int // DIVタイマー用
