@@ -25,6 +25,7 @@ type GPU struct {
 	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
 	HBlankDMALength int
 	OAM             *ebiten.Image // OAMをまとめたもの
+	debug           bool          // デバッグモードか
 }
 
 type tileData struct {
@@ -46,10 +47,15 @@ const (
 )
 
 // Init GPU
-func (g *GPU) Init() {
+func (g *GPU) Init(debug bool) {
 	g.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
 	g.original = image.NewRGBA(image.Rect(0, 0, 160, 144))
 	g.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
+
+	g.debug = debug
+	if debug {
+		g.initDebugTiles()
+	}
 }
 
 // GetDisplay getter for display data

@@ -8,25 +8,6 @@ var (
 	maxHistory = 128
 )
 
-// pushHistory CPUのログを追加する
-func (cpu *CPU) pushHistory(eip uint16, opcode byte) {
-	instruction, operand1, operand2 := opcodeToString[opcode][0], opcodeToString[opcode][1], opcodeToString[opcode][2]
-	log := fmt.Sprintf("eip:0x%04x   opcode:%02x	%s %s %s", eip, opcode, instruction, operand1, operand2)
-
-	cpu.history = append(cpu.history, log)
-
-	if len(cpu.history) > maxHistory {
-		cpu.history = cpu.history[1:]
-	}
-}
-
-// writeHistory CPUのログを書き出す
-func (cpu *CPU) writeHistory() {
-	for i, log := range cpu.history {
-		fmt.Printf("%d: %s\n", i, log)
-	}
-}
-
 func (cpu *CPU) debugRegister() string {
 	A, F := byte(cpu.Reg.AF>>8), byte(cpu.Reg.AF)
 	B, C := byte(cpu.Reg.BC>>8), byte(cpu.Reg.BC)

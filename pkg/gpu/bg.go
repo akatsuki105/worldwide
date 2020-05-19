@@ -2,43 +2,48 @@ package gpu
 
 import "image/color"
 
+type EntryY struct {
+	Block  int
+	Offset int
+}
+
 // SetBGLine 1タイルライン描画する
-func (g *GPU) SetBGLine(entryX, entryY int, tileX, tileY uint, useWindow, isCGB bool, lineIndex int) bool {
+func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, useWindow, isCGB bool, lineNumber int) bool {
 	index := tileX + tileY*32 // マップの何タイル目か
 
 	// タイル番号からタイルデータのあるアドレス取得
-	var addr uint16
+	var BGMapAddr uint16
 	LCDC := g.LCDC
 	if useWindow {
 		if LCDC&0x40 != 0 {
-			addr = 0x9c00 + uint16(index)
+			BGMapAddr = 0x9c00 + uint16(index)
 		} else {
-			addr = 0x9800 + uint16(index)
+			BGMapAddr = 0x9800 + uint16(index)
 		}
 	} else {
 		if LCDC&0x08 != 0 {
-			addr = 0x9c00 + uint16(index)
+			BGMapAddr = 0x9c00 + uint16(index)
 		} else {
-			addr = 0x9800 + uint16(index)
+			BGMapAddr = 0x9800 + uint16(index)
 		}
 	}
-	tileIndex := uint8(g.VRAMBank[0][addr-0x8000])
+	tileNumber := g.VRAMBank[0][BGMapAddr-0x8000] // BG Mapから該当の画面の場所のタイル番号を取得
 	baseAddr := g.fetchTileBaseAddr()
 	if baseAddr == 0x8800 {
-		tileIndex = uint8(int(int8(tileIndex)) + 128)
+		tileNumber = uint8(int(int8(tileNumber)) + 128)
 	}
 
 	// 背景属性取得
 	var attr byte
 	if isCGB {
-		attr = uint8(g.VRAMBank[1][addr-0x8000])
+		attr = g.VRAMBank[1][BGMapAddr-0x8000]
 	} else {
 		attr = 0
 	}
 
-	index16 := uint16(tileIndex)*8 + uint16(lineIndex) // 何枚目のタイルか*8 + タイルの何行目か
-	addr = uint16(baseAddr + 2*index16)
-	return g.setBGLine(entryX, entryY, uint(lineIndex), addr, attr, isCGB)
+	tileDataOffset := uint16(tileNumber)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か = 描画対象のタイルデータのオフセット
+	tileDataAddr := baseAddr + 2*tileDataOffset                 // タイルデータのアドレス
+	return g.setBGLine(entryX, entryY.Block, entryY.Offset, tileDataAddr, attr, isCGB)
 }
 
 // SetBGPriorPixels 背景優先の背景を描画するための関数
@@ -54,7 +59,7 @@ func (g *GPU) SetBGPriorPixels() {
 	g.BGPriorPixels = [][5]byte{}
 }
 
-func (g *GPU) setBGLine(entryX, entryY int, lineIndex uint, addr uint16, attr byte, isCGB bool) bool {
+func (g *GPU) setBGLine(entryX, entryY, lineNumber int, addr uint16, attr byte, isCGB bool) bool {
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
 	VRAMBankPtr := (attr >> 3) & 0x01
@@ -64,13 +69,12 @@ func (g *GPU) setBGLine(entryX, entryY int, lineIndex uint, addr uint16, attr by
 
 	lowerByte, upperByte := g.VRAMBank[VRAMBankPtr][addr-0x8000], g.VRAMBank[VRAMBankPtr][addr-0x8000+1]
 
-	for j := 0; j < 8; j++ {
-		bitCtr := (7 - uint(j)) // 上位何ビット目を取り出すか
+	for i := 0; i < 8; i++ {
+		bitCtr := (7 - uint(i)) // 上位何ビット目を取り出すか
 		upperColor := (upperByte >> bitCtr) & 0x01
 		lowerColor := (lowerByte >> bitCtr) & 0x01
 		colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
 
-		var x, y int
 		var RGB, R, G, B byte
 		var isTransparent bool
 
@@ -89,23 +93,23 @@ func (g *GPU) setBGLine(entryX, entryY int, lineIndex uint, addr uint16, attr by
 			// 反転を考慮してpixelをセット
 			if (attr>>6)&0x01 == 1 && (attr>>5)&0x01 == 1 {
 				// 上下左右
-				deltaX = int((7 - j))
-				deltaY = int((7 - int(lineIndex)))
+				deltaX = 7 - i
+				deltaY = 7 - lineNumber
 			} else if (attr>>6)&0x01 == 1 {
 				// 上下
-				deltaX = int(j)
-				deltaY = int((7 - int(lineIndex)))
+				deltaX = i
+				deltaY = 7 - lineNumber
 			} else if (attr>>5)&0x01 == 1 {
 				// 左右
-				deltaX = int((7 - j))
-				deltaY = int(lineIndex)
+				deltaX = 7 - i
+				deltaY = lineNumber
 			} else {
 				// 反転無し
-				deltaX = int(j)
-				deltaY = int(lineIndex)
+				deltaX = i
+				deltaY = lineNumber
 			}
-			x = entryX + deltaX
-			y = entryY + deltaY
+			x := entryX + deltaX
+			y := entryY + deltaY
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {
 				g.displayColor[y][x] = colorNumber

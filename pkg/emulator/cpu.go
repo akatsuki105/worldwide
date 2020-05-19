@@ -14,22 +14,33 @@ import (
 	"gbc/pkg/serial"
 )
 
+const (
+	HBlankMode = iota
+	VBlankMode
+	OAMRAMMode
+	LCDMode
+)
+
+type Cycle struct {
+	tac      int // タイマー用
+	div      int // DIVタイマー用
+	scanline int // スキャンライン用
+	serial   int
+}
+
 // CPU Central Processing Unit
 type CPU struct {
 	Reg       Register
 	RAM       [0x10000]byte
 	Cartridge cartridge.Cartridge
 	mutex     sync.Mutex
-	history   []string
 	joypad    joypad.Joypad
 	halt      bool // Halt状態か
 	Config    *config.Config
+	mode      int
 	// timer関連
-	cycle       int // タイマー用
-	cycleDIV    int // DIVタイマー用
-	cycleLine   int // スキャンライン用
-	cycleSerial int
-	serialTick  chan int
+	cycle      Cycle
+	serialTick chan int
 	// ROM bank
 	ROMBankPtr uint8
 	ROMBank    [256][0x4000]byte // 0x4000-0x7fff
@@ -52,12 +63,7 @@ type CPU struct {
 	Serial serial.Serial
 
 	romdir string // ロムがあるところのディレクトリパス
-
-	// OAMDMA情報
-	startOAMDMA   uint16
-	ptrOAMDMA     uint16
-	restartOAMDMA uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
-	reptrOAMDMA   uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+	OAMDMA OAMDMA
 
 	IMESwitch
 	debug bool // デバッグモードかどうか
@@ -285,7 +291,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	cpu.ROMBankPtr = 1
 	cpu.WRAMBankPtr = 1
 
-	cpu.GPU.Init()
+	cpu.GPU.Init(debug)
 	cpu.Config = config.Init()
 	cpu.Expand = uint(cpu.Config.Display.Expand)
 
@@ -334,7 +340,6 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
-		cpu.GPU.InitTiles()
 	}
 }
 
@@ -342,10 +347,6 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 func (cpu *CPU) Exit() {
 	cpu.save()
 	cpu.Serial.Exit()
-
-	if cpu.debug {
-		cpu.writeHistory()
-	}
 }
 
 // Exec 1サイクル
@@ -438,8 +439,6 @@ func (cpu *CPU) exec() {
 			case INS_STOP:
 				cpu.STOP(operand1, operand2)
 			default:
-				cpu.writeHistory()
-
 				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)
 			}
