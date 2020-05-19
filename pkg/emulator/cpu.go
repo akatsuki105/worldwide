@@ -34,7 +34,6 @@ type CPU struct {
 	RAM       [0x10000]byte
 	Cartridge cartridge.Cartridge
 	mutex     sync.Mutex
-	history   []string
 	joypad    joypad.Joypad
 	halt      bool // Halt状態か
 	Config    *config.Config
@@ -348,10 +347,6 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 func (cpu *CPU) Exit() {
 	cpu.save()
 	cpu.Serial.Exit()
-
-	if cpu.debug {
-		cpu.writeHistory()
-	}
 }
 
 // Exec 1サイクル
@@ -444,8 +439,6 @@ func (cpu *CPU) exec() {
 			case INS_STOP:
 				cpu.STOP(operand1, operand2)
 			default:
-				cpu.writeHistory()
-
 				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)
 			}
