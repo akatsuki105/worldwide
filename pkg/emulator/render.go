@@ -173,9 +173,9 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	wait.Add(1)
 	go func() {
 		for {
-			cpu.cycleLine = 0
+			cpu.cycle.scanline = 0
 
-			for cpu.cycleLine < cyclePerLine*cpu.boost {
+			for cpu.cycle.scanline < cyclePerLine*cpu.boost {
 				cpu.exec()
 			}
 			cpu.incrementLY()
@@ -317,25 +317,25 @@ func (cpu *CPU) handleJoypad() {
 
 func (cpu *CPU) execFrame() (uint, uint) {
 	// OAM mode2
-	cpu.cycleLine = 0
+	cpu.cycle.scanline = 0
 	cpu.setOAMRAMMode()
-	for cpu.cycleLine <= 20*cpu.boost {
+	for cpu.cycle.scanline <= 20*cpu.boost {
 		cpu.exec()
 	}
 
 	// LCD Driver mode3
-	cpu.cycleLine = 0
+	cpu.cycle.scanline = 0
 	cpu.setLCDMode()
-	for cpu.cycleLine <= 42*cpu.boost {
+	for cpu.cycle.scanline <= 42*cpu.boost {
 		cpu.exec()
 	}
 
 	scrollX, scrollY := cpu.GPU.GetScroll()
 
 	// HBlank mode0
-	cpu.cycleLine = 0
+	cpu.cycle.scanline = 0
 	cpu.setHBlankMode()
-	for cpu.cycleLine <= (cyclePerLine-(20+42))*cpu.boost {
+	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
 		cpu.exec()
 	}
 	cpu.incrementLY()

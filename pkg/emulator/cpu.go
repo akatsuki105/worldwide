@@ -21,6 +21,13 @@ const (
 	LCDMode
 )
 
+type Cycle struct {
+	tac      int // タイマー用
+	div      int // DIVタイマー用
+	scanline int // スキャンライン用
+	serial   int
+}
+
 // CPU Central Processing Unit
 type CPU struct {
 	Reg       Register
@@ -33,11 +40,8 @@ type CPU struct {
 	Config    *config.Config
 	mode      int
 	// timer関連
-	cycle       int // タイマー用
-	cycleDIV    int // DIVタイマー用
-	cycleLine   int // スキャンライン用
-	cycleSerial int
-	serialTick  chan int
+	cycle      Cycle
+	serialTick chan int
 	// ROM bank
 	ROMBankPtr uint8
 	ROMBank    [256][0x4000]byte // 0x4000-0x7fff
