@@ -144,7 +144,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 
 		// OAMDMA中はCPUは0xff80-0xfffeのみアクセス可能
 		if addr < 0xff80 || addr > 0xfffe {
-			if cpu.ptrOAMDMA > 0 && cpu.ptrOAMDMA <= 160 {
+			if cpu.OAMDMA.ptr > 0 && cpu.OAMDMA.ptr <= 160 {
 				return
 			}
 		}
@@ -247,12 +247,12 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == DMAIO:
 		// DMA転送
 		start := uint16(cpu.getAReg()) << 8
-		if cpu.ptrOAMDMA > 0 {
-			cpu.restartOAMDMA = start
-			cpu.reptrOAMDMA = 160 + 2 // 転送開始までにラグがある
+		if cpu.OAMDMA.ptr > 0 {
+			cpu.OAMDMA.restart = start
+			cpu.OAMDMA.reptr = 160 + 2 // 転送開始までにラグがある
 		} else {
-			cpu.startOAMDMA = start
-			cpu.ptrOAMDMA = 160 + 2 // 転送開始までにラグがある
+			cpu.OAMDMA.start = start
+			cpu.OAMDMA.ptr = 160 + 2 // 転送開始までにラグがある
 		}
 
 	case addr >= 0xff10 && addr <= 0xff26:

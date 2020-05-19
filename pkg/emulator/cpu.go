@@ -64,12 +64,7 @@ type CPU struct {
 	Serial serial.Serial
 
 	romdir string // ロムがあるところのディレクトリパス
-
-	// OAMDMA情報
-	startOAMDMA   uint16
-	ptrOAMDMA     uint16
-	restartOAMDMA uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
-	reptrOAMDMA   uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+	OAMDMA OAMDMA
 
 	IMESwitch
 	debug bool // デバッグモードかどうか

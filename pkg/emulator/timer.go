@@ -1,5 +1,12 @@
 package emulator
 
+type OAMDMA struct {
+	start   uint16
+	ptr     uint16
+	restart uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+	reptr   uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+}
+
 func (cpu *CPU) getTimerEnable() bool {
 	IE := cpu.fetchIO(IEIO)
 	TimerEnable := (IE >> 2) % 2
@@ -122,28 +129,28 @@ func (cpu *CPU) timer(cycle int) {
 	}
 
 	// OAMDMA
-	if cpu.ptrOAMDMA > 0 {
+	if cpu.OAMDMA.ptr > 0 {
 		for i := 0; i < cycle; i++ {
-			if cpu.ptrOAMDMA == 160 {
-				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
+			if cpu.OAMDMA.ptr == 160 {
+				cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
 				cpu.RAM[OAM] = 0xff
-			} else if cpu.ptrOAMDMA < 160 {
-				cpu.RAM[0xfe00+uint16(cpu.ptrOAMDMA)-1] = cpu.FetchMemory8(cpu.startOAMDMA + uint16(cpu.ptrOAMDMA) - 1)
+			} else if cpu.OAMDMA.ptr < 160 {
+				cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
 			}
 
 			// OAMDMAを1カウント進める(重複しているときはそっちのカウントも進める)
-			cpu.ptrOAMDMA--
-			if cpu.reptrOAMDMA > 0 {
-				cpu.reptrOAMDMA--
+			cpu.OAMDMA.ptr--
+			if cpu.OAMDMA.reptr > 0 {
+				cpu.OAMDMA.reptr--
 
-				if cpu.reptrOAMDMA == 160 {
-					cpu.startOAMDMA = cpu.restartOAMDMA
-					cpu.ptrOAMDMA = 160
-					cpu.reptrOAMDMA = 0
+				if cpu.OAMDMA.reptr == 160 {
+					cpu.OAMDMA.start = cpu.OAMDMA.restart
+					cpu.OAMDMA.ptr = 160
+					cpu.OAMDMA.reptr = 0
 				}
 			}
 
-			if cpu.ptrOAMDMA == 0 {
+			if cpu.OAMDMA.ptr == 0 {
 				break
 			}
 		}
