@@ -46,66 +46,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		setIcon()
 	}
 
-	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
-	if cpu.debug {
-		screen.Fill(color.RGBA{35, 27, 167, 255})
-		{
-			// debug screen
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(10), float64(25))
-			screen.DrawImage(display, op)
-		}
-
-		// debug FPS
-		title := fmt.Sprintf("GameBoy FPS: %d", fps)
-		ebitenutil.DebugPrintAt(screen, title, 10, 5)
-
-		// debug register
-		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
-
-		if bgMap != nil {
-			// debug BG
-			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(float64(10), float64(340))
-			screen.DrawImage(bgMap, op)
-		}
-
-		{
-			// debug tiles
-			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
-			tile := cpu.GPU.GetTileData()
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(200), float64(340))
-			screen.DrawImage(tile, op)
-		}
-
-		if cpu.GPU.OAM != nil {
-			// debug OAM
-			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
-
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(4, 4)
-			op.GeoM.Translate(float64(750), float64(340))
-			screen.DrawImage(cpu.GPU.OAM, op)
-
-			for i := 0; i < 40; i++ {
-				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
-
-				col := i % 8
-				row := i / 8
-				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
-				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
-			}
-		}
-	} else {
-		if !skipRender && cpu.Config.Display.HQ2x {
-			display = cpu.GPU.HQ2x()
-		}
-		screen.DrawImage(display, nil)
-	}
+	cpu.renderScreen(screen)
 
 	if frames%3 == 0 {
 		cpu.handleJoypad()
@@ -125,45 +66,19 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	LCDC := cpu.FetchMemory8(LCDCIO)
 	scrollX, scrollY := cpu.GPU.GetScroll()
 	scrollPixelX := scrollX % 8
-	scrollPixelY := scrollY % 8
 
 	iterX := width
 	iterY := height
 	if scrollPixelX > 0 {
 		iterX += 8
 	}
-	if scrollPixelY > 0 {
-		iterY += 8
-	}
 
 	// 背景描画 + CPU稼働
 	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
 
-		if y < height {
-
-			// OAM mode2
-			cpu.cycleLine = 0
-			cpu.setOAMRAMMode()
-			for cpu.cycleLine <= 20*cpu.boost {
-				cpu.exec()
-			}
-
-			// LCD Driver mode3
-			cpu.cycleLine = 0
-			cpu.setLCDMode()
-			for cpu.cycleLine <= 42*cpu.boost {
-				cpu.exec()
-			}
-
-			// HBlank mode0
-			cpu.cycleLine = 0
-			cpu.setHBlankMode()
-			for cpu.cycleLine <= (cyclePerLine-(20+42))*cpu.boost {
-				cpu.exec()
-			}
-			cpu.incrementLY()
-		}
+		// CPU works
+		cpu.execFrame()
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
 		if y < height {
@@ -172,13 +87,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 		scrollX, scrollY = cpu.GPU.GetScroll()
 		scrollPixelX = scrollX % 8
-		scrollPixelY = scrollY % 8
 
 		WY := uint(cpu.FetchMemory8(WYIO))
 		WX := uint(cpu.FetchMemory8(WXIO)) - 7
 
+		// 背景(ウィンドウ)描画
 		if !skipRender {
-			// 背景(ウィンドウ)描画
 			for x := 0; x < iterX; x += 8 {
 				blockX := x / 8
 				blockY := y / 8
@@ -294,6 +208,69 @@ func setIcon() {
 	ebiten.SetWindowIcon([]image.Image{img})
 }
 
+func (cpu *CPU) renderScreen(screen *ebiten.Image) {
+	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
+	if cpu.debug {
+		screen.Fill(color.RGBA{35, 27, 167, 255})
+		{
+			// debug screen
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(10), float64(25))
+			screen.DrawImage(display, op)
+		}
+
+		// debug FPS
+		title := fmt.Sprintf("GameBoy FPS: %d", fps)
+		ebitenutil.DebugPrintAt(screen, title, 10, 5)
+
+		// debug register
+		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
+
+		if bgMap != nil {
+			// debug BG
+			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(float64(10), float64(340))
+			screen.DrawImage(bgMap, op)
+		}
+
+		{
+			// debug tiles
+			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
+			tile := cpu.GPU.GetTileData()
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(200), float64(340))
+			screen.DrawImage(tile, op)
+		}
+
+		if cpu.GPU.OAM != nil {
+			// debug OAM
+			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(4, 4)
+			op.GeoM.Translate(float64(750), float64(340))
+			screen.DrawImage(cpu.GPU.OAM, op)
+
+			for i := 0; i < 40; i++ {
+				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
+
+				col := i % 8
+				row := i / 8
+				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
+				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
+			}
+		}
+	} else {
+		if !skipRender && cpu.Config.Display.HQ2x {
+			display = cpu.GPU.HQ2x()
+		}
+		screen.DrawImage(display, nil)
+	}
+}
+
 func (cpu *CPU) handleJoypad() {
 	pad := cpu.Config.Joypad
 	result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
@@ -338,4 +315,28 @@ func (cpu *CPU) handleJoypad() {
 			}
 		}
 	}
+}
+
+func (cpu *CPU) execFrame() {
+	// OAM mode2
+	cpu.cycleLine = 0
+	cpu.setOAMRAMMode()
+	for cpu.cycleLine <= 20*cpu.boost {
+		cpu.exec()
+	}
+
+	// LCD Driver mode3
+	cpu.cycleLine = 0
+	cpu.setLCDMode()
+	for cpu.cycleLine <= 42*cpu.boost {
+		cpu.exec()
+	}
+
+	// HBlank mode0
+	cpu.cycleLine = 0
+	cpu.setHBlankMode()
+	for cpu.cycleLine <= (cyclePerLine-(20+42))*cpu.boost {
+		cpu.exec()
+	}
+	cpu.incrementLY()
 }
