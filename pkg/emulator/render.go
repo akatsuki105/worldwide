@@ -78,7 +78,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	for y := 0; y < iterY; y++ {
 
 		// CPU works
-		scrollX, scrollY = cpu.execFrame()
+		scrollX, scrollY = cpu.execScanline()
 		scrollPixelX = scrollX % 8
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
@@ -145,47 +145,14 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	if !skipRender {
 		// スプライト描画
-		cpu.GPU.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
-		cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
-
-		for i := 0; i < 40; i++ {
-			Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
-			if Y != 0 && Y < 160 {
-				Y -= 16
-				X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
-				tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
-				attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
-				if Y >= 0 && LCDC1[Y] {
-					cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
-				}
-
-				if cpu.debug {
-					OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
-				}
-			}
-		}
+		cpu.setSprite(&LCDC1)
 
 		// 背景優先のpixelを描画していく
 		cpu.GPU.SetBGPriorPixels()
 	}
 
 	// VBlank
-	wait.Add(1)
-	go func() {
-		for {
-			cpu.cycle.scanline = 0
-
-			for cpu.cycle.scanline < cyclePerLine*cpu.boost {
-				cpu.exec()
-			}
-			cpu.incrementLY()
-			LY := cpu.FetchMemory8(LYIO)
-			if LY == 0 {
-				break
-			}
-		}
-		wait.Done()
-	}()
+	cpu.execVBlank()
 
 	if cpu.debug {
 		select {
@@ -195,8 +162,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 		default:
 		}
 	}
-
-	wait.Wait()
 	return nil
 }
 
@@ -315,7 +280,7 @@ func (cpu *CPU) handleJoypad() {
 	}
 }
 
-func (cpu *CPU) execFrame() (uint, uint) {
+func (cpu *CPU) execScanline() (uint, uint) {
 	// OAM mode2
 	cpu.cycle.scanline = 0
 	cpu.setOAMRAMMode()
@@ -340,4 +305,41 @@ func (cpu *CPU) execFrame() (uint, uint) {
 	}
 	cpu.incrementLY()
 	return scrollX, scrollY
+}
+
+func (cpu *CPU) setSprite(LCDC1 *[144]bool) {
+	cpu.GPU.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
+	cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+
+	for i := 0; i < 40; i++ {
+		Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
+		if Y != 0 && Y < 160 {
+			Y -= 16
+			X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
+			tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
+			attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
+			if Y >= 0 && LCDC1[Y] {
+				cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+			}
+
+			if cpu.debug {
+				OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
+			}
+		}
+	}
+}
+
+func (cpu *CPU) execVBlank() {
+	for {
+		cpu.cycle.scanline = 0
+
+		for cpu.cycle.scanline < cyclePerLine*cpu.boost {
+			cpu.exec()
+		}
+		cpu.incrementLY()
+		LY := cpu.FetchMemory8(LYIO)
+		if LY == 0 {
+			break
+		}
+	}
 }

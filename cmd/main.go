@@ -24,6 +24,7 @@ func Run() int {
 	var (
 		showVersion = flag.Bool("v", false, "show version")
 		debug       = flag.Bool("debug", false, "enable debug mode")
+		outputReg   = flag.Bool("output-register", false, "only CPU works and output register state")
 	)
 
 	flag.Parse()
@@ -64,6 +65,10 @@ func Run() int {
 		os.Chdir(cur)
 		cpu.Exit()
 	}()
+
+	if *outputReg {
+		return 0
+	}
 
 	ebiten.SetRunnableInBackground(true)
 	if *debug {
