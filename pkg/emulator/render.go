@@ -280,33 +280,6 @@ func (cpu *CPU) handleJoypad() {
 	}
 }
 
-func (cpu *CPU) execScanline() (uint, uint) {
-	// OAM mode2
-	cpu.cycle.scanline = 0
-	cpu.setOAMRAMMode()
-	for cpu.cycle.scanline <= 20*cpu.boost {
-		cpu.exec()
-	}
-
-	// LCD Driver mode3
-	cpu.cycle.scanline = 0
-	cpu.setLCDMode()
-	for cpu.cycle.scanline <= 42*cpu.boost {
-		cpu.exec()
-	}
-
-	scrollX, scrollY := cpu.GPU.GetScroll()
-
-	// HBlank mode0
-	cpu.cycle.scanline = 0
-	cpu.setHBlankMode()
-	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
-		cpu.exec()
-	}
-	cpu.incrementLY()
-	return scrollX, scrollY
-}
-
 func (cpu *CPU) setSprite(LCDC1 *[144]bool) {
 	cpu.GPU.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
 	cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
@@ -325,21 +298,6 @@ func (cpu *CPU) setSprite(LCDC1 *[144]bool) {
 			if cpu.debug {
 				OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
 			}
-		}
-	}
-}
-
-func (cpu *CPU) execVBlank() {
-	for {
-		cpu.cycle.scanline = 0
-
-		for cpu.cycle.scanline < cyclePerLine*cpu.boost {
-			cpu.exec()
-		}
-		cpu.incrementLY()
-		LY := cpu.FetchMemory8(LYIO)
-		if LY == 0 {
-			break
 		}
 	}
 }
