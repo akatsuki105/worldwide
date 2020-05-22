@@ -22,9 +22,9 @@ func main() {
 // Run - エミュレータを実行する
 func Run() int {
 	var (
-		showVersion = flag.Bool("v", false, "show version")
-		debug       = flag.Bool("debug", false, "enable debug mode")
-		outputReg   = flag.Bool("test", false, "only CPU works and output screen map file")
+		showVersion  = flag.Bool("v", false, "show version")
+		debug        = flag.Bool("debug", false, "enable debug mode")
+		outputScreen = flag.String("test", "", "only CPU works and output screen map file")
 	)
 
 	flag.Parse()
@@ -66,8 +66,8 @@ func Run() int {
 		cpu.Exit()
 	}()
 
-	if *outputReg {
-		cpu.DebugExec(60 * 5)
+	if *outputScreen != "" {
+		cpu.DebugExec(60*5, *outputScreen)
 		return 0
 	}
 
@@ -91,18 +91,6 @@ func Run() int {
 func selectROM(p string) (string, error) {
 	if p == "" {
 		return p, fmt.Errorf("please input ROM file path")
-		// switch runtime.GOOS {
-		// case "windows":
-		// 	cd, _ := os.Getwd()
-		// 	tmp, err := dialog.File().Filter("GameBoy ROM File", "gb*").Load()
-		// 	if err != nil {
-		// 		return p, fmt.Errorf("Failed to read ROM file: %s", err)
-		// 	}
-		// 	p = tmp
-		// 	os.Chdir(cd)
-		// default:
-		// 	return p, fmt.Errorf("please input ROM file path")
-		// }
 	}
 	return p, nil
 }

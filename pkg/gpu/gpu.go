@@ -66,6 +66,11 @@ func (g *GPU) GetDisplay(hq2x bool) *ebiten.Image {
 	return g.display
 }
 
+// GetOriginal - getter for display data in image.RGBA format. Function for debug.
+func (g *GPU) GetOriginal() *image.RGBA {
+	return g.original
+}
+
 // HQ2x - scaling display data using HQ2x
 func (g *GPU) HQ2x() *ebiten.Image {
 	tmp, _ := hq2x.HQ2x(g.original)
