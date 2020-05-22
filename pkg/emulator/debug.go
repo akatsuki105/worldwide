@@ -33,3 +33,12 @@ STAT: %02x
 SCX: %02x    SCY: %02x
 WX: %02x     WY: %02x`, LCDC, STAT, SCX, SCY, WX, WY)
 }
+
+func (cpu *CPU) DebugExec(frame int) {
+	for i := 0; i < frame; i++ {
+		for y := 0; y < 144; y++ {
+			cpu.execScanline()
+		}
+		cpu.execVBlank()
+	}
+}

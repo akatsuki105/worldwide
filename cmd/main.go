@@ -24,7 +24,7 @@ func Run() int {
 	var (
 		showVersion = flag.Bool("v", false, "show version")
 		debug       = flag.Bool("debug", false, "enable debug mode")
-		outputReg   = flag.Bool("output-register", false, "only CPU works and output register state")
+		outputReg   = flag.Bool("test", false, "only CPU works and output screen map file")
 	)
 
 	flag.Parse()
@@ -67,6 +67,7 @@ func Run() int {
 	}()
 
 	if *outputReg {
+		cpu.DebugExec(60 * 5)
 		return 0
 	}
 
