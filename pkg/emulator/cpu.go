@@ -246,57 +246,47 @@ func (cpu *CPU) transferROM(bankNum int, rom []byte) {
 	}
 }
 
-// Init CPU・メモリの初期化
-func (cpu *CPU) Init(romdir string, debug bool) {
-	{
-		cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
-		cpu.Reg.BC = 0x0013
-		cpu.Reg.DE = 0x00d8
-		cpu.Reg.HL = 0x014d
-		cpu.Reg.PC = 0x0100
-		cpu.Reg.SP = 0xfffe
-	}
+func (cpu *CPU) initRegister() {
+	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
+	cpu.Reg.BC = 0x0013
+	cpu.Reg.DE = 0x00d8
+	cpu.Reg.HL = 0x014d
+	cpu.Reg.PC = 0x0100
+	cpu.Reg.SP = 0xfffe
+}
 
-	{
-		cpu.RAM[0xff04] = 0x1e
-		cpu.RAM[0xff05] = 0x00
-		cpu.RAM[0xff06] = 0x00
-		cpu.RAM[0xff07] = 0xf8
-		cpu.RAM[0xff0f] = 0xe1
-		cpu.RAM[0xff10] = 0x80
-		cpu.RAM[0xff11] = 0xbf
-		cpu.RAM[0xff12] = 0xf3
-		cpu.RAM[0xff14] = 0xbf
-		cpu.RAM[0xff16] = 0x3f
-		cpu.RAM[0xff17] = 0x00
-		cpu.RAM[0xff19] = 0xbf
-		cpu.RAM[0xff1a] = 0x7f
-		cpu.RAM[0xff1b] = 0xff
-		cpu.RAM[0xff1c] = 0x9f
-		cpu.RAM[0xff1e] = 0xbf
-		cpu.RAM[0xff20] = 0xff
-		cpu.RAM[0xff21] = 0x00
-		cpu.RAM[0xff22] = 0x00
-		cpu.RAM[0xff23] = 0xbf
-		cpu.RAM[0xff24] = 0x77
-		cpu.RAM[0xff25] = 0xf3
-		cpu.RAM[0xff26] = 0xf1
-		cpu.SetMemory8(LCDCIO, 0x91)
-		cpu.SetMemory8(LCDSTATIO, 0x85)
-		cpu.RAM[BGPIO] = 0xfc
-		cpu.RAM[OBP0IO] = 0xff
-		cpu.RAM[OBP1IO] = 0xff
-	}
+func (cpu *CPU) initIOMap() {
+	cpu.RAM[0xff04] = 0x1e
+	cpu.RAM[0xff05] = 0x00
+	cpu.RAM[0xff06] = 0x00
+	cpu.RAM[0xff07] = 0xf8
+	cpu.RAM[0xff0f] = 0xe1
+	cpu.RAM[0xff10] = 0x80
+	cpu.RAM[0xff11] = 0xbf
+	cpu.RAM[0xff12] = 0xf3
+	cpu.RAM[0xff14] = 0xbf
+	cpu.RAM[0xff16] = 0x3f
+	cpu.RAM[0xff17] = 0x00
+	cpu.RAM[0xff19] = 0xbf
+	cpu.RAM[0xff1a] = 0x7f
+	cpu.RAM[0xff1b] = 0xff
+	cpu.RAM[0xff1c] = 0x9f
+	cpu.RAM[0xff1e] = 0xbf
+	cpu.RAM[0xff20] = 0xff
+	cpu.RAM[0xff21] = 0x00
+	cpu.RAM[0xff22] = 0x00
+	cpu.RAM[0xff23] = 0xbf
+	cpu.RAM[0xff24] = 0x77
+	cpu.RAM[0xff25] = 0xf3
+	cpu.RAM[0xff26] = 0xf1
+	cpu.SetMemory8(LCDCIO, 0x91)
+	cpu.SetMemory8(LCDSTATIO, 0x85)
+	cpu.RAM[BGPIO] = 0xfc
+	cpu.RAM[OBP0IO] = 0xff
+	cpu.RAM[OBP1IO] = 0xff
+}
 
-	cpu.ROMBankPtr = 1
-	cpu.WRAMBankPtr = 1
-
-	cpu.GPU.Init(debug)
-	cpu.Config = config.Init()
-	cpu.Expand = uint(cpu.Config.Display.Expand)
-
-	cpu.boost = 1
-
+func (cpu *CPU) initNetwork() {
 	if cpu.Config.Network.Network {
 		your := cpu.Config.Network.Your
 		peer := cpu.Config.Network.Peer
@@ -317,13 +307,33 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 			}
 		}()
 	}
+}
+
+func (cpu *CPU) initDMGPalette() {
+	color0 := cpu.Config.Pallete.Color0
+	color1 := cpu.Config.Pallete.Color1
+	color2 := cpu.Config.Pallete.Color2
+	color3 := cpu.Config.Pallete.Color3
+	gpu.InitPalette(color0, color1, color2, color3)
+}
+
+// Init CPU・メモリの初期化
+func (cpu *CPU) Init(romdir string, debug bool) {
+	cpu.initRegister()
+	cpu.initIOMap()
+
+	cpu.ROMBankPtr = 1
+	cpu.WRAMBankPtr = 1
+
+	cpu.GPU.Init(debug)
+	cpu.Config = config.Init()
+	cpu.Expand = uint(cpu.Config.Display.Expand)
+	cpu.boost = 1
+
+	cpu.initNetwork()
 
 	if !cpu.Cartridge.IsCGB {
-		color0 := cpu.Config.Pallete.Color0
-		color1 := cpu.Config.Pallete.Color1
-		color2 := cpu.Config.Pallete.Color2
-		color3 := cpu.Config.Pallete.Color3
-		gpu.InitPalette(color0, color1, color2, color3)
+		cpu.initDMGPalette()
 	}
 
 	// load save data
@@ -450,4 +460,47 @@ func (cpu *CPU) exec() {
 	cpu.timer(cycle)
 
 	cpu.handleInterrupt()
+}
+
+func (cpu *CPU) execScanline() (uint, uint) {
+	// OAM mode2
+	cpu.cycle.scanline = 0
+	cpu.setOAMRAMMode()
+	for cpu.cycle.scanline <= 20*cpu.boost {
+		cpu.exec()
+	}
+
+	// LCD Driver mode3
+	cpu.cycle.scanline = 0
+	cpu.setLCDMode()
+	for cpu.cycle.scanline <= 42*cpu.boost {
+		cpu.exec()
+	}
+
+	scrollX, scrollY := cpu.GPU.GetScroll()
+
+	// HBlank mode0
+	cpu.cycle.scanline = 0
+	cpu.setHBlankMode()
+	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
+		cpu.exec()
+	}
+	cpu.incrementLY()
+	return scrollX, scrollY
+}
+
+// VBlank
+func (cpu *CPU) execVBlank() {
+	for {
+		cpu.cycle.scanline = 0
+
+		for cpu.cycle.scanline < cyclePerLine*cpu.boost {
+			cpu.exec()
+		}
+		cpu.incrementLY()
+		LY := cpu.FetchMemory8(LYIO)
+		if LY == 0 {
+			break
+		}
+	}
 }

@@ -2,6 +2,10 @@ package emulator
 
 import (
 	"fmt"
+	"gbc/pkg/gpu"
+	"gbc/pkg/util"
+	"image/jpeg"
+	"os"
 )
 
 var (
@@ -32,4 +36,75 @@ LCDC: %02x
 STAT: %02x
 SCX: %02x    SCY: %02x
 WX: %02x     WY: %02x`, LCDC, STAT, SCX, SCY, WX, WY)
+}
+
+func (cpu *CPU) DebugExec(frame int, output string) error {
+	const (
+		WX, WY, scrollX, scrollY, scrollPixelX = 0, 0, 0, 0, 0
+	)
+
+	for i := 0; i < frame; i++ {
+		for y := 0; y < 144; y++ {
+			cpu.execScanline()
+		}
+		cpu.execVBlank()
+	}
+
+	// 最後の1frameは背景データを生成する
+	for y := 0; y < 144; y++ {
+		cpu.execScanline()
+
+		LCDC := cpu.FetchMemory8(LCDCIO)
+		for x := 0; x < 160; x += 8 {
+			blockX := x / 8
+			blockY := y / 8
+
+			var tileX, tileY uint
+			var useWindow bool
+			var entryX int
+
+			lineNumber := y % 8 // タイルの何行目を描画するか
+			entryY := gpu.EntryY{}
+			if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
+				tileX = ((uint(x) - WX) / 8) % 32
+				tileY = ((uint(y) - WY) / 8) % 32
+				useWindow = true
+
+				entryX = blockX * 8
+				entryY.Block = blockY * 8
+				entryY.Offset = y % 8
+			} else {
+				tileX = (scrollX + uint(x)) / 8 % 32
+				tileY = (scrollY + uint(y)) / 8 % 32
+				useWindow = false
+
+				entryX = blockX*8 - int(scrollPixelX)
+				entryY.Block = blockY * 8
+				entryY.Offset = y % 8
+				lineNumber = (int(scrollY) + y) % 8
+			}
+
+			if util.Bit(LCDC, 7) == 1 {
+				if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, lineNumber) {
+					break
+				}
+			}
+		}
+	}
+	cpu.execVBlank()
+	screen := cpu.GPU.GetOriginal()
+
+	file, err := os.Create(output)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	opt := jpeg.Options{
+		Quality: 100,
+	}
+	if err = jpeg.Encode(file, screen, &opt); err != nil {
+		return err
+	}
+	return nil
 }
