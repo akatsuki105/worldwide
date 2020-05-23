@@ -68,6 +68,7 @@ func Run() int {
 
 	if *outputScreen != "" {
 		sec := 60
+		cpu.Sound.Off()
 		cpu.DebugExec(30*sec, *outputScreen)
 		return 0
 	}
