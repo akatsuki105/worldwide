@@ -53,4 +53,4 @@ test:
 	-$(call compare,$(TEST13))
 	-$(call compare,$(TEST14))
 
-	rm -f ./test/$(TEST0)actual.jpg ./test/$(TEST1)actual.jpg ./test/$(TEST2)actual.jpg ./test/$(TEST3)actual.jpg ./test/$(TEST4)actual.jpg ./test/$(TEST5)actual.jpg ./test/$(TEST6)actual.jpg ./test/$(TEST7)actual.jpg ./test/$(TEST8)actual.jpg ./test/$(TEST9)actual.jpg ./test/$(TEST10)actual.jpg ./test/$(TEST11)actual.jpg ./test/$(TEST12)actual.jpg ./test/$(TEST13)actual.jpg ./test/$(TEST14)actual.jpg
+	-rm -f ./test/$(TEST0)actual.jpg ./test/$(TEST1)actual.jpg ./test/$(TEST2)actual.jpg ./test/$(TEST3)actual.jpg ./test/$(TEST4)actual.jpg ./test/$(TEST5)actual.jpg ./test/$(TEST6)actual.jpg ./test/$(TEST7)actual.jpg ./test/$(TEST8)actual.jpg ./test/$(TEST9)actual.jpg ./test/$(TEST10)actual.jpg ./test/$(TEST11)actual.jpg ./test/$(TEST12)actual.jpg ./test/$(TEST13)actual.jpg ./test/$(TEST14)actual.jpg
