@@ -66,7 +66,7 @@ type CPU struct {
 	OAMDMA OAMDMA
 
 	IMESwitch
-	debug bool // デバッグモードかどうか
+	debug Debug
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -346,7 +346,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	// Init RTC
 	go cpu.RTC.Init()
 
-	cpu.debug = debug
+	cpu.debug.on = debug
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
@@ -367,7 +367,7 @@ func (cpu *CPU) exec() {
 	cycle := cycle1
 
 	if !cpu.halt {
-		if cpu.debug {
+		if cpu.debug.on {
 			cpu.pushHistory(bytecode)
 		}
 
