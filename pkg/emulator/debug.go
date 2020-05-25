@@ -11,14 +11,34 @@ import (
 // Debug - Info used in debug mode
 type Debug struct {
 	on          bool
-	breakpoints []string
+	breakpoints []BreakPoint
 	history     History
+}
+
+// BreakPoint - A Breakpoint info used in debug mode
+type BreakPoint struct {
+	PC   uint16
+	Cond string
 }
 
 // History - CPU instruction log
 type History struct {
 	ptr    uint
 	buffer [10]string
+}
+
+func (cpu *CPU) parseBreakpoints() {
+	for _, s := range cpu.Config.Debug.BreakPoints {
+		if bk, ok := newBreakPoint(s); ok {
+			cpu.debug.breakpoints = append(cpu.debug.breakpoints, bk)
+		}
+	}
+}
+
+func newBreakPoint(s string) (bk BreakPoint, ok bool) {
+	bk = BreakPoint{}
+	ok = false
+	return bk, ok
 }
 
 func (cpu *CPU) pushHistory(opcode byte) {
@@ -79,6 +99,7 @@ IE: %02x     IF: %02x    IME: %02x
 SPD: %02x    ROM: %02x`, LCDC, STAT, LY, LYC, IE, IF, IME, spd, rom)
 }
 
+// DebugExec - used in test
 func (cpu *CPU) DebugExec(frame int, output string) error {
 	const (
 		WX, WY, scrollX, scrollY, scrollPixelX = 0, 0, 0, 0, 0
