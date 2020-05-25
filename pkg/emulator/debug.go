@@ -8,9 +8,37 @@ import (
 	"os"
 )
 
+type History struct {
+	ptr    uint
+	buffer [10]string
+}
+
 var (
-	maxHistory = 128
+	history History
 )
+
+func (cpu *CPU) pushHistory(opcode byte) {
+	instruction, operand1, operand2 := opcodeToString[opcode][0], opcodeToString[opcode][1], opcodeToString[opcode][2]
+	switch {
+	case operand1 == "*" && operand2 == "*":
+		history.buffer[history.ptr] = instruction
+	case operand2 == "*":
+		history.buffer[history.ptr] = instruction + " " + operand1
+	default:
+		history.buffer[history.ptr] = instruction + " " + operand1 + ", " + operand2
+	}
+	history.ptr = (history.ptr + 1) % 10
+}
+
+func (cpu *CPU) debugHistory() string {
+	result := "History\n"
+	for i := -9; i <= 0; i++ {
+		index := (history.ptr + uint(i)) % 10
+		log := history.buffer[index]
+		result += fmt.Sprintf("%d:    %0s\n", i, log)
+	}
+	return result
+}
 
 func (cpu *CPU) debugRegister() string {
 	A, F := byte(cpu.Reg.AF>>8), byte(cpu.Reg.AF)
@@ -29,12 +57,15 @@ PC: 0x%04x  SP: 0x%04x`, A, F, B, C, D, E, H, L, cpu.Reg.PC, cpu.Reg.SP)
 func (cpu *CPU) debugIOMap() string {
 	LCDC := cpu.FetchMemory8(LCDCIO)
 	STAT := cpu.FetchMemory8(LCDSTATIO)
-	LY, LYC := cpu.FetchMemory8(LYIO), cpu.FetchMemory8(0xff45)
-	IE, IF := cpu.FetchMemory8(IEIO), cpu.FetchMemory8(IFIO)
+	LY, LYC := cpu.FetchMemory8(LYIO), cpu.FetchMemory8(LYCIO)
+	IE, IF, IME := cpu.FetchMemory8(IEIO), cpu.FetchMemory8(IFIO), util.Bool2Int(cpu.Reg.IME)
+	spd := cpu.boost / 2
+	rom := cpu.ROMBankPtr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
 LY: %02x     LYC: %02x
-IE: %02x     IF: %02x`, LCDC, STAT, LY, LYC, IE, IF)
+IE: %02x     IF: %02x    IME: %02x
+SPD: %02x    ROM: %02x`, LCDC, STAT, LY, LYC, IE, IF, IME, spd, rom)
 }
 
 func (cpu *CPU) DebugExec(frame int, output string) error {

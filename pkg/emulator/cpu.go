@@ -363,20 +363,20 @@ func (cpu *CPU) Exit() {
 func (cpu *CPU) exec() {
 	bytecode := cpu.FetchMemory8(cpu.Reg.PC)
 	opcode := opcodes[bytecode]
-	instruction, operand1, operand2, cycle1, cycle2, exec := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Exec
+	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
 
 	if !cpu.halt {
-		// if cpu.debug {
-		// 	cpu.pushHistory(cpu.Reg.PC, cpu.FetchMemory8(cpu.Reg.PC))
-		// }
+		if cpu.debug {
+			cpu.pushHistory(bytecode)
+		}
 
-		if exec != nil {
-			exec(cpu, operand1, operand2)
+		if handler != nil {
+			handler(cpu, operand1, operand2)
 		} else {
 			switch instruction {
 			case INS_HALT:
-				HALT(cpu, operand1, operand2)
+				cpu.HALT(operand1, operand2)
 			case INS_LD:
 				LD(cpu, operand1, operand2)
 			case INS_LDH:
@@ -455,6 +455,15 @@ func (cpu *CPU) exec() {
 		}
 	} else {
 		cycle = 4 // TODO: check if cycle is 1
+
+		// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
+		if !cpu.Reg.IME {
+			IE, IF := cpu.fetchIO(IEIO), cpu.fetchIO(IFIO)
+			pending := IE&IF != 0
+			if pending {
+				cpu.halt = false
+			}
+		}
 	}
 
 	cpu.timer(cycle)

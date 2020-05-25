@@ -60,10 +60,7 @@ func (cpu *CPU) incrementLY() {
 	if LY == 144 {
 		// VBlank期間フラグを立てる
 		cpu.setVBlankMode()
-
-		if cpu.Reg.IME && cpu.getVBlankEnable() {
-			cpu.triggerVBlank()
-		}
+		cpu.setVBlankFlag()
 	}
 	if LY > 153 {
 		LY = 0
@@ -73,7 +70,7 @@ func (cpu *CPU) incrementLY() {
 }
 
 func (cpu *CPU) compareLYC(LY uint8) {
-	LYC := cpu.FetchMemory8(0xff45)
+	LYC := cpu.FetchMemory8(LYCIO)
 	if LYC == LY {
 		// LCDC STAT IOポートの一致フラグをセットする
 		STAT := cpu.FetchMemory8(LCDSTATIO) | 0x04

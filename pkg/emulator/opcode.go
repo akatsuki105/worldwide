@@ -906,9 +906,27 @@ func JR(cpu *CPU, operand1, operand2 int) {
 }
 
 // HALT Halt
-func HALT(cpu *CPU, operand1, operand2 int) {
+func (cpu *CPU) HALT(operand1, operand2 int) {
 	cpu.Reg.PC++
 	cpu.halt = true
+
+	// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
+	if !cpu.Reg.IME {
+		IE, IF := cpu.fetchIO(IEIO), cpu.fetchIO(IFIO)
+		pending := IE&IF != 0
+		if pending {
+			// Some pending
+			cpu.halt = false
+			PC := cpu.Reg.PC
+			cpu.exec()
+			cpu.Reg.PC = PC
+
+			// IME turns on due to EI delay.
+			if cpu.Reg.IME {
+				cpu.halt = true
+			}
+		}
+	}
 }
 
 // STOP stop CPU
