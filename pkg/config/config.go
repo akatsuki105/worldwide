@@ -16,6 +16,7 @@ type Config struct {
 	Pallete Pallete `toml:"pallete"`
 	Network Network `toml:"network"`
 	Joypad  Joypad  `toml:"joypad"`
+	Debug   Debug   `toml:"debug"`
 }
 
 // Display config
@@ -47,6 +48,11 @@ type Joypad struct {
 	Start     uint    `toml:"Start"`
 	Select    uint    `toml:"Select"`
 	Threshold float64 `toml:"threshold"`
+}
+
+// Debug config
+type Debug struct {
+	BreakPoints []string `toml:"breakpoints"`
 }
 
 func Init() *Config {
@@ -81,6 +87,10 @@ B = 0
 Start = 7
 Select = 6
 threshold = 0.7 # How reactive axis is
+
+[debug]
+# "BANK:PC;Cond" e.g. "00:0460;SP==c0f3", "01:ffff;"
+breakpoints = []
 `
 	ioutil.WriteFile(tomlName, []byte(cfgText), 0666)
 	toml.Decode(cfgText, cfg)
