@@ -58,7 +58,7 @@ func (cpu *CPU) debugHistory() string {
 	result := "History\n"
 	history := &cpu.debug.history
 	for i := -9; i <= 0; i++ {
-		index := (history.ptr + uint(i)) % 10
+		index := (history.ptr + uint(i) - 1) % 10
 		log := history.buffer[index]
 		if i < 0 {
 			result += fmt.Sprintf("%d:    %0s\n", i, log)

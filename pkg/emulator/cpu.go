@@ -383,6 +383,7 @@ func (cpu *CPU) exec() bool {
 
 				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
 					b.SetFlag(debug.BreakOn)
+					cpu.pushHistory(bytecode)
 					return true
 				}
 			}
