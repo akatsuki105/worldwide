@@ -383,9 +383,21 @@ func (cpu *CPU) exec() bool {
 				}
 
 				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
-					b.SetFlag(debug.BreakOn)
-					cpu.debug.history.SetHistory(bank, PC, bytecode)
-					return true
+					breakFlag := true
+					if breakpoint.Cond.On {
+						lhs := breakpoint.Cond.LHS
+						switch lhs {
+						case "A", "F", "B", "C", "D", "E", "H", "L", "AF", "BC", "DE", "HL", "SP":
+						default:
+							breakFlag = false
+						}
+					}
+
+					if breakFlag {
+						b.SetFlag(debug.BreakOn)
+						cpu.debug.history.SetHistory(bank, PC, bytecode)
+						return true
+					}
 				}
 			}
 		case debug.BreakDelay:
