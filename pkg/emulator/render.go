@@ -265,11 +265,11 @@ func (cpu *CPU) handleJoypad() {
 			debug := &cpu.debug
 			if debug.on && debug.pause.delay <= 0 {
 				if debug.pause.on {
-					debug.pause.On(30)
+					debug.pause.on = false
+					debug.pause.delay = 30
 					cpu.Sound.On()
 				} else {
-					debug.pause.on = true
-					debug.pause.delay = 30
+					debug.pause.On(30)
 					cpu.Sound.Off()
 				}
 			}
