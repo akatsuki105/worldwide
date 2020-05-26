@@ -34,16 +34,22 @@ type History struct {
 }
 
 func (cpu *CPU) pushHistory(opcode byte) {
-	PC := fmt.Sprintf("%04x: ", cpu.Reg.PC)
+	bank := byte(0)
+	PC := cpu.Reg.PC
+	if PC > 0x4000 {
+		bank = cpu.ROMBankPtr
+	}
+	bankPC := fmt.Sprintf("%02x:%04x: ", bank, PC)
+
 	instruction, operand1, operand2 := opcodeToString[opcode][0], opcodeToString[opcode][1], opcodeToString[opcode][2]
 	history := &cpu.debug.history
 	switch {
 	case operand1 == "*" && operand2 == "*":
-		history.buffer[history.ptr] = PC + instruction
+		history.buffer[history.ptr] = bankPC + instruction
 	case operand2 == "*":
-		history.buffer[history.ptr] = PC + instruction + " " + operand1
+		history.buffer[history.ptr] = bankPC + instruction + " " + operand1
 	default:
-		history.buffer[history.ptr] = PC + instruction + " " + operand1 + ", " + operand2
+		history.buffer[history.ptr] = bankPC + instruction + " " + operand1 + ", " + operand2
 	}
 	history.ptr = (history.ptr + 1) % 10
 }

@@ -3,6 +3,7 @@ package emulator
 import (
 	"bytes"
 	"fmt"
+	"gbc/pkg/debug"
 	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/util"
@@ -49,10 +50,11 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	frames++
 
 	pause := &cpu.debug.pause
+	b := &cpu.debug.Break
 	if pause.delay > 0 {
 		pause.delay--
 	}
-	if pause.on {
+	if pause.on || b.On() {
 		return nil
 	}
 
@@ -73,7 +75,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	for y := 0; y < iterY; y++ {
 
 		// CPU works
-		scrollX, scrollY = cpu.execScanline()
+		scx, scy, ok := cpu.execScanline()
+		if !ok {
+			break
+		}
+		scrollX, scrollY = scx, scy
+
 		scrollPixelX = scrollX % 8
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
@@ -262,14 +269,26 @@ func (cpu *CPU) handleJoypad() {
 				ebiten.SetScreenScale(float64(cpu.Expand))
 			}
 		case joypad.Pause:
-			debug := &cpu.debug
-			if debug.on && debug.pause.delay <= 0 {
-				if debug.pause.on {
-					debug.pause.on = false
-					debug.pause.delay = 30
+			p := &cpu.debug.pause
+			b := &cpu.debug.Break
+
+			if !cpu.debug.on {
+				return
+			}
+
+			if b.On() {
+				b.SetFlag(debug.BreakDelay)
+				p.delay = 30
+				return
+			}
+
+			if p.delay <= 0 {
+				if p.on {
+					p.on = false
+					p.delay = 30
 					cpu.Sound.On()
 				} else {
-					debug.pause.On(30)
+					p.On(30)
 					cpu.Sound.Off()
 				}
 			}

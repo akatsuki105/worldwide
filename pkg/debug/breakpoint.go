@@ -21,6 +21,14 @@ func (b *Break) Flag() int {
 	return b.flag
 }
 
+func (b *Break) On() bool {
+	return b.flag == BreakOn
+}
+
+func (b *Break) Off() bool {
+	return b.flag == BreakOff
+}
+
 func (b *Break) SetFlag(flag int) {
 	b.flag = flag
 }

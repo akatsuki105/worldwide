@@ -362,21 +362,32 @@ func (cpu *CPU) Exit() {
 }
 
 // Exec 1サイクル
-func (cpu *CPU) exec() {
+func (cpu *CPU) exec() bool {
 	bytecode := cpu.FetchMemory8(cpu.Reg.PC)
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
 
+	// in breakpoint
 	b := &cpu.debug.Break
-	if cpu.debug.on && b.Flag() == debug.BreakOff {
-		bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
-		for _, breakpoint := range b.BreakPoints() {
-			if PC > 0x4000 && bank == breakpoint.Bank && PC == breakpoint.PC {
-				b.SetFlag(debug.BreakOn)
-			} else if breakpoint.Bank == 0 && PC == breakpoint.PC {
-				b.SetFlag(debug.BreakOn)
+	if cpu.debug.on {
+		switch b.Flag() {
+		case debug.BreakOn:
+			return true
+		case debug.BreakOff:
+			bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
+			for _, breakpoint := range b.BreakPoints() {
+				if PC != breakpoint.PC {
+					continue
+				}
+
+				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
+					b.SetFlag(debug.BreakOn)
+					return true
+				}
 			}
+		case debug.BreakDelay:
+			b.SetFlag(debug.BreakOff)
 		}
 	}
 
@@ -483,21 +494,27 @@ func (cpu *CPU) exec() {
 	cpu.timer(cycle)
 
 	cpu.handleInterrupt()
+
+	return false
 }
 
-func (cpu *CPU) execScanline() (uint, uint) {
+func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
 	cpu.cycle.scanline = 0
 	cpu.setOAMRAMMode()
 	for cpu.cycle.scanline <= 20*cpu.boost {
-		cpu.exec()
+		if inBreak := cpu.exec(); inBreak {
+			return 0, 0, false
+		}
 	}
 
 	// LCD Driver mode3
 	cpu.cycle.scanline = 0
 	cpu.setLCDMode()
 	for cpu.cycle.scanline <= 42*cpu.boost {
-		cpu.exec()
+		if inBreak := cpu.exec(); inBreak {
+			return 0, 0, false
+		}
 	}
 
 	scrollX, scrollY := cpu.GPU.GetScroll()
@@ -506,10 +523,12 @@ func (cpu *CPU) execScanline() (uint, uint) {
 	cpu.cycle.scanline = 0
 	cpu.setHBlankMode()
 	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
-		cpu.exec()
+		if inBreak := cpu.exec(); inBreak {
+			return 0, 0, false
+		}
 	}
 	cpu.incrementLY()
-	return scrollX, scrollY
+	return scrollX, scrollY, true
 }
 
 // VBlank
@@ -518,7 +537,9 @@ func (cpu *CPU) execVBlank() {
 		cpu.cycle.scanline = 0
 
 		for cpu.cycle.scanline < cyclePerLine*cpu.boost {
-			cpu.exec()
+			if inBreak := cpu.exec(); inBreak {
+				return
+			}
 		}
 		cpu.incrementLY()
 		LY := cpu.FetchMemory8(LYIO)
