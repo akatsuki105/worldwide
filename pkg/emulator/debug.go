@@ -14,17 +14,7 @@ type Debug struct {
 	on      bool
 	Break   debug.Break
 	history debug.History
-	pause   Pause
-}
-
-type Pause struct {
-	on    bool
-	delay int
-}
-
-func (p *Pause) On(delay int) {
-	p.on = true
-	p.delay = delay
+	pause   debug.Pause
 }
 
 func (cpu *CPU) debugRegister() string {

@@ -49,12 +49,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	frames++
 
-	pause := &cpu.debug.pause
+	p := &cpu.debug.pause
 	b := &cpu.debug.Break
-	if pause.delay > 0 {
-		pause.delay--
+	if p.Delay() {
+		p.DecrementDelay()
 	}
-	if pause.on || b.On() {
+	if p.On() || b.On() {
 		return nil
 	}
 
@@ -278,17 +278,16 @@ func (cpu *CPU) handleJoypad() {
 
 			if b.On() {
 				b.SetFlag(debug.BreakDelay)
-				p.delay = 30
+				p.SetOff(30)
 				return
 			}
 
-			if p.delay <= 0 {
-				if p.on {
-					p.on = false
-					p.delay = 30
+			if !p.Delay() {
+				if p.On() {
+					p.SetOff(30)
 					cpu.Sound.On()
 				} else {
-					p.On(30)
+					p.SetOn(30)
 					cpu.Sound.Off()
 				}
 			}
