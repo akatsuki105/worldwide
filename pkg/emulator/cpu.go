@@ -368,8 +368,7 @@ func (cpu *CPU) exec() {
 	cycle := cycle1
 
 	if cpu.debug.on && !cpu.debug.pause.on {
-		bank := cpu.ROMBankPtr
-		PC := cpu.Reg.PC
+		bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
 		for _, breakpoint := range cpu.debug.breakpoints {
 			if PC > 0x4000 && bank == breakpoint.Bank && PC == breakpoint.PC {
 				cpu.debug.pause.On(0)
