@@ -13,7 +13,7 @@ import (
 type Debug struct {
 	on      bool
 	Break   debug.Break
-	history History
+	history debug.History
 	pause   Pause
 }
 
@@ -25,48 +25,6 @@ type Pause struct {
 func (p *Pause) On(delay int) {
 	p.on = true
 	p.delay = delay
-}
-
-// History - CPU instruction log
-type History struct {
-	ptr    uint
-	buffer [10]string
-}
-
-func (cpu *CPU) pushHistory(opcode byte) {
-	bank := byte(0)
-	PC := cpu.Reg.PC
-	if PC > 0x4000 {
-		bank = cpu.ROMBankPtr
-	}
-	bankPC := fmt.Sprintf("%02x:%04x: ", bank, PC)
-
-	instruction, operand1, operand2 := opcodeToString[opcode][0], opcodeToString[opcode][1], opcodeToString[opcode][2]
-	history := &cpu.debug.history
-	switch {
-	case operand1 == "*" && operand2 == "*":
-		history.buffer[history.ptr] = bankPC + instruction
-	case operand2 == "*":
-		history.buffer[history.ptr] = bankPC + instruction + " " + operand1
-	default:
-		history.buffer[history.ptr] = bankPC + instruction + " " + operand1 + ", " + operand2
-	}
-	history.ptr = (history.ptr + 1) % 10
-}
-
-func (cpu *CPU) debugHistory() string {
-	result := "History\n"
-	history := &cpu.debug.history
-	for i := -9; i <= 0; i++ {
-		index := (history.ptr + uint(i) - 1) % 10
-		log := history.buffer[index]
-		if i < 0 {
-			result += fmt.Sprintf("%d:    %0s\n", i, log)
-		} else if i == 0 {
-			result += fmt.Sprintf(" %d:    %0s\n", i, log)
-		}
-	}
-	return result
 }
 
 func (cpu *CPU) debugRegister() string {

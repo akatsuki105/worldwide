@@ -363,7 +363,9 @@ func (cpu *CPU) Exit() {
 
 // Exec 1サイクル
 func (cpu *CPU) exec() bool {
-	bytecode := cpu.FetchMemory8(cpu.Reg.PC)
+	bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
+
+	bytecode := cpu.FetchMemory8(PC)
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
@@ -375,7 +377,6 @@ func (cpu *CPU) exec() bool {
 		case debug.BreakOn:
 			return true
 		case debug.BreakOff:
-			bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
 			for _, breakpoint := range b.BreakPoints() {
 				if PC != breakpoint.PC {
 					continue
@@ -383,7 +384,7 @@ func (cpu *CPU) exec() bool {
 
 				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
 					b.SetFlag(debug.BreakOn)
-					cpu.pushHistory(bytecode)
+					cpu.debug.history.SetHistory(bank, PC, bytecode)
 					return true
 				}
 			}
@@ -394,7 +395,7 @@ func (cpu *CPU) exec() bool {
 
 	if !cpu.halt {
 		if cpu.debug.on {
-			cpu.pushHistory(bytecode)
+			cpu.debug.history.SetHistory(bank, PC, bytecode)
 		}
 
 		if handler != nil {

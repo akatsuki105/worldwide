@@ -192,7 +192,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		// debug register
 		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
 		ebitenutil.DebugPrintAt(screen, cpu.debugIOMap(), 490, 5)
-		ebitenutil.DebugPrintAt(screen, cpu.debugHistory(), 340, 120)
+		ebitenutil.DebugPrintAt(screen, cpu.debug.history.History(), 340, 120)
 
 		if bgMap != nil {
 			// debug BG
