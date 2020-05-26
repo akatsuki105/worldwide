@@ -6,6 +6,8 @@ import (
 	"gbc/pkg/util"
 	"image/jpeg"
 	"os"
+	"strconv"
+	"strings"
 )
 
 // Debug - Info used in debug mode
@@ -13,10 +15,22 @@ type Debug struct {
 	on          bool
 	breakpoints []BreakPoint
 	history     History
+	pause       Pause
+}
+
+type Pause struct {
+	on    bool
+	delay int
+}
+
+func (p *Pause) On(delay int) {
+	p.on = true
+	p.delay = delay
 }
 
 // BreakPoint - A Breakpoint info used in debug mode
 type BreakPoint struct {
+	Bank byte
 	PC   uint16
 	Cond string
 }
@@ -36,9 +50,41 @@ func (cpu *CPU) parseBreakpoints() {
 }
 
 func newBreakPoint(s string) (bk BreakPoint, ok bool) {
-	bk = BreakPoint{}
-	ok = false
-	return bk, ok
+	slice := strings.Split(s, ";") // [00:0460], [SP==c0f3]
+	if len(slice) < 2 {
+		ok = false
+		return bk, ok
+	}
+
+	bank, PC := parseBreakpointsPC(slice[0])
+	if bank == 0 && PC == 0 {
+		ok = false
+		return bk, ok
+	}
+	bk.Bank = bank
+	bk.PC = PC
+
+	return bk, true
+}
+
+func parseBreakpointsPC(s string) (bank byte, PC uint16) {
+	bankPC := strings.Split(s, ":")
+	if len(bankPC) < 2 {
+		return 0, 0
+	}
+
+	var err error
+	bankI64, err := strconv.ParseInt(bankPC[0], 16, 8)
+	if err != nil {
+		return 0, 0
+	}
+	pcI64, err := strconv.ParseInt(bankPC[1], 16, 16)
+	if err != nil {
+		return 0, 0
+	}
+	bank = byte(bankI64)
+	PC = uint16(pcI64)
+	return bank, PC
 }
 
 func (cpu *CPU) pushHistory(opcode byte) {

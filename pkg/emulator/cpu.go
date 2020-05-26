@@ -350,6 +350,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
+		cpu.parseBreakpoints()
 	}
 }
 
@@ -365,6 +366,18 @@ func (cpu *CPU) exec() {
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
+
+	if cpu.debug.on && !cpu.debug.pause.on {
+		bank := cpu.ROMBankPtr
+		PC := cpu.Reg.PC
+		for _, breakpoint := range cpu.debug.breakpoints {
+			if PC > 0x4000 && bank == breakpoint.Bank && PC == breakpoint.PC {
+				cpu.debug.pause.On(0)
+			} else if breakpoint.Bank == 0 && PC == breakpoint.PC {
+				cpu.debug.pause.On(0)
+			}
+		}
+	}
 
 	if !cpu.halt {
 		if cpu.debug.on {

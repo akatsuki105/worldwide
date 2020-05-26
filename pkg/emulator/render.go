@@ -22,11 +22,6 @@ const (
 	cyclePerLine = 114
 )
 
-type Pause struct {
-	on    bool
-	delay int
-}
-
 var (
 	wait        sync.WaitGroup
 	lineMutex   sync.Mutex
@@ -36,7 +31,6 @@ var (
 	fps         = 0
 	bgMap       *ebiten.Image
 	OAMProperty = [40][4]byte{}
-	pause       Pause
 )
 
 // Render レンダリングを行う
@@ -54,6 +48,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	frames++
 
+	pause := &cpu.debug.pause
 	if pause.delay > 0 {
 		pause.delay--
 	}
@@ -267,14 +262,14 @@ func (cpu *CPU) handleJoypad() {
 				ebiten.SetScreenScale(float64(cpu.Expand))
 			}
 		case joypad.Pause:
-			if cpu.debug.on && pause.delay <= 0 {
-				if pause.on {
-					pause.on = false
-					pause.delay = 30
+			debug := &cpu.debug
+			if debug.on && debug.pause.delay <= 0 {
+				if debug.pause.on {
+					debug.pause.On(30)
 					cpu.Sound.On()
 				} else {
-					pause.on = true
-					pause.delay = 30
+					debug.pause.on = true
+					debug.pause.delay = 30
 					cpu.Sound.Off()
 				}
 			}
