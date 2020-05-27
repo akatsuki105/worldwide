@@ -28,6 +28,11 @@ func (cpu *CPU) setAReg(A byte) {
 	cpu.Reg.AF = AF
 }
 
+func (cpu *CPU) getFReg() byte {
+	value := byte(cpu.Reg.AF)
+	return value
+}
+
 func (cpu *CPU) getBReg() byte {
 	value := byte(cpu.Reg.BC >> 8)
 	return value
@@ -153,4 +158,37 @@ func (cpu *CPU) getSPRegLower4() byte {
 func (cpu *CPU) getSPRegLower12() uint16 {
 	value := cpu.Reg.SP & 0x0fff
 	return value
+}
+
+func (cpu *CPU) getRegister(s string) uint16 {
+	switch s {
+	case "A":
+		return uint16(cpu.getAReg())
+	case "F":
+		return uint16(cpu.getFReg())
+	case "B":
+		return uint16(cpu.getBReg())
+	case "C":
+		return uint16(cpu.getCReg())
+	case "D":
+		return uint16(cpu.getDReg())
+	case "E":
+		return uint16(cpu.getEReg())
+	case "H":
+		return uint16(cpu.getHReg())
+	case "L":
+		return uint16(cpu.getLReg())
+	case "AF":
+		return cpu.Reg.AF
+	case "BC":
+		return cpu.Reg.BC
+	case "DE":
+		return cpu.Reg.DE
+	case "HL":
+		return cpu.Reg.HL
+	case "SP":
+		return cpu.Reg.SP
+	}
+
+	return 0
 }

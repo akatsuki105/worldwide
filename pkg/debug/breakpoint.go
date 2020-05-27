@@ -1,7 +1,6 @@
 package debug
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -10,6 +9,15 @@ const (
 	BreakOff = iota
 	BreakOn
 	BreakDelay
+)
+
+const (
+	Equal  = "=="
+	NEqual = "!="
+	Gte    = ">="
+	Lte    = "<="
+	Gt     = ">"
+	Lt     = "<"
 )
 
 // Break - Breakpoint state info used in debug mode.
@@ -76,7 +84,6 @@ func newBreakPoint(s string) (bk BreakPoint, ok bool) {
 	bk.PC = PC
 
 	bk.Cond = parseCond(slice[1])
-	fmt.Println(bk.Cond)
 	return bk, true
 }
 
@@ -105,35 +112,28 @@ func parseCond(s string) (cond Cond) {
 		On: false,
 	}
 
-	const (
-		equal  = "=="
-		nEqual = "!="
-		gte    = ">="
-		lte    = "<="
-		gt     = ">"
-		lt     = "<"
-	)
-
 	var slice []string
 	switch {
-	case strings.Index(s, equal) >= 0:
-		slice = strings.Split(s, equal)
-		cond.Operand = equal
-	case strings.Index(s, nEqual) >= 0:
-		slice = strings.Split(s, nEqual)
-		cond.Operand = nEqual
-	case strings.Index(s, gte) >= 0:
-		slice = strings.Split(s, gte)
-		cond.Operand = gte
-	case strings.Index(s, lte) >= 0:
-		slice = strings.Split(s, lte)
-		cond.Operand = lte
-	case strings.Index(s, gt) >= 0:
-		slice = strings.Split(s, gt)
-		cond.Operand = gt
-	case strings.Index(s, lt) >= 0:
-		slice = strings.Split(s, lt)
-		cond.Operand = lt
+	case strings.Index(s, Equal) >= 0:
+		slice = strings.Split(s, Equal)
+		cond.Operand = Equal
+	case strings.Index(s, NEqual) >= 0:
+		slice = strings.Split(s, NEqual)
+		cond.Operand = NEqual
+	case strings.Index(s, Gte) >= 0:
+		slice = strings.Split(s, Gte)
+		cond.Operand = Gte
+	case strings.Index(s, Lte) >= 0:
+		slice = strings.Split(s, Lte)
+		cond.Operand = Lte
+	case strings.Index(s, Gt) >= 0:
+		slice = strings.Split(s, Gt)
+		cond.Operand = Gt
+	case strings.Index(s, Lt) >= 0:
+		slice = strings.Split(s, Lt)
+		cond.Operand = Lt
+	default:
+		return cond
 	}
 
 	if len(slice) != 2 {

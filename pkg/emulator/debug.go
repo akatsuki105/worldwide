@@ -23,12 +23,18 @@ func (cpu *CPU) debugRegister() string {
 	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
 	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
 
+	bank := cpu.ROMBankPtr
+	PC := cpu.Reg.PC
+	if PC < 0x4000 {
+		bank = 0
+	}
+
 	return fmt.Sprintf(`Register
 A: %02x       F: %02x
 B: %02x       C: %02x
 D: %02x       E: %02x
 H: %02x       L: %02x
-PC: 0x%04x  SP: 0x%04x`, A, F, B, C, D, E, H, L, cpu.Reg.PC, cpu.Reg.SP)
+PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, cpu.Reg.SP)
 }
 
 func (cpu *CPU) debugIOMap() string {
@@ -115,4 +121,36 @@ func (cpu *CPU) DebugExec(frame int, output string) error {
 		return err
 	}
 	return nil
+}
+
+func (cpu *CPU) checkBreakCond(breakpoint *debug.BreakPoint) bool {
+	if !breakpoint.Cond.On {
+		return true
+	}
+
+	lhs := uint16(0)
+	switch breakpoint.Cond.LHS {
+	case "A", "F", "B", "C", "D", "E", "H", "L", "AF", "BC", "DE", "HL", "SP":
+		lhs = cpu.getRegister(breakpoint.Cond.LHS)
+	default:
+		return false
+	}
+
+	rhs := breakpoint.Cond.RHS
+	switch breakpoint.Cond.Operand {
+	case debug.Equal:
+		return lhs == rhs
+	case debug.NEqual:
+		return lhs != rhs
+	case debug.Gte:
+		return lhs >= rhs
+	case debug.Lte:
+		return lhs <= rhs
+	case debug.Gt:
+		return lhs > rhs
+	case debug.Lt:
+		return lhs < rhs
+	default:
+		return false
+	}
 }
