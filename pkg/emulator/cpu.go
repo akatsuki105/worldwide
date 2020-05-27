@@ -8,6 +8,7 @@ import (
 	"gbc/pkg/apu"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
+	"gbc/pkg/debug"
 	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/rtc"
@@ -66,7 +67,7 @@ type CPU struct {
 	OAMDMA OAMDMA
 
 	IMESwitch
-	debug bool // デバッグモードかどうか
+	debug Debug
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -346,10 +347,11 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	// Init RTC
 	go cpu.RTC.Init()
 
-	cpu.debug = debug
+	cpu.debug.on = debug
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
+		cpu.debug.Break.ParseBreakpoints(cpu.Config.Debug.BreakPoints)
 	}
 }
 
@@ -360,15 +362,42 @@ func (cpu *CPU) Exit() {
 }
 
 // Exec 1サイクル
-func (cpu *CPU) exec() {
-	bytecode := cpu.FetchMemory8(cpu.Reg.PC)
+func (cpu *CPU) exec() bool {
+	bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
+
+	bytecode := cpu.FetchMemory8(PC)
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
 
+	// in breakpoint
+	b := &cpu.debug.Break
+	if cpu.debug.on {
+		switch b.Flag() {
+		case debug.BreakOn:
+			return true
+		case debug.BreakOff:
+			for _, breakpoint := range b.BreakPoints() {
+				if PC != breakpoint.PC {
+					continue
+				}
+
+				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
+					if cpu.checkBreakCond(&breakpoint) {
+						b.SetFlag(debug.BreakOn)
+						cpu.debug.history.SetHistory(bank, PC, bytecode)
+						return true
+					}
+				}
+			}
+		case debug.BreakDelay:
+			b.SetFlag(debug.BreakOff)
+		}
+	}
+
 	if !cpu.halt {
-		if cpu.debug {
-			cpu.pushHistory(bytecode)
+		if cpu.debug.on {
+			cpu.debug.history.SetHistory(bank, PC, bytecode)
 		}
 
 		if handler != nil {
@@ -469,21 +498,27 @@ func (cpu *CPU) exec() {
 	cpu.timer(cycle)
 
 	cpu.handleInterrupt()
+
+	return false
 }
 
-func (cpu *CPU) execScanline() (uint, uint) {
+func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
 	cpu.cycle.scanline = 0
 	cpu.setOAMRAMMode()
 	for cpu.cycle.scanline <= 20*cpu.boost {
-		cpu.exec()
+		if inBreak := cpu.exec(); inBreak {
+			return 0, 0, false
+		}
 	}
 
 	// LCD Driver mode3
 	cpu.cycle.scanline = 0
 	cpu.setLCDMode()
 	for cpu.cycle.scanline <= 42*cpu.boost {
-		cpu.exec()
+		if inBreak := cpu.exec(); inBreak {
+			return 0, 0, false
+		}
 	}
 
 	scrollX, scrollY := cpu.GPU.GetScroll()
@@ -492,10 +527,12 @@ func (cpu *CPU) execScanline() (uint, uint) {
 	cpu.cycle.scanline = 0
 	cpu.setHBlankMode()
 	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
-		cpu.exec()
+		if inBreak := cpu.exec(); inBreak {
+			return 0, 0, false
+		}
 	}
 	cpu.incrementLY()
-	return scrollX, scrollY
+	return scrollX, scrollY, true
 }
 
 // VBlank
@@ -504,7 +541,9 @@ func (cpu *CPU) execVBlank() {
 		cpu.cycle.scanline = 0
 
 		for cpu.cycle.scanline < cyclePerLine*cpu.boost {
-			cpu.exec()
+			if inBreak := cpu.exec(); inBreak {
+				return
+			}
 		}
 		cpu.incrementLY()
 		LY := cpu.FetchMemory8(LYIO)

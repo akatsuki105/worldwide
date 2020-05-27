@@ -2,42 +2,19 @@ package emulator
 
 import (
 	"fmt"
+	"gbc/pkg/debug"
 	"gbc/pkg/gpu"
 	"gbc/pkg/util"
 	"image/jpeg"
 	"os"
 )
 
-type History struct {
-	ptr    uint
-	buffer [10]string
-}
-
-var (
-	history History
-)
-
-func (cpu *CPU) pushHistory(opcode byte) {
-	instruction, operand1, operand2 := opcodeToString[opcode][0], opcodeToString[opcode][1], opcodeToString[opcode][2]
-	switch {
-	case operand1 == "*" && operand2 == "*":
-		history.buffer[history.ptr] = instruction
-	case operand2 == "*":
-		history.buffer[history.ptr] = instruction + " " + operand1
-	default:
-		history.buffer[history.ptr] = instruction + " " + operand1 + ", " + operand2
-	}
-	history.ptr = (history.ptr + 1) % 10
-}
-
-func (cpu *CPU) debugHistory() string {
-	result := "History\n"
-	for i := -9; i <= 0; i++ {
-		index := (history.ptr + uint(i)) % 10
-		log := history.buffer[index]
-		result += fmt.Sprintf("%d:    %0s\n", i, log)
-	}
-	return result
+// Debug - Info used in debug mode
+type Debug struct {
+	on      bool
+	Break   debug.Break
+	history debug.History
+	pause   debug.Pause
 }
 
 func (cpu *CPU) debugRegister() string {
@@ -46,12 +23,18 @@ func (cpu *CPU) debugRegister() string {
 	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
 	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
 
+	bank := cpu.ROMBankPtr
+	PC := cpu.Reg.PC
+	if PC < 0x4000 {
+		bank = 0
+	}
+
 	return fmt.Sprintf(`Register
 A: %02x       F: %02x
 B: %02x       C: %02x
 D: %02x       E: %02x
 H: %02x       L: %02x
-PC: 0x%04x  SP: 0x%04x`, A, F, B, C, D, E, H, L, cpu.Reg.PC, cpu.Reg.SP)
+PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, cpu.Reg.SP)
 }
 
 func (cpu *CPU) debugIOMap() string {
@@ -68,6 +51,7 @@ IE: %02x     IF: %02x    IME: %02x
 SPD: %02x    ROM: %02x`, LCDC, STAT, LY, LYC, IE, IF, IME, spd, rom)
 }
 
+// DebugExec - used in test
 func (cpu *CPU) DebugExec(frame int, output string) error {
 	const (
 		WX, WY, scrollX, scrollY, scrollPixelX = 0, 0, 0, 0, 0
@@ -137,4 +121,36 @@ func (cpu *CPU) DebugExec(frame int, output string) error {
 		return err
 	}
 	return nil
+}
+
+func (cpu *CPU) checkBreakCond(breakpoint *debug.BreakPoint) bool {
+	if !breakpoint.Cond.On {
+		return true
+	}
+
+	lhs := uint16(0)
+	switch breakpoint.Cond.LHS {
+	case "A", "F", "B", "C", "D", "E", "H", "L", "AF", "BC", "DE", "HL", "SP":
+		lhs = cpu.getRegister(breakpoint.Cond.LHS)
+	default:
+		return false
+	}
+
+	rhs := breakpoint.Cond.RHS
+	switch breakpoint.Cond.Operand {
+	case debug.Equal:
+		return lhs == rhs
+	case debug.NEqual:
+		return lhs != rhs
+	case debug.Gte:
+		return lhs >= rhs
+	case debug.Lte:
+		return lhs <= rhs
+	case debug.Gt:
+		return lhs > rhs
+	case debug.Lt:
+		return lhs < rhs
+	default:
+		return false
+	}
 }

@@ -3,6 +3,7 @@ package emulator
 import (
 	"bytes"
 	"fmt"
+	"gbc/pkg/debug"
 	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/util"
@@ -22,11 +23,6 @@ const (
 	cyclePerLine = 114
 )
 
-type Pause struct {
-	on    bool
-	delay int
-}
-
 var (
 	wait        sync.WaitGroup
 	lineMutex   sync.Mutex
@@ -36,7 +32,6 @@ var (
 	fps         = 0
 	bgMap       *ebiten.Image
 	OAMProperty = [40][4]byte{}
-	pause       Pause
 )
 
 // Render レンダリングを行う
@@ -54,10 +49,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	frames++
 
-	if pause.delay > 0 {
-		pause.delay--
+	p := &cpu.debug.pause
+	b := &cpu.debug.Break
+	if p.Delay() {
+		p.DecrementDelay()
 	}
-	if pause.on {
+	if p.On() || b.On() {
 		return nil
 	}
 
@@ -78,7 +75,12 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	for y := 0; y < iterY; y++ {
 
 		// CPU works
-		scrollX, scrollY = cpu.execScanline()
+		scx, scy, ok := cpu.execScanline()
+		if !ok {
+			break
+		}
+		scrollX, scrollY = scx, scy
+
 		scrollPixelX = scrollX % 8
 
 		LCDC = cpu.FetchMemory8(LCDCIO)
@@ -130,7 +132,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}
 
 	// デバッグモードのときはBGマップとタイルデータを保存
-	if cpu.debug {
+	if cpu.debug.on {
 		if !skipRender {
 			bg := cpu.GPU.GetDisplay(false)
 			bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
@@ -154,7 +156,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	// VBlank
 	cpu.execVBlank()
 
-	if cpu.debug {
+	if cpu.debug.on {
 		select {
 		case <-second:
 			fps = frames
@@ -173,7 +175,7 @@ func setIcon() {
 
 func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
-	if cpu.debug {
+	if cpu.debug.on {
 		screen.Fill(color.RGBA{35, 27, 167, 255})
 		{
 			// debug screen
@@ -190,7 +192,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		// debug register
 		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
 		ebitenutil.DebugPrintAt(screen, cpu.debugIOMap(), 490, 5)
-		ebitenutil.DebugPrintAt(screen, cpu.debugHistory(), 340, 120)
+		ebitenutil.DebugPrintAt(screen, cpu.debug.history.History(), 340, 120)
 
 		if bgMap != nil {
 			// debug BG
@@ -255,26 +257,37 @@ func (cpu *CPU) handleJoypad() {
 			cpu.loadData()
 			cpu.Sound.On()
 		case joypad.Expand:
-			if !cpu.Config.Display.HQ2x && !cpu.debug {
+			if !cpu.Config.Display.HQ2x && !cpu.debug.on {
 				cpu.Expand *= 2
 				time.Sleep(time.Millisecond * 400)
 				ebiten.SetScreenScale(float64(cpu.Expand))
 			}
 		case joypad.Collapse:
-			if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 && !cpu.debug {
+			if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 && !cpu.debug.on {
 				cpu.Expand /= 2
 				time.Sleep(time.Millisecond * 400)
 				ebiten.SetScreenScale(float64(cpu.Expand))
 			}
 		case joypad.Pause:
-			if cpu.debug && pause.delay <= 0 {
-				if pause.on {
-					pause.on = false
-					pause.delay = 30
+			p := &cpu.debug.pause
+			b := &cpu.debug.Break
+
+			if !cpu.debug.on {
+				return
+			}
+
+			if b.On() {
+				b.SetFlag(debug.BreakDelay)
+				p.SetOff(30)
+				return
+			}
+
+			if !p.Delay() {
+				if p.On() {
+					p.SetOff(30)
 					cpu.Sound.On()
 				} else {
-					pause.on = true
-					pause.delay = 30
+					p.SetOn(30)
 					cpu.Sound.Off()
 				}
 			}
@@ -297,7 +310,7 @@ func (cpu *CPU) setSprite(LCDC1 *[144]bool) {
 				cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
 			}
 
-			if cpu.debug {
+			if cpu.debug.on {
 				OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
 			}
 		}
