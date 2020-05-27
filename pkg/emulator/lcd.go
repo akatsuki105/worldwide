@@ -79,5 +79,9 @@ func (cpu *CPU) compareLYC(LY uint8) {
 		if (STAT>>6)&0x01 == 1 {
 			cpu.setLCDSTATFlag()
 		}
+	} else {
+		// LCDC STAT IOポートの一致フラグをクリアする
+		STAT := cpu.FetchMemory8(LCDSTATIO) & 0b11111011
+		cpu.SetMemory8(LCDSTATIO, STAT)
 	}
 }

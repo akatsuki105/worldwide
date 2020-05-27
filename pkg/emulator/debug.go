@@ -38,17 +38,18 @@ PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, cpu.Reg.SP)
 }
 
 func (cpu *CPU) debugIOMap() string {
-	LCDC := cpu.FetchMemory8(LCDCIO)
-	STAT := cpu.FetchMemory8(LCDSTATIO)
+	LCDC, STAT := cpu.FetchMemory8(LCDCIO), cpu.FetchMemory8(LCDSTATIO)
+	DIV := cpu.FetchMemory8(DIVIO)
 	LY, LYC := cpu.FetchMemory8(LYIO), cpu.FetchMemory8(LYCIO)
 	IE, IF, IME := cpu.FetchMemory8(IEIO), cpu.FetchMemory8(IFIO), util.Bool2Int(cpu.Reg.IME)
 	spd := cpu.boost / 2
 	rom := cpu.ROMBankPtr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
+DIV: %02x
 LY: %02x     LYC: %02x
 IE: %02x     IF: %02x    IME: %02x
-SPD: %02x    ROM: %02x`, LCDC, STAT, LY, LYC, IE, IF, IME, spd, rom)
+SPD: %02x    ROM: %02x`, LCDC, STAT, DIV, LY, LYC, IE, IF, IME, spd, rom)
 }
 
 // DebugExec - used in test
