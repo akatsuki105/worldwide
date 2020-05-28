@@ -31,13 +31,13 @@ func (h *History) SetHistory(bank byte, PC uint16, opcode byte) {
 
 func (h *History) History() string {
 	result := "History\n"
-	for i := -9; i <= 0; i++ {
-		index := (h.ptr + uint(i) - 1) % 10
+	for i := 0; i < 10; i++ {
+		index := (h.ptr + uint(i)) % 10
 		log := h.buffer[index]
-		if i < 0 {
-			result += fmt.Sprintf("%d:    %0s\n", i, log)
-		} else if i == 0 {
-			result += fmt.Sprintf(" %d:    %0s\n", i, log)
+		if i < 9 {
+			result += fmt.Sprintf("%d:    %0s\n", -(9 - i), log)
+		} else if i == 9 {
+			result += fmt.Sprintf(" %d:    %0s\n", 9-i, log)
 		}
 	}
 	return result
