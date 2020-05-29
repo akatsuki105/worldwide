@@ -483,7 +483,7 @@ func (cpu *CPU) exec() bool {
 			}
 		}
 	} else {
-		cycle = 4 // TODO: check if cycle is 1
+		cycle = 1 // TODO: check if cycle is 1
 
 		// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 		if !cpu.Reg.IME {

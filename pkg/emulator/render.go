@@ -93,41 +93,44 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 		// 背景(ウィンドウ)描画
 		if !skipRender {
+			wait.Add(iterX / 8)
 			for x := 0; x < iterX; x += 8 {
-				blockX := x / 8
-				blockY := y / 8
+				go func(x int) {
+					blockX := x / 8
+					blockY := y / 8
 
-				var tileX, tileY uint
-				var useWindow bool
-				var entryX int
+					var tileX, tileY uint
+					var useWindow bool
+					var entryX int
 
-				lineNumber := y % 8 // タイルの何行目を描画するか
-				entryY := gpu.EntryY{}
-				if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
-					tileX = ((uint(x) - WX) / 8) % 32
-					tileY = ((uint(y) - WY) / 8) % 32
-					useWindow = true
+					lineNumber := y % 8 // タイルの何行目を描画するか
+					entryY := gpu.EntryY{}
+					if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
+						tileX = ((uint(x) - WX) / 8) % 32
+						tileY = ((uint(y) - WY) / 8) % 32
+						useWindow = true
 
-					entryX = blockX * 8
-					entryY.Block = blockY * 8
-					entryY.Offset = y % 8
-				} else {
-					tileX = (scrollX + uint(x)) / 8 % 32
-					tileY = (scrollY + uint(y)) / 8 % 32
-					useWindow = false
+						entryX = blockX * 8
+						entryY.Block = blockY * 8
+						entryY.Offset = y % 8
+					} else {
+						tileX = (scrollX + uint(x)) / 8 % 32
+						tileY = (scrollY + uint(y)) / 8 % 32
+						useWindow = false
 
-					entryX = blockX*8 - int(scrollPixelX)
-					entryY.Block = blockY * 8
-					entryY.Offset = y % 8
-					lineNumber = (int(scrollY) + y) % 8
-				}
-
-				if util.Bit(LCDC, 7) == 1 {
-					if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, lineNumber) {
-						break
+						entryX = blockX*8 - int(scrollPixelX)
+						entryY.Block = blockY * 8
+						entryY.Offset = y % 8
+						lineNumber = (int(scrollY) + y) % 8
 					}
-				}
+
+					if util.Bit(LCDC, 7) == 1 {
+						cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, lineNumber)
+					}
+					wait.Done()
+				}(x)
 			}
+			wait.Wait()
 		}
 	}
 
