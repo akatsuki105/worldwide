@@ -504,7 +504,6 @@ func (cpu *CPU) exec() bool {
 
 func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
-	cpu.cycle.scanline = 0
 	cpu.setOAMRAMMode()
 	for cpu.cycle.scanline <= 20*cpu.boost {
 		if inBreak := cpu.exec(); inBreak {
@@ -513,7 +512,7 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	}
 
 	// LCD Driver mode3
-	cpu.cycle.scanline = 0
+	cpu.cycle.scanline -= 20 * cpu.boost
 	cpu.setLCDMode()
 	for cpu.cycle.scanline <= 42*cpu.boost {
 		if inBreak := cpu.exec(); inBreak {
@@ -524,13 +523,15 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	scrollX, scrollY := cpu.GPU.GetScroll()
 
 	// HBlank mode0
-	cpu.cycle.scanline = 0
+	cpu.cycle.scanline -= 42 * cpu.boost
 	cpu.setHBlankMode()
 	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
 		if inBreak := cpu.exec(); inBreak {
 			return 0, 0, false
 		}
 	}
+	cpu.cycle.scanline -= (cyclePerLine - (20 + 42)) * cpu.boost
+
 	cpu.incrementLY()
 	return scrollX, scrollY, true
 }
@@ -551,4 +552,5 @@ func (cpu *CPU) execVBlank() {
 			break
 		}
 	}
+	cpu.cycle.scanline = 0
 }
