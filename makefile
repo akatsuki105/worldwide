@@ -44,6 +44,7 @@ TEST18=mooneye-gb/ei_timing/
 TEST19=mooneye-gb/if_ie_registers/
 TEST20=mooneye-gb/pop_timing/
 TEST21=mooneye-gb/rapid_di_ei/
+TEST22=mooneye-gb/halt_ime0_nointr_timing/
 
 define compare
 	go run ./cmd/ --test="./test/$1actual.jpg" ./test/$1rom.gb
@@ -74,6 +75,7 @@ test:
 	-$(call compare,$(TEST19))
 	-$(call compare,$(TEST20))
 	-$(call compare,$(TEST21))
+	-$(call compare,$(TEST22))
 
 	-rm -f ./test/$(TEST0)actual.jpg \
 	./test/$(TEST1)actual.jpg \
@@ -97,3 +99,4 @@ test:
 	./test/$(TEST19)actual.jpg \
 	./test/$(TEST20)actual.jpg \
 	./test/$(TEST21)actual.jpg \
+	./test/$(TEST22)actual.jpg \
