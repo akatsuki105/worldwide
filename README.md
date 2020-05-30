@@ -60,13 +60,16 @@ You can play this emulator in debug mode.
 
 For those who want to build from source code.
 
-requirements
-- go 1.14
+Requirements
+- Go 1.14
 - make
 
 ```sh
 make
 ./worldwide "***.gb" # ./worldwide.exe on Windows
+
+# or
+make run ROM="***.gb"
 ```
 
 ## 📥 Download

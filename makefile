@@ -8,6 +8,14 @@ endif
 all:
 	go build -o $(TARGET) -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
 
+.PHONY: run
+run:
+	make all
+ifeq ($(DEBUG), on)
+	$(eval DEBUG_FLAG = --debug)
+endif
+	./$(TARGET) $(DEBUG_FLAG) ${ROM}
+
 .PHONY: clean
 clean:
 	rm -f $(TARGET)
