@@ -299,8 +299,9 @@ func (cpu *CPU) handleJoypad() {
 }
 
 func (cpu *CPU) setSprite(LCDC1 *[144]bool) {
-	cpu.GPU.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
-	cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+	if cpu.debug.on {
+		cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+	}
 
 	for i := 0; i < 40; i++ {
 		Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))

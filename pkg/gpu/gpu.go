@@ -55,6 +55,7 @@ func (g *GPU) Init(debug bool) {
 	g.debug = debug
 	if debug {
 		g.initDebugTiles()
+		g.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
 	}
 }
 
