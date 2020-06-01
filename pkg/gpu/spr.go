@@ -87,10 +87,12 @@ func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType i
 			x := entryX + deltaX
 			y := entryY + deltaY
 
-			// debug OAM
-			col := OAMindex % 8
-			row := OAMindex / 8
-			g.OAM.Set(col*16+deltaX+2, row*20+deltaY, c)
+			if g.debug {
+				// debug OAM
+				col := OAMindex % 8
+				row := OAMindex / 8
+				g.OAM.Set(col*16+deltaX+2, row*20+deltaY, c)
+			}
 
 			if (x >= 0 && x < 160) && (y >= 0 && y < 144) {
 				if (attr>>7)&0x01 == 0 && g.displayColor[y][x] != 0 {

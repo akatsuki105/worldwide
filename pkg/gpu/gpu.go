@@ -10,8 +10,7 @@ import (
 
 // GPU Graphic Processor Unit
 type GPU struct {
-	display       *ebiten.Image  // 160*144のイメージデータ
-	original      *image.RGBA    // 160*144のイメージデータ
+	display       *image.RGBA    // 160*144のイメージデータ
 	hq2x          *ebiten.Image  // 320*288のイメージデータ(HQ2xかつ30fpsで使用)
 	tileData      tileData       // タイルデータ
 	LCDC          byte           // LCD Control
@@ -48,13 +47,13 @@ const (
 
 // Init GPU
 func (g *GPU) Init(debug bool) {
-	g.display, _ = ebiten.NewImage(160, 144, ebiten.FilterDefault)
-	g.original = image.NewRGBA(image.Rect(0, 0, 160, 144))
+	g.display = image.NewRGBA(image.Rect(0, 0, 160, 144))
 	g.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
 
 	g.debug = debug
 	if debug {
 		g.initDebugTiles()
+		g.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
 	}
 }
 
@@ -63,24 +62,24 @@ func (g *GPU) GetDisplay(hq2x bool) *ebiten.Image {
 	if hq2x {
 		return g.hq2x
 	}
-	return g.display
+	display, _ := ebiten.NewImageFromImage(g.display, ebiten.FilterDefault)
+	return display
 }
 
 // GetOriginal - getter for display data in image.RGBA format. Function for debug.
 func (g *GPU) GetOriginal() *image.RGBA {
-	return g.original
+	return g.display
 }
 
 // HQ2x - scaling display data using HQ2x
 func (g *GPU) HQ2x() *ebiten.Image {
-	tmp, _ := hq2x.HQ2x(g.original)
+	tmp, _ := hq2x.HQ2x(g.display)
 	g.hq2x, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
 	return g.hq2x
 }
 
 func (g *GPU) set(x, y int, c color.RGBA) {
-	g.display.Set(x, y, c)
-	g.original.SetRGBA(x, y, c)
+	g.display.SetRGBA(x, y, c)
 }
 
 func (g *GPU) fetchTileBaseAddr() uint16 {
