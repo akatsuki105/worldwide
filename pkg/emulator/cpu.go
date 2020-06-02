@@ -29,10 +29,16 @@ type Cycle struct {
 	serial   int
 }
 
-// ROM - 0x4000-0x7fff
+// ROMBank - 0x4000-0x7fff
 type ROMBank struct {
 	ptr  uint8
 	bank [256][0x4000]byte
+}
+
+// RAMBank - 0xa000-0xbfff
+type RAMBank struct {
+	ptr  uint8
+	bank [16][0x2000]byte
 }
 
 // CPU Central Processing Unit
@@ -49,9 +55,7 @@ type CPU struct {
 	cycle      Cycle
 	serialTick chan int
 	ROMBank
-	// RAM bank
-	RAMBankPtr uint8
-	RAMBank    [16][0x2000]byte // 0xa000-0xbfff
+	RAMBank
 	// WRAM bank
 	WRAMBankPtr uint8
 	WRAMBank    [8][0x1000]byte // 0xd000-0xdfff ゲームボーイカラーのみ

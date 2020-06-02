@@ -23,7 +23,7 @@ func (cpu *CPU) gobEncode() ([]byte, error) {
 	if err := encoder.Encode(cpu.ROMBank.ptr); err != nil {
 		return nil, err
 	}
-	if err := encoder.Encode(cpu.RAMBankPtr); err != nil {
+	if err := encoder.Encode(cpu.RAMBank.ptr); err != nil {
 		return nil, err
 	}
 	if err := encoder.Encode(cpu.RAMBank); err != nil {
@@ -70,7 +70,7 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 	if err := decoder.Decode(&cpu.ROMBank.ptr); err != nil {
 		return err
 	}
-	if err := decoder.Decode(&cpu.RAMBankPtr); err != nil {
+	if err := decoder.Decode(&cpu.RAMBank.ptr); err != nil {
 		return err
 	}
 	if err := decoder.Decode(&cpu.RAMBank); err != nil {
