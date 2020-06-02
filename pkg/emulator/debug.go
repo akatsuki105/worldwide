@@ -33,7 +33,7 @@ func (cpu *CPU) debugRegister() string {
 	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
 	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
 
-	bank := cpu.ROMBankPtr
+	bank := cpu.ROMBank.ptr
 	PC := cpu.Reg.PC
 	if PC < 0x4000 {
 		bank = 0
@@ -53,7 +53,7 @@ func (cpu *CPU) debugIOMap() string {
 	LY, LYC := cpu.FetchMemory8(LYIO), cpu.FetchMemory8(LYCIO)
 	IE, IF, IME := cpu.FetchMemory8(IEIO), cpu.FetchMemory8(IFIO), util.Bool2Int(cpu.Reg.IME)
 	spd := cpu.boost / 2
-	rom := cpu.ROMBankPtr
+	rom := cpu.ROMBank.ptr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
 DIV: %02x

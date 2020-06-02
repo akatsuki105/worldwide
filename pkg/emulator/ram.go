@@ -12,7 +12,7 @@ func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 	switch {
 	case addr >= 0x4000 && addr < 0x8000:
 		// ROMバンク
-		value = cpu.ROMBank[cpu.ROMBankPtr][addr-0x4000]
+		value = cpu.ROMBank.bank[cpu.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000:
 		// VRAMバンク
 		value = cpu.GPU.VRAMBank[cpu.GPU.VRAMBankPtr][addr-0x8000]
@@ -75,7 +75,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				if value == 0 {
 					value = 1
 				}
-				upper2 := cpu.ROMBankPtr >> 5
+				upper2 := cpu.ROMBank.ptr >> 5
 				lower5 := value
 				newROMBankPtr := (upper2 << 5) | lower5
 				cpu.switchROMBank(newROMBankPtr)
@@ -104,7 +104,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				if cpu.bankMode == 0 {
 					// ROMptrの上位2bitの切り替え
 					upper2 := value
-					lower5 := cpu.ROMBankPtr & 0x1f
+					lower5 := cpu.ROMBank.ptr & 0x1f
 					newROMBankPtr := (upper2 << 5) | lower5
 					cpu.switchROMBank(newROMBankPtr)
 				} else if cpu.bankMode == 1 {
@@ -362,7 +362,7 @@ func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
 	}
 
 	if switchFlag {
-		cpu.ROMBankPtr = newROMBankPtr
+		cpu.ROMBank.ptr = newROMBankPtr
 	}
 }
 
