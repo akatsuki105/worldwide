@@ -9,6 +9,7 @@ import (
 	"gbc/pkg/util"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"sync"
 	"time"
@@ -227,7 +228,8 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(4, 4)
 			op.GeoM.Translate(float64(750), float64(340))
-			debugScreen.DrawImage(cpu.GPU.OAM, op)
+			OAMScreen, _ := ebiten.NewImageFromImage(cpu.GPU.OAM, ebiten.FilterDefault)
+			debugScreen.DrawImage(OAMScreen, op)
 
 			for i := 0; i < 40; i++ {
 				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
@@ -309,7 +311,9 @@ func (cpu *CPU) handleJoypad() {
 
 func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 	if cpu.debug.on {
-		cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+		OAMScreen := cpu.GPU.OAM
+		c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
+		draw.Draw(OAMScreen, OAMScreen.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
 	}
 
 	for i := 0; i < 40; i++ {

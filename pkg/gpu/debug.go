@@ -1,6 +1,7 @@
 package gpu
 
 import (
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
@@ -14,8 +15,7 @@ const (
 )
 
 func (g *GPU) initDebugTiles() {
-	g.tileData.overall, _ = ebiten.NewImage(32*8+gridWidthY, 24*8+gridWidthX, ebiten.FilterDefault)
-	g.tileData.overall.Fill(color.RGBA{255, 255, 255, 255})
+	g.tileData.overall = image.NewRGBA(image.Rect(0, 0, 32*8+gridWidthY, 24*8+gridWidthX))
 
 	// gridを引く
 	gridColor := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
@@ -34,13 +34,14 @@ func (g *GPU) initDebugTiles() {
 
 	for bank := 0; bank < 2; bank++ {
 		for i := 0; i < 384; i++ {
-			g.tileData.tiles[bank][i], _ = ebiten.NewImage(8, 8, ebiten.FilterDefault)
+			g.tileData.tiles[bank][i] = image.NewRGBA(image.Rect(0, 0, 8, 8))
 		}
 	}
 }
 
 func (g *GPU) GetTileData() *ebiten.Image {
-	return g.tileData.overall
+	result, _ := ebiten.NewImageFromImage(g.tileData.overall, ebiten.FilterDefault)
+	return result
 }
 
 func (g *GPU) UpdateTiles(isCGB bool) {
