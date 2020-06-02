@@ -407,6 +407,7 @@ func (cpu *CPU) exec() bool {
 		}
 	}
 
+	halt := cpu.halt
 	if !cpu.halt {
 		if cpu.debug.on {
 			cpu.debug.history.SetHistory(bank, PC, bytecode)
@@ -507,6 +508,7 @@ func (cpu *CPU) exec() bool {
 		}
 	}
 
+	cpu.debug.monitor.Add(halt, cycle)
 	cpu.timer(cycle)
 
 	cpu.handleInterrupt()
