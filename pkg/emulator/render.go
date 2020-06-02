@@ -179,50 +179,52 @@ func setIcon() {
 func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
 	if cpu.debug.on {
-		screen.Fill(color.RGBA{35, 27, 167, 255})
+		width, height := float64(1270), float64(740)
+		newScreen, _ := ebiten.NewImage(int(width), int(height), ebiten.FilterDefault)
+		newScreen.Fill(color.RGBA{35, 27, 167, 255})
 		{
 			// debug screen
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(10), float64(25))
-			screen.DrawImage(display, op)
+			newScreen.DrawImage(display, op)
 		}
 
 		// debug FPS
 		title := fmt.Sprintf("GameBoy FPS: %d", fps)
-		ebitenutil.DebugPrintAt(screen, title, 10, 5)
+		ebitenutil.DebugPrintAt(newScreen, title, 10, 5)
 
 		// debug register
-		ebitenutil.DebugPrintAt(screen, cpu.debugRegister(), 340, 5)
-		ebitenutil.DebugPrintAt(screen, cpu.debugIOMap(), 490, 5)
-		ebitenutil.DebugPrintAt(screen, cpu.debug.history.History(), 340, 120)
+		ebitenutil.DebugPrintAt(newScreen, cpu.debugRegister(), 340, 5)
+		ebitenutil.DebugPrintAt(newScreen, cpu.debugIOMap(), 490, 5)
+		ebitenutil.DebugPrintAt(newScreen, cpu.debug.history.History(), 340, 120)
 
 		if bgMap != nil {
 			// debug BG
-			ebitenutil.DebugPrintAt(screen, "BG map", 10, 320)
+			ebitenutil.DebugPrintAt(newScreen, "BG map", 10, 320)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(10), float64(340))
-			screen.DrawImage(bgMap, op)
+			newScreen.DrawImage(bgMap, op)
 		}
 
 		{
 			// debug tiles
-			ebitenutil.DebugPrintAt(screen, "Tiles", 200, 320)
+			ebitenutil.DebugPrintAt(newScreen, "Tiles", 200, 320)
 			tile := cpu.GPU.GetTileData()
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(200), float64(340))
-			screen.DrawImage(tile, op)
+			newScreen.DrawImage(tile, op)
 		}
 
 		if cpu.GPU.OAM != nil {
 			// debug OAM
-			ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+			ebitenutil.DebugPrintAt(newScreen, "OAM (Y, X, tile, attr)", 750, 320)
 
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(4, 4)
 			op.GeoM.Translate(float64(750), float64(340))
-			screen.DrawImage(cpu.GPU.OAM, op)
+			newScreen.DrawImage(cpu.GPU.OAM, op)
 
 			for i := 0; i < 40; i++ {
 				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
@@ -233,6 +235,10 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
 			}
 		}
+		op := &ebiten.DrawImageOptions{}
+		monitorX, monitorY := cpu.Monitor()
+		op.GeoM.Scale(monitorX/width, monitorY/height)
+		screen.DrawImage(newScreen, op)
 	} else {
 		if !skipRender && cpu.Config.Display.HQ2x {
 			display = cpu.GPU.HQ2x()
