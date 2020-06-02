@@ -9,6 +9,7 @@ import (
 	"gbc/pkg/util"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"sync"
 	"time"
@@ -23,9 +24,13 @@ const (
 	cyclePerLine = 114
 )
 
+const (
+	debugWidth  = 1270.
+	debugHeight = 740.
+)
+
 var (
 	wait        sync.WaitGroup
-	lineMutex   sync.Mutex
 	frames      = 0
 	second      = time.Tick(time.Second)
 	skipRender  bool
@@ -150,7 +155,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	if !skipRender {
 		// スプライト描画
-		cpu.setSprite(&LCDC1)
+		cpu.renderSprite(&LCDC1)
 
 		// 背景優先のpixelを描画していく
 		cpu.GPU.SetBGPriorPixels()
@@ -179,52 +184,52 @@ func setIcon() {
 func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
 	if cpu.debug.on {
-		width, height := float64(1270), float64(740)
-		newScreen, _ := ebiten.NewImage(int(width), int(height), ebiten.FilterDefault)
-		newScreen.Fill(color.RGBA{35, 27, 167, 255})
+		debugScreen, _ := ebiten.NewImage(int(debugWidth), int(debugHeight), ebiten.FilterDefault)
+		debugScreen.Fill(color.RGBA{35, 27, 167, 255})
 		{
 			// debug screen
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(10), float64(25))
-			newScreen.DrawImage(display, op)
+			debugScreen.DrawImage(display, op)
 		}
 
 		// debug FPS
 		title := fmt.Sprintf("GameBoy FPS: %d", fps)
-		ebitenutil.DebugPrintAt(newScreen, title, 10, 5)
+		ebitenutil.DebugPrintAt(debugScreen, title, 10, 5)
 
 		// debug register
-		ebitenutil.DebugPrintAt(newScreen, cpu.debugRegister(), 340, 5)
-		ebitenutil.DebugPrintAt(newScreen, cpu.debugIOMap(), 490, 5)
-		ebitenutil.DebugPrintAt(newScreen, cpu.debug.history.History(), 340, 120)
+		ebitenutil.DebugPrintAt(debugScreen, cpu.debugRegister(), 340, 5)
+		ebitenutil.DebugPrintAt(debugScreen, cpu.debugIOMap(), 490, 5)
+		ebitenutil.DebugPrintAt(debugScreen, cpu.debug.history.History(), 340, 120)
 
 		if bgMap != nil {
 			// debug BG
-			ebitenutil.DebugPrintAt(newScreen, "BG map", 10, 320)
+			ebitenutil.DebugPrintAt(debugScreen, "BG map", 10, 320)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(10), float64(340))
-			newScreen.DrawImage(bgMap, op)
+			debugScreen.DrawImage(bgMap, op)
 		}
 
 		{
 			// debug tiles
-			ebitenutil.DebugPrintAt(newScreen, "Tiles", 200, 320)
+			ebitenutil.DebugPrintAt(debugScreen, "Tiles", 200, 320)
 			tile := cpu.GPU.GetTileData()
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(200), float64(340))
-			newScreen.DrawImage(tile, op)
+			debugScreen.DrawImage(tile, op)
 		}
 
 		if cpu.GPU.OAM != nil {
 			// debug OAM
-			ebitenutil.DebugPrintAt(newScreen, "OAM (Y, X, tile, attr)", 750, 320)
+			ebitenutil.DebugPrintAt(debugScreen, "OAM (Y, X, tile, attr)", 750, 320)
 
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(4, 4)
 			op.GeoM.Translate(float64(750), float64(340))
-			newScreen.DrawImage(cpu.GPU.OAM, op)
+			OAMScreen, _ := ebiten.NewImageFromImage(cpu.GPU.OAM, ebiten.FilterDefault)
+			debugScreen.DrawImage(OAMScreen, op)
 
 			for i := 0; i < 40; i++ {
 				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
@@ -232,13 +237,13 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 				col := i % 8
 				row := i / 8
 				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
-				ebitenutil.DebugPrintAt(newScreen, property, 750+(col*64)+42, 340+(row*80))
+				ebitenutil.DebugPrintAt(debugScreen, property, 750+(col*64)+42, 340+(row*80))
 			}
 		}
 		op := &ebiten.DrawImageOptions{}
 		monitorX, monitorY := cpu.Monitor()
-		op.GeoM.Scale(monitorX/width, monitorY/height)
-		screen.DrawImage(newScreen, op)
+		op.GeoM.Scale(monitorX/debugWidth, monitorY/debugHeight)
+		screen.DrawImage(debugScreen, op)
 	} else {
 		if !skipRender && cpu.Config.Display.HQ2x {
 			display = cpu.GPU.HQ2x()
@@ -304,9 +309,11 @@ func (cpu *CPU) handleJoypad() {
 	}
 }
 
-func (cpu *CPU) setSprite(LCDC1 *[144]bool) {
+func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 	if cpu.debug.on {
-		cpu.GPU.OAM.Fill(color.RGBA{0x8f, 0x8f, 0x8f, 0xff})
+		OAMScreen := cpu.GPU.OAM
+		c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
+		draw.Draw(OAMScreen, OAMScreen.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
 	}
 
 	for i := 0; i < 40; i++ {

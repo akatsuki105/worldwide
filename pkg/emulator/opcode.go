@@ -2763,7 +2763,7 @@ func (cpu *CPU) SBC(operand1, operand2 int) {
 // DAA Decimal adjust
 func (cpu *CPU) DAA(operand1, operand2 int) {
 	A := uint8(cpu.getAReg())
-	// 参考: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
+	// ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !cpu.getNFlag() {
 		if cpu.getCFlag() || A > 0x99 {
 			A += 0x60

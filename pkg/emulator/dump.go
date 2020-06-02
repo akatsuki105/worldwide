@@ -20,10 +20,10 @@ func (cpu *CPU) gobEncode() ([]byte, error) {
 	if err := encoder.Encode(cpu.RAM); err != nil {
 		return nil, err
 	}
-	if err := encoder.Encode(cpu.ROMBankPtr); err != nil {
+	if err := encoder.Encode(cpu.ROMBank.ptr); err != nil {
 		return nil, err
 	}
-	if err := encoder.Encode(cpu.RAMBankPtr); err != nil {
+	if err := encoder.Encode(cpu.RAMBank.ptr); err != nil {
 		return nil, err
 	}
 	if err := encoder.Encode(cpu.RAMBank); err != nil {
@@ -35,7 +35,7 @@ func (cpu *CPU) gobEncode() ([]byte, error) {
 
 	if isCGB {
 		// ゲームボーイカラー
-		if err := encoder.Encode(cpu.WRAMBankPtr); err != nil {
+		if err := encoder.Encode(cpu.WRAMBank.ptr); err != nil {
 			return nil, err
 		}
 		if err := encoder.Encode(cpu.WRAMBank); err != nil {
@@ -67,10 +67,10 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 	if err := decoder.Decode(&cpu.RAM); err != nil {
 		return err
 	}
-	if err := decoder.Decode(&cpu.ROMBankPtr); err != nil {
+	if err := decoder.Decode(&cpu.ROMBank.ptr); err != nil {
 		return err
 	}
-	if err := decoder.Decode(&cpu.RAMBankPtr); err != nil {
+	if err := decoder.Decode(&cpu.RAMBank.ptr); err != nil {
 		return err
 	}
 	if err := decoder.Decode(&cpu.RAMBank); err != nil {
@@ -81,7 +81,7 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 	}
 
 	if isCGB {
-		if err := decoder.Decode(&cpu.WRAMBankPtr); err != nil {
+		if err := decoder.Decode(&cpu.WRAMBank.ptr); err != nil {
 			return err
 		}
 		if err := decoder.Decode(&cpu.WRAMBank); err != nil {

@@ -20,19 +20,19 @@ func (cpu *CPU) save() {
 	case 1:
 		savdata = make([]byte, 0x800)
 		for index := 0; index < 0x800; index++ {
-			savdata[index] = cpu.RAMBank[0][index]
+			savdata[index] = cpu.RAMBank.bank[0][index]
 		}
 	case 2:
 		savdata = make([]byte, 0x2000*1)
 		for index := 0; index < 0x2000; index++ {
-			savdata[index] = cpu.RAMBank[0][index]
+			savdata[index] = cpu.RAMBank.bank[0][index]
 		}
 	case 3:
 		savdata = make([]byte, 0x2000*4)
 		for i := 0; i < 4; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				savdata[index] = cpu.RAMBank[i][j]
+				savdata[index] = cpu.RAMBank.bank[i][j]
 			}
 		}
 	case 5:
@@ -40,7 +40,7 @@ func (cpu *CPU) save() {
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				savdata[index] = cpu.RAMBank[i][j]
+				savdata[index] = cpu.RAMBank.bank[i][j]
 			}
 		}
 	}
@@ -69,24 +69,24 @@ func (cpu *CPU) load() {
 	switch cpu.Cartridge.RAMSize {
 	case 1:
 		for index := 0; index < 0x800; index++ {
-			cpu.RAMBank[0][index] = savdata[index]
+			cpu.RAMBank.bank[0][index] = savdata[index]
 		}
 	case 2:
 		for index := 0; index < 0x2000; index++ {
-			cpu.RAMBank[0][index] = savdata[index]
+			cpu.RAMBank.bank[0][index] = savdata[index]
 		}
 	case 3:
 		for i := 0; i < 4; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				cpu.RAMBank[i][j] = savdata[index]
+				cpu.RAMBank.bank[i][j] = savdata[index]
 			}
 		}
 	case 5:
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				cpu.RAMBank[i][j] = savdata[index]
+				cpu.RAMBank.bank[i][j] = savdata[index]
 			}
 		}
 	}

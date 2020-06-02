@@ -23,13 +23,13 @@ type GPU struct {
 	VRAMBankPtr     uint8
 	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
 	HBlankDMALength int
-	OAM             *ebiten.Image // OAMをまとめたもの
-	debug           bool          // デバッグモードか
+	OAM             *image.RGBA // OAMをまとめたもの
+	debug           bool        // デバッグモードか
 }
 
 type tileData struct {
-	overall *ebiten.Image         // タイルデータをいちまいの画像にまとめたもの
-	tiles   [2][384]*ebiten.Image // 8*8のタイルデータの一覧
+	overall *image.RGBA         // タイルデータをいちまいの画像にまとめたもの
+	tiles   [2][384]*image.RGBA // 8*8のタイルデータの一覧
 }
 
 var (
@@ -53,7 +53,7 @@ func (g *GPU) Init(debug bool) {
 	g.debug = debug
 	if debug {
 		g.initDebugTiles()
-		g.OAM, _ = ebiten.NewImage(16*8-1, 20*5-3, ebiten.FilterDefault)
+		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))
 	}
 }
 

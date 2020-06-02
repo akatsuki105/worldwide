@@ -29,6 +29,24 @@ type Cycle struct {
 	serial   int
 }
 
+// ROMBank - 0x4000-0x7fff
+type ROMBank struct {
+	ptr  uint8
+	bank [256][0x4000]byte
+}
+
+// RAMBank - 0xa000-0xbfff
+type RAMBank struct {
+	ptr  uint8
+	bank [16][0x2000]byte
+}
+
+// WRAMBank - 0xd000-0xdfff ゲームボーイカラーのみ
+type WRAMBank struct {
+	ptr  uint8
+	bank [8][0x1000]byte
+}
+
 // CPU Central Processing Unit
 type CPU struct {
 	Reg       Register
@@ -42,16 +60,10 @@ type CPU struct {
 	// timer関連
 	cycle      Cycle
 	serialTick chan int
-	// ROM bank
-	ROMBankPtr uint8
-	ROMBank    [256][0x4000]byte // 0x4000-0x7fff
-	// RAM bank
-	RAMBankPtr uint8
-	RAMBank    [16][0x2000]byte // 0xa000-0xbfff
-	// WRAM bank
-	WRAMBankPtr uint8
-	WRAMBank    [8][0x1000]byte // 0xd000-0xdfff ゲームボーイカラーのみ
-	bankMode    uint
+	ROMBank
+	RAMBank
+	WRAMBank
+	bankMode uint
 	// サウンド
 	Sound apu.APU
 	// 画面
@@ -242,7 +254,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 func (cpu *CPU) transferROM(bankNum int, rom []byte) {
 	for bank := 0; bank < bankNum; bank++ {
 		for i := 0x0000; i <= 0x3fff; i++ {
-			cpu.ROMBank[bank][i] = rom[bank*0x4000+i]
+			cpu.ROMBank.bank[bank][i] = rom[bank*0x4000+i]
 		}
 	}
 }
@@ -323,8 +335,8 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	cpu.initRegister()
 	cpu.initIOMap()
 
-	cpu.ROMBankPtr = 1
-	cpu.WRAMBankPtr = 1
+	cpu.ROMBank.ptr = 1
+	cpu.WRAMBank.ptr = 1
 
 	cpu.GPU.Init(debug)
 	cpu.Config = config.Init()
@@ -363,7 +375,7 @@ func (cpu *CPU) Exit() {
 
 // Exec 1サイクル
 func (cpu *CPU) exec() bool {
-	bank, PC := cpu.ROMBankPtr, cpu.Reg.PC
+	bank, PC := cpu.ROMBank.ptr, cpu.Reg.PC
 
 	bytecode := cpu.FetchMemory8(PC)
 	opcode := opcodes[bytecode]

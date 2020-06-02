@@ -12,7 +12,7 @@ func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 	switch {
 	case addr >= 0x4000 && addr < 0x8000:
 		// ROMバンク
-		value = cpu.ROMBank[cpu.ROMBankPtr][addr-0x4000]
+		value = cpu.ROMBank.bank[cpu.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000:
 		// VRAMバンク
 		value = cpu.GPU.VRAMBank[cpu.GPU.VRAMBankPtr][addr-0x8000]
@@ -21,11 +21,11 @@ func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 			value = cpu.RTC.Read(byte(cpu.RTC.Mapped))
 		} else {
 			// RAMバンク
-			value = cpu.RAMBank[cpu.RAMBankPtr][addr-0xa000]
+			value = cpu.RAMBank.bank[cpu.RAMBank.ptr][addr-0xa000]
 		}
-	case cpu.WRAMBankPtr > 1 && addr >= 0xd000 && addr < 0xe000:
+	case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000:
 		// WRAMバンク
-		value = cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000]
+		value = cpu.WRAMBank.bank[cpu.WRAMBank.ptr][addr-0xd000]
 	case addr >= 0xff00:
 		value = cpu.fetchIO(addr)
 	default:
@@ -75,7 +75,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				if value == 0 {
 					value = 1
 				}
-				upper2 := cpu.ROMBankPtr >> 5
+				upper2 := cpu.ROMBank.ptr >> 5
 				lower5 := value
 				newROMBankPtr := (upper2 << 5) | lower5
 				cpu.switchROMBank(newROMBankPtr)
@@ -104,25 +104,25 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				if cpu.bankMode == 0 {
 					// ROMptrの上位2bitの切り替え
 					upper2 := value
-					lower5 := cpu.ROMBankPtr & 0x1f
+					lower5 := cpu.ROMBank.ptr & 0x1f
 					newROMBankPtr := (upper2 << 5) | lower5
 					cpu.switchROMBank(newROMBankPtr)
 				} else if cpu.bankMode == 1 {
 					// RAMptrの切り替え
 					newRAMBankPtr := value
-					cpu.RAMBankPtr = newRAMBankPtr
+					cpu.RAMBank.ptr = newRAMBankPtr
 				}
 			case cartridge.MBC3:
 				switch {
 				case value <= 0x07 && cpu.GPU.HBlankDMALength == 0:
 					cpu.RTC.Mapped = 0
-					cpu.RAMBankPtr = value
+					cpu.RAMBank.ptr = value
 				case value >= 0x08 && value <= 0x0c:
 					cpu.RTC.Mapped = uint(value)
 				}
 			case cartridge.MBC5:
 				// fmt.Println(value)
-				cpu.RAMBankPtr = value & 0x0f
+				cpu.RAMBank.ptr = value & 0x0f
 			}
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch cpu.Cartridge.MBC {
@@ -156,13 +156,13 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 		case addr >= 0xa000 && addr < 0xc000:
 			if cpu.RTC.Mapped == 0 {
 				// RAM
-				cpu.RAMBank[cpu.RAMBankPtr][addr-0xa000] = value
+				cpu.RAMBank.bank[cpu.RAMBank.ptr][addr-0xa000] = value
 			} else {
 				cpu.RTC.Write(byte(cpu.RTC.Mapped), value)
 			}
-		case cpu.WRAMBankPtr > 1 && addr >= 0xd000 && addr < 0xe000:
+		case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000:
 			// WRAM
-			cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000] = value
+			cpu.WRAMBank.bank[cpu.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xff00:
 			cpu.setIO(addr, value)
 		default:
@@ -332,7 +332,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		if newWRAMBankPtr == 0 {
 			newWRAMBankPtr = 1
 		}
-		cpu.WRAMBankPtr = newWRAMBankPtr
+		cpu.WRAMBank.ptr = newWRAMBankPtr
 	}
 }
 
@@ -362,7 +362,7 @@ func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
 	}
 
 	if switchFlag {
-		cpu.ROMBankPtr = newROMBankPtr
+		cpu.ROMBank.ptr = newROMBankPtr
 	}
 }
 
