@@ -232,7 +232,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 				col := i % 8
 				row := i / 8
 				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
-				ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340+(row*80))
+				ebitenutil.DebugPrintAt(newScreen, property, 750+(col*64)+42, 340+(row*80))
 			}
 		}
 		op := &ebiten.DrawImageOptions{}
