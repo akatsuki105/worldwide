@@ -241,7 +241,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			}
 		}
 		op := &ebiten.DrawImageOptions{}
-		windowX, windowY := cpu.Window()
+		windowX, windowY := cpu.debug.Window.Size()
 		op.GeoM.Scale(windowX/debugWidth, windowY/debugHeight)
 		screen.DrawImage(debugScreen, op)
 	} else {

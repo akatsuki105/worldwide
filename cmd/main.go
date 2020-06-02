@@ -80,7 +80,7 @@ func Run() int {
 		if width >= 1280 && height >= 740 {
 			width, height = 1280, 740
 		}
-		cpu.SetWindow(width, height)
+		cpu.SetWindowSize(width, height)
 		if err := ebiten.Run(cpu.Render, width, height, 1, "Worldwide(debug)"); err != nil {
 			return 1
 		}
