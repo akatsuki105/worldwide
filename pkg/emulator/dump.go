@@ -35,7 +35,7 @@ func (cpu *CPU) gobEncode() ([]byte, error) {
 
 	if isCGB {
 		// ゲームボーイカラー
-		if err := encoder.Encode(cpu.WRAMBankPtr); err != nil {
+		if err := encoder.Encode(cpu.WRAMBank.ptr); err != nil {
 			return nil, err
 		}
 		if err := encoder.Encode(cpu.WRAMBank); err != nil {
@@ -81,7 +81,7 @@ func (cpu *CPU) gobDecode(buf []byte) error {
 	}
 
 	if isCGB {
-		if err := decoder.Decode(&cpu.WRAMBankPtr); err != nil {
+		if err := decoder.Decode(&cpu.WRAMBank.ptr); err != nil {
 			return err
 		}
 		if err := decoder.Decode(&cpu.WRAMBank); err != nil {

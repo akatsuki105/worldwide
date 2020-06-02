@@ -41,6 +41,12 @@ type RAMBank struct {
 	bank [16][0x2000]byte
 }
 
+// WRAMBank - 0xd000-0xdfff ゲームボーイカラーのみ
+type WRAMBank struct {
+	ptr  uint8
+	bank [8][0x1000]byte
+}
+
 // CPU Central Processing Unit
 type CPU struct {
 	Reg       Register
@@ -56,10 +62,8 @@ type CPU struct {
 	serialTick chan int
 	ROMBank
 	RAMBank
-	// WRAM bank
-	WRAMBankPtr uint8
-	WRAMBank    [8][0x1000]byte // 0xd000-0xdfff ゲームボーイカラーのみ
-	bankMode    uint
+	WRAMBank
+	bankMode uint
 	// サウンド
 	Sound apu.APU
 	// 画面
@@ -332,7 +336,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	cpu.initIOMap()
 
 	cpu.ROMBank.ptr = 1
-	cpu.WRAMBankPtr = 1
+	cpu.WRAMBank.ptr = 1
 
 	cpu.GPU.Init(debug)
 	cpu.Config = config.Init()

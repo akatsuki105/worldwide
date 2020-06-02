@@ -23,9 +23,9 @@ func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 			// RAMバンク
 			value = cpu.RAMBank.bank[cpu.RAMBank.ptr][addr-0xa000]
 		}
-	case cpu.WRAMBankPtr > 1 && addr >= 0xd000 && addr < 0xe000:
+	case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000:
 		// WRAMバンク
-		value = cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000]
+		value = cpu.WRAMBank.bank[cpu.WRAMBank.ptr][addr-0xd000]
 	case addr >= 0xff00:
 		value = cpu.fetchIO(addr)
 	default:
@@ -160,9 +160,9 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 			} else {
 				cpu.RTC.Write(byte(cpu.RTC.Mapped), value)
 			}
-		case cpu.WRAMBankPtr > 1 && addr >= 0xd000 && addr < 0xe000:
+		case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000:
 			// WRAM
-			cpu.WRAMBank[cpu.WRAMBankPtr][addr-0xd000] = value
+			cpu.WRAMBank.bank[cpu.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xff00:
 			cpu.setIO(addr, value)
 		default:
@@ -332,7 +332,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		if newWRAMBankPtr == 0 {
 			newWRAMBankPtr = 1
 		}
-		cpu.WRAMBankPtr = newWRAMBankPtr
+		cpu.WRAMBank.ptr = newWRAMBankPtr
 	}
 }
 
