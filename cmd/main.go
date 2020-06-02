@@ -76,7 +76,12 @@ func Run() int {
 	ebiten.SetRunnableInBackground(true)
 	if *debug {
 		width, height := ebiten.MonitorSize()
-		if err := ebiten.Run(cpu.Render, width*9/10, height*8/10, 1, "Worldwide(debug)"); err != nil {
+		width, height = width*9/10, height*9/10
+		if width >= 1280 && height >= 740 {
+			width, height = 1280, 740
+		}
+		cpu.SetMonitor(width, height)
+		if err := ebiten.Run(cpu.Render, width, height, 1, "Worldwide(debug)"); err != nil {
 			return 1
 		}
 	} else if cpu.Config.Display.HQ2x {
