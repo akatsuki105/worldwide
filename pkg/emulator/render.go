@@ -241,8 +241,8 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			}
 		}
 		op := &ebiten.DrawImageOptions{}
-		monitorX, monitorY := cpu.Monitor()
-		op.GeoM.Scale(monitorX/debugWidth, monitorY/debugHeight)
+		windowX, windowY := cpu.Window()
+		op.GeoM.Scale(windowX/debugWidth, windowY/debugHeight)
 		screen.DrawImage(debugScreen, op)
 	} else {
 		if !skipRender && cpu.Config.Display.HQ2x {

@@ -1,6 +1,6 @@
 package debug
 
-type Monitor struct {
+type Window struct {
 	X int
 	Y int
 }
