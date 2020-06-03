@@ -206,7 +206,8 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(debugScreen, cpu.debug.history.History(), 340, 120)
 
 		// debug CPU Usage
-		cpu.debug.monitor.CPU.DrawUsage(debugScreen, 600, 100)
+		ebitenutil.DebugPrintAt(debugScreen, "CPU", 540, 120)
+		cpu.debug.monitor.CPU.DrawUsage(debugScreen, 542, 150, cpu.isBoost())
 
 		if bgMap != nil {
 			// debug BG

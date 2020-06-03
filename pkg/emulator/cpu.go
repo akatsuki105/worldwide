@@ -568,3 +568,7 @@ func (cpu *CPU) execVBlank() {
 	}
 	cpu.cycle.scanline = 0
 }
+
+func (cpu *CPU) isBoost() bool {
+	return cpu.boost > 1
+}
