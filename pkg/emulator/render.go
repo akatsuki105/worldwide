@@ -44,6 +44,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 	if frames == 0 {
 		setIcon()
+		cpu.debug.monitor.CPU.Reset()
 	}
 
 	cpu.renderScreen(screen)
@@ -53,6 +54,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}
 
 	frames++
+	cpu.debug.monitor.CPU.Reset()
 
 	p := &cpu.debug.pause
 	b := &cpu.debug.Break
@@ -203,6 +205,10 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(debugScreen, cpu.debugIOMap(), 490, 5)
 		ebitenutil.DebugPrintAt(debugScreen, cpu.debug.history.History(), 340, 120)
 
+		// debug CPU Usage
+		ebitenutil.DebugPrintAt(debugScreen, "CPU", 540, 120)
+		cpu.debug.monitor.CPU.DrawUsage(debugScreen, 542, 150, cpu.isBoost())
+
 		if bgMap != nil {
 			// debug BG
 			ebitenutil.DebugPrintAt(debugScreen, "BG map", 10, 320)
@@ -241,8 +247,8 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			}
 		}
 		op := &ebiten.DrawImageOptions{}
-		monitorX, monitorY := cpu.Monitor()
-		op.GeoM.Scale(monitorX/debugWidth, monitorY/debugHeight)
+		windowX, windowY := cpu.debug.Window.Size()
+		op.GeoM.Scale(windowX/debugWidth, windowY/debugHeight)
 		screen.DrawImage(debugScreen, op)
 	} else {
 		if !skipRender && cpu.Config.Display.HQ2x {

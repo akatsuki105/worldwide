@@ -15,16 +15,12 @@ type Debug struct {
 	Break   debug.Break
 	history debug.History
 	pause   debug.Pause
+	Window  debug.Window
 	monitor debug.Monitor
 }
 
-func (cpu *CPU) Monitor() (float64, float64) {
-	return float64(cpu.debug.monitor.X), float64(cpu.debug.monitor.Y)
-}
-
-func (cpu *CPU) SetMonitor(x, y int) {
-	cpu.debug.monitor.X = x
-	cpu.debug.monitor.Y = y
+func (cpu *CPU) SetWindowSize(x, y int) {
+	cpu.debug.Window.SetSize(x, y)
 }
 
 func (cpu *CPU) debugRegister() string {
