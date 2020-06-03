@@ -7,6 +7,34 @@ type IMESwitch struct {
 	Working bool
 }
 
+type intrIEIF struct {
+	VBlank, LCDSTAT, Timer, Serial, Joypad struct {
+		IE, IF bool
+	}
+}
+
+func (cpu *CPU) getIEIF() intrIEIF {
+	ieif := intrIEIF{}
+	IE, IF := cpu.RAM[IEIO], cpu.RAM[IFIO]
+
+	VBlankEnable, VBlankFlag := IE&0x01 == 1, IF&0x01 == 1
+	ieif.VBlank.IE, ieif.VBlank.IF = VBlankEnable, VBlankFlag
+
+	LCDSTATEnable, LCDSTATFlag := (IE>>1)&0x01 == 1, (IF>>1)&0x01 == 1
+	ieif.LCDSTAT.IE, ieif.LCDSTAT.IF = LCDSTATEnable, LCDSTATFlag
+
+	TimerEnable, TimerFlag := (IE>>2)&0x01 == 1, (IF>>2)&0x01 == 1
+	ieif.Timer.IE, ieif.Timer.IF = TimerEnable, TimerFlag
+
+	SerialEnable, SerialFlag := (IE>>3)&0x01 == 1, (IF>>3)&0x01 == 1
+	ieif.Serial.IE, ieif.Serial.IF = SerialEnable, SerialFlag
+
+	JoypadEnable, JoypadFlag := (IE>>4)&0x01 == 1, (IF>>4)&0x01 == 1
+	ieif.Joypad.IE, ieif.Joypad.IF = JoypadEnable, JoypadFlag
+
+	return ieif
+}
+
 // ------------ VBlank --------------------
 
 func (cpu *CPU) getVBlankEnable() bool {
@@ -220,25 +248,26 @@ func (cpu *CPU) triggerJoypad() {
 
 // 能動的な割り込みに対処する
 func (cpu *CPU) handleInterrupt() {
-
 	if cpu.Reg.IME {
-		if cpu.getVBlankEnable() && cpu.getVBlankFlag() {
+		intr := cpu.getIEIF()
+
+		if intr.VBlank.IE && intr.VBlank.IF {
 			cpu.triggerVBlank()
 		}
 
-		if cpu.getLCDSTATEnable() && cpu.getLCDSTATFlag() {
+		if intr.LCDSTAT.IE && intr.LCDSTAT.IF {
 			cpu.triggerLCDC()
 		}
 
-		if cpu.getTimerEnable() && cpu.getTimerFlag() {
+		if intr.Timer.IE && intr.Timer.IF {
 			cpu.triggerTimer()
 		}
 
-		if cpu.getSerialEnable() && cpu.getSerialFlag() {
+		if intr.Serial.IE && intr.Serial.IF {
 			cpu.triggerSerial()
 		}
 
-		if cpu.getJoypadEnable() && cpu.getJoypadFlag() {
+		if intr.Joypad.IE && intr.Joypad.IF {
 			cpu.triggerJoypad()
 		}
 	}

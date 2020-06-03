@@ -28,8 +28,8 @@ func (cpu *CPU) clearTimerEnable() {
 
 func (cpu *CPU) getTimerFlag() bool {
 	IF := cpu.fetchIO(IFIO)
-	LCDSTATFlag := (IF >> 2) % 2
-	if LCDSTATFlag == 1 {
+	TimerFlag := (IF >> 2) % 2
+	if TimerFlag == 1 {
 		return true
 	}
 	return false
