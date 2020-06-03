@@ -35,7 +35,6 @@ var (
 	second      = time.Tick(time.Second)
 	skipRender  bool
 	fps         = 0
-	cpuUsage    = 0.
 	bgMap       *ebiten.Image
 	OAMProperty = [40][4]byte{}
 )
@@ -55,7 +54,6 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	}
 
 	frames++
-	cpuUsage = cpu.debug.monitor.CPU.Usage()
 	cpu.debug.monitor.CPU.Reset()
 
 	p := &cpu.debug.pause
@@ -206,6 +204,9 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(debugScreen, cpu.debugRegister(), 340, 5)
 		ebitenutil.DebugPrintAt(debugScreen, cpu.debugIOMap(), 490, 5)
 		ebitenutil.DebugPrintAt(debugScreen, cpu.debug.history.History(), 340, 120)
+
+		// debug CPU Usage
+		cpu.debug.monitor.CPU.DrawUsage(debugScreen, 600, 100)
 
 		if bgMap != nil {
 			// debug BG
