@@ -227,25 +227,11 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			debugScreen.DrawImage(tile, op)
 		}
 
+		// debug OAM
 		if cpu.GPU.OAM != nil {
-			// debug OAM
-			ebitenutil.DebugPrintAt(debugScreen, "OAM (Y, X, tile, attr)", 750, 320)
-
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(4, 4)
-			op.GeoM.Translate(float64(750), float64(340))
-			OAMScreen, _ := ebiten.NewImageFromImage(cpu.GPU.OAM, ebiten.FilterDefault)
-			debugScreen.DrawImage(OAMScreen, op)
-
-			for i := 0; i < 40; i++ {
-				Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
-
-				col := i % 8
-				row := i / 8
-				property := fmt.Sprintf("%02x\n%02x\n%02x\n%02x", Y, X, index, attr)
-				ebitenutil.DebugPrintAt(debugScreen, property, 750+(col*64)+42, 340+(row*80))
-			}
+			cpu.debugPrintOAM(debugScreen)
 		}
+
 		op := &ebiten.DrawImageOptions{}
 		windowX, windowY := cpu.debug.Window.Size()
 		op.GeoM.Scale(windowX/debugWidth, windowY/debugHeight)
@@ -317,6 +303,7 @@ func (cpu *CPU) handleJoypad() {
 
 func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 	if cpu.debug.on {
+		// fill OAM screen in uni-color
 		OAMScreen := cpu.GPU.OAM
 		c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
 		draw.Draw(OAMScreen, OAMScreen.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)

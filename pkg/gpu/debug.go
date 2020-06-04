@@ -7,40 +7,49 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
-// --------------------------------------------- debug tiles -----------------------------------------------------
+type tileData struct {
+	overall *image.RGBA         // タイルデータをいちまいの画像にまとめたもの
+	tiles   [2][384]*image.RGBA // 8*8のタイルデータの一覧
+}
+
+type Debug struct {
+	On       bool
+	tileData tileData
+	OAM      *image.RGBA // OAMをまとめたもの
+}
 
 const (
 	gridWidthX = 2
 	gridWidthY = 3
 )
 
-func (g *GPU) initDebugTiles() {
-	g.tileData.overall = image.NewRGBA(image.Rect(0, 0, 32*8+gridWidthY, 24*8+gridWidthX))
+func (d *Debug) initDebugTiles() {
+	d.tileData.overall = image.NewRGBA(image.Rect(0, 0, 32*8+gridWidthY, 24*8+gridWidthX))
 
 	// gridを引く
 	gridColor := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
 	for y := 0; y < 24*8+gridWidthX; y++ {
 		for i := 0; i < gridWidthY; i++ {
-			g.tileData.overall.Set(16*8+i, y, gridColor)
+			d.tileData.overall.Set(16*8+i, y, gridColor)
 		}
 	}
 	for x := 0; x < 32*8+gridWidthY; x++ {
 		for i := 0; i < gridWidthX; i++ {
 			// 横グリッドは2本
-			g.tileData.overall.Set(x, 8*8+i, gridColor)
-			g.tileData.overall.Set(x, 16*8+i, gridColor)
+			d.tileData.overall.Set(x, 8*8+i, gridColor)
+			d.tileData.overall.Set(x, 16*8+i, gridColor)
 		}
 	}
 
 	for bank := 0; bank < 2; bank++ {
 		for i := 0; i < 384; i++ {
-			g.tileData.tiles[bank][i] = image.NewRGBA(image.Rect(0, 0, 8, 8))
+			d.tileData.tiles[bank][i] = image.NewRGBA(image.Rect(0, 0, 8, 8))
 		}
 	}
 }
 
-func (g *GPU) GetTileData() *ebiten.Image {
-	result, _ := ebiten.NewImageFromImage(g.tileData.overall, ebiten.FilterDefault)
+func (d *Debug) GetTileData() *ebiten.Image {
+	result, _ := ebiten.NewImageFromImage(d.tileData.overall, ebiten.FilterDefault)
 	return result
 }
 
@@ -56,7 +65,7 @@ func (g *GPU) UpdateTiles(isCGB bool) {
 			tileAddr := 0x8000 + 16*i
 			for y := 0; y < 8; y++ {
 				addr := tileAddr + 2*y
-				lowerByte, upperByte := g.VRAMBank[bank][addr-0x8000], g.VRAMBank[bank][addr-0x8000+1]
+				lowerByte, upperByte := g.VRAM.Bank[bank][addr-0x8000], g.VRAM.Bank[bank][addr-0x8000+1]
 
 				for x := 0; x < 8; x++ {
 					bitCtr := (7 - uint(x)) // 上位何ビット目を取り出すか
@@ -72,8 +81,8 @@ func (g *GPU) UpdateTiles(isCGB bool) {
 					// overall と 各タイルに対して
 					overallX := bank*(16*8+gridWidthY) + (i%16)*8
 					overallY := (i/16)*8 + (i/16)*gridWidthX/16
-					g.tileData.overall.Set(overallX+x, overallY+y, c)
-					g.tileData.tiles[bank][i].Set(x, y, c)
+					g.Debug.tileData.overall.Set(overallX+x, overallY+y, c)
+					g.Debug.tileData.tiles[bank][i].Set(x, y, c)
 				}
 			}
 		}

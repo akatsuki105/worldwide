@@ -7,6 +7,9 @@ import (
 	"gbc/pkg/util"
 	"image/jpeg"
 	"os"
+
+	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 // Debug - Info used in debug mode
@@ -159,5 +162,29 @@ func (cpu *CPU) checkBreakCond(breakpoint *debug.BreakPoint) bool {
 		return lhs < rhs
 	default:
 		return false
+	}
+}
+
+func (cpu *CPU) debugPrintOAM(screen *ebiten.Image) {
+	// debug OAM
+	ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(4, 4)
+	op.GeoM.Translate(float64(750), float64(340))
+	OAMScreen, _ := ebiten.NewImageFromImage(cpu.GPU.OAM, ebiten.FilterDefault)
+	screen.DrawImage(OAMScreen, op)
+
+	properties := [8]string{}
+	for col := 0; col < 8; col++ {
+		for row := 0; row < 5; row++ {
+			i := row*8 + col
+			Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
+			properties[col] += fmt.Sprintf("%02x\n%02x\n%02x\n%02x\n\n", Y, X, index, attr)
+		}
+	}
+
+	for col, property := range properties {
+		ebitenutil.DebugPrintAt(screen, property, 750+(col*64)+42, 340)
 	}
 }

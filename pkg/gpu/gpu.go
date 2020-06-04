@@ -8,28 +8,24 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
+type VRAM struct {
+	Ptr  uint8
+	Bank [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
+}
+
 // GPU Graphic Processor Unit
 type GPU struct {
 	display       *image.RGBA    // 160*144のイメージデータ
 	hq2x          *ebiten.Image  // 320*288のイメージデータ(HQ2xかつ30fpsで使用)
-	tileData      tileData       // タイルデータ
 	LCDC          byte           // LCD Control
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scrollの座標
 	displayColor  [144][160]byte // 160*144の色番号(背景色を記録)
 	Palette       Palette
 	BGPriorPixels [][5]byte
-	// VRAM bank
-	VRAMBankPtr     uint8
-	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
+	VRAM
 	HBlankDMALength int
-	OAM             *image.RGBA // OAMをまとめたもの
-	debug           bool        // デバッグモードか
-}
-
-type tileData struct {
-	overall *image.RGBA         // タイルデータをいちまいの画像にまとめたもの
-	tiles   [2][384]*image.RGBA // 8*8のタイルデータの一覧
+	Debug
 }
 
 var (
@@ -50,7 +46,7 @@ func (g *GPU) Init(debug bool) {
 	g.display = image.NewRGBA(image.Rect(0, 0, 160, 144))
 	g.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
 
-	g.debug = debug
+	g.Debug.On = debug
 	if debug {
 		g.initDebugTiles()
 		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))

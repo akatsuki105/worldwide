@@ -27,7 +27,7 @@ func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, useWindow,
 			BGMapAddr = 0x9800 + uint16(index)
 		}
 	}
-	tileNumber := g.VRAMBank[0][BGMapAddr-0x8000] // BG Mapから該当の画面の場所のタイル番号を取得
+	tileNumber := g.VRAM.Bank[0][BGMapAddr-0x8000] // BG Mapから該当の画面の場所のタイル番号を取得
 	baseAddr := g.fetchTileBaseAddr()
 	if baseAddr == 0x8800 {
 		tileNumber = uint8(int(int8(tileNumber)) + 128)
@@ -36,7 +36,7 @@ func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, useWindow,
 	// 背景属性取得
 	var attr byte
 	if isCGB {
-		attr = g.VRAMBank[1][BGMapAddr-0x8000]
+		attr = g.VRAM.Bank[1][BGMapAddr-0x8000]
 	} else {
 		attr = 0
 	}
@@ -67,7 +67,7 @@ func (g *GPU) setBGLine(entryX, entryY, lineNumber int, addr uint16, attr byte, 
 		VRAMBankPtr = 0
 	}
 
-	lowerByte, upperByte := g.VRAMBank[VRAMBankPtr][addr-0x8000], g.VRAMBank[VRAMBankPtr][addr-0x8000+1]
+	lowerByte, upperByte := g.VRAM.Bank[VRAMBankPtr][addr-0x8000], g.VRAM.Bank[VRAMBankPtr][addr-0x8000+1]
 
 	for i := 0; i < 8; i++ {
 		bitCtr := (7 - uint(i)) // 上位何ビット目を取り出すか

@@ -43,7 +43,7 @@ func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType i
 		VRAMBankPtr = 0
 	}
 
-	lowerByte, upperByte := g.VRAMBank[VRAMBankPtr][addr-0x8000], g.VRAMBank[VRAMBankPtr][addr-0x8000+1]
+	lowerByte, upperByte := g.VRAM.Bank[VRAMBankPtr][addr-0x8000], g.VRAM.Bank[VRAMBankPtr][addr-0x8000+1]
 
 	for j := 0; j < 8; j++ {
 		bitCtr := (7 - uint(j)) // 上位何ビット目を取り出すか
@@ -87,7 +87,7 @@ func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType i
 			x := entryX + deltaX
 			y := entryY + deltaY
 
-			if g.debug {
+			if g.Debug.On {
 				// debug OAM
 				col := OAMindex % 8
 				row := OAMindex / 8
