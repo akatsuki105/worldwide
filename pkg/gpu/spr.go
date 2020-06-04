@@ -87,7 +87,7 @@ func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType i
 			x := entryX + deltaX
 			y := entryY + deltaY
 
-			if g.debug {
+			if g.Debug.On {
 				// debug OAM
 				col := OAMindex % 8
 				row := OAMindex / 8
