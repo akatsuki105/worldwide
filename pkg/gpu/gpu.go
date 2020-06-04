@@ -8,6 +8,11 @@ import (
 	"github.com/hajimehoshi/ebiten"
 )
 
+type VRAM struct {
+	Ptr  uint8
+	Bank [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
+}
+
 // GPU Graphic Processor Unit
 type GPU struct {
 	display       *image.RGBA    // 160*144のイメージデータ
@@ -18,9 +23,7 @@ type GPU struct {
 	displayColor  [144][160]byte // 160*144の色番号(背景色を記録)
 	Palette       Palette
 	BGPriorPixels [][5]byte
-	// VRAM bank
-	VRAMBankPtr     uint8
-	VRAMBank        [2][0x2000]byte // 0x8000-0x9fff ゲームボーイカラーのみ
+	VRAM
 	HBlankDMALength int
 	OAM             *image.RGBA // OAMをまとめたもの
 	Debug

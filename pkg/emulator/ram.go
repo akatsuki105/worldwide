@@ -15,7 +15,7 @@ func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 		value = cpu.ROMBank.bank[cpu.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000:
 		// VRAMバンク
-		value = cpu.GPU.VRAMBank[cpu.GPU.VRAMBankPtr][addr-0x8000]
+		value = cpu.GPU.VRAM.Bank[cpu.GPU.VRAM.Ptr][addr-0x8000]
 	case addr >= 0xa000 && addr < 0xc000:
 		if cpu.RTC.Mapped != 0 {
 			value = cpu.RTC.Read(byte(cpu.RTC.Mapped))
@@ -152,7 +152,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 		switch {
 		case addr >= 0x8000 && addr < 0xa000:
 			// VRAM
-			cpu.GPU.VRAMBank[cpu.GPU.VRAMBankPtr][addr-0x8000] = value
+			cpu.GPU.VRAM.Bank[cpu.GPU.VRAM.Ptr][addr-0x8000] = value
 		case addr >= 0xa000 && addr < 0xc000:
 			if cpu.RTC.Mapped == 0 {
 				// RAM
@@ -284,7 +284,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == VBKIO && cpu.GPU.HBlankDMALength == 0:
 		// VRAMバンク切り替え
 		newVRAMBankPtr := value & 0x01
-		cpu.GPU.VRAMBankPtr = newVRAMBankPtr
+		cpu.GPU.VRAM.Ptr = newVRAMBankPtr
 
 	case addr == HDMA5IO:
 		HDMA5 := value
