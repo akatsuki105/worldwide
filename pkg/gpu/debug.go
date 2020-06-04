@@ -15,7 +15,8 @@ type tileData struct {
 type Debug struct {
 	On       bool
 	tileData tileData
-	OAM      *image.RGBA // OAMをまとめたもの
+	OAM      *image.RGBA   // OAMをまとめたもの
+	bgMap    *ebiten.Image // 背景のみ
 }
 
 const (
@@ -87,4 +88,12 @@ func (g *GPU) UpdateTiles(isCGB bool) {
 			}
 		}
 	}
+}
+
+func (d *Debug) BGMap() *ebiten.Image {
+	return d.bgMap
+}
+
+func (d *Debug) SetBGMap(bg *ebiten.Image) {
+	d.bgMap = bg
 }

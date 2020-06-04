@@ -35,7 +35,6 @@ var (
 	second      = time.Tick(time.Second)
 	skipRender  bool
 	fps         = 0
-	bgMap       *ebiten.Image
 	OAMProperty = [40][4]byte{}
 )
 
@@ -145,7 +144,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 	if cpu.debug.on {
 		if !skipRender {
 			bg := cpu.GPU.GetDisplay(false)
-			bgMap, _ = ebiten.NewImageFromImage(bg, ebiten.FilterDefault)
+			cpu.GPU.Debug.SetBGMap(bg)
 		}
 
 		if frames%4 == 0 {
@@ -209,6 +208,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(debugScreen, "CPU", 540, 120)
 		cpu.debug.monitor.CPU.DrawUsage(debugScreen, 542, 150, cpu.isBoost())
 
+		bgMap := cpu.GPU.Debug.BGMap()
 		if bgMap != nil {
 			// debug BG
 			ebitenutil.DebugPrintAt(debugScreen, "BG map", 10, 320)
