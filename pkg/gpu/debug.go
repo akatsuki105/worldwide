@@ -15,6 +15,7 @@ type tileData struct {
 type Debug struct {
 	On       bool
 	tileData tileData
+	OAM      *image.RGBA // OAMをまとめたもの
 }
 
 const (

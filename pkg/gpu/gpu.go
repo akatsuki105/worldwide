@@ -25,7 +25,6 @@ type GPU struct {
 	BGPriorPixels [][5]byte
 	VRAM
 	HBlankDMALength int
-	OAM             *image.RGBA // OAMをまとめたもの
 	Debug
 }
 
