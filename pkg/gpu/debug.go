@@ -3,6 +3,7 @@ package gpu
 import (
 	"image"
 	"image/color"
+	"image/draw"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -13,10 +14,11 @@ type tileData struct {
 }
 
 type Debug struct {
-	On       bool
-	tileData tileData
-	OAM      *image.RGBA   // OAMをまとめたもの
-	bgMap    *ebiten.Image // 背景のみ
+	On          bool
+	tileData    tileData
+	OAM         *image.RGBA // OAMをまとめたもの
+	oamProperty [40][4]byte
+	bgMap       *ebiten.Image // 背景のみ
 }
 
 const (
@@ -24,7 +26,7 @@ const (
 	gridWidthY = 3
 )
 
-func (d *Debug) initDebugTiles() {
+func (d *Debug) initTileData() {
 	d.tileData.overall = image.NewRGBA(image.Rect(0, 0, 32*8+gridWidthY, 24*8+gridWidthX))
 
 	// gridを引く
@@ -54,7 +56,7 @@ func (d *Debug) GetTileData() *ebiten.Image {
 	return result
 }
 
-func (g *GPU) UpdateTiles(isCGB bool) {
+func (g *GPU) UpdateTileData(isCGB bool) {
 	itr := 1
 	if isCGB {
 		itr = 2
@@ -96,4 +98,24 @@ func (d *Debug) BGMap() *ebiten.Image {
 
 func (d *Debug) SetBGMap(bg *ebiten.Image) {
 	d.bgMap = bg
+}
+
+func (d *Debug) FillOAM() {
+	c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
+	draw.Draw(d.OAM, d.OAM.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
+}
+
+func (d *Debug) UpdateOAM() {
+
+}
+
+func (d *Debug) OAMProperty(index int) (byte, byte, byte, byte) {
+	Y := d.oamProperty[index][0]
+	X := d.oamProperty[index][1]
+	tileIndex := d.oamProperty[index][2]
+	attr := d.oamProperty[index][3]
+	return Y, X, tileIndex, attr
+}
+func (d *Debug) SetOAMProperty(index int, X, Y, tileIndex, attr byte) {
+	d.oamProperty[index] = [4]byte{Y, X, tileIndex, attr}
 }

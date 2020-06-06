@@ -48,7 +48,7 @@ func (g *GPU) Init(debug bool) {
 
 	g.Debug.On = debug
 	if debug {
-		g.initDebugTiles()
+		g.initTileData()
 		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))
 	}
 }
