@@ -409,9 +409,6 @@ func (cpu *CPU) exec() bool {
 
 	halt := cpu.halt
 	if !cpu.halt {
-		if cpu.debug.on {
-			cpu.debug.history.SetHistory(bank, PC, bytecode)
-		}
 
 		if handler != nil {
 			handler(cpu, operand1, operand2)
