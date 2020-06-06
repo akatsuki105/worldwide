@@ -25,7 +25,7 @@ const (
 	gridWidthY = 3
 )
 
-func (d *Debug) initDebugTiles() {
+func (d *Debug) initTileData() {
 	d.tileData.overall = image.NewRGBA(image.Rect(0, 0, 32*8+gridWidthY, 24*8+gridWidthX))
 
 	// gridを引く
@@ -55,7 +55,7 @@ func (d *Debug) GetTileData() *ebiten.Image {
 	return result
 }
 
-func (g *GPU) UpdateTiles(isCGB bool) {
+func (g *GPU) UpdateTileData(isCGB bool) {
 	itr := 1
 	if isCGB {
 		itr = 2
@@ -102,4 +102,8 @@ func (d *Debug) SetBGMap(bg *ebiten.Image) {
 func (d *Debug) FillOAM() {
 	c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
 	draw.Draw(d.OAM, d.OAM.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
+}
+
+func (d *Debug) UpdateOAM() {
+
 }

@@ -148,7 +148,7 @@ func (cpu *CPU) Render(screen *ebiten.Image) error {
 
 		if frames%4 == 0 {
 			go func() {
-				cpu.GPU.UpdateTiles(cpu.Cartridge.IsCGB)
+				cpu.GPU.UpdateTileData(cpu.Cartridge.IsCGB)
 			}()
 		}
 	}
