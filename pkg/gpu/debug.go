@@ -3,6 +3,7 @@ package gpu
 import (
 	"image"
 	"image/color"
+	"image/draw"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -96,4 +97,9 @@ func (d *Debug) BGMap() *ebiten.Image {
 
 func (d *Debug) SetBGMap(bg *ebiten.Image) {
 	d.bgMap = bg
+}
+
+func (d *Debug) FillOAM() {
+	c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
+	draw.Draw(d.OAM, d.OAM.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
 }

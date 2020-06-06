@@ -9,7 +9,6 @@ import (
 	"gbc/pkg/util"
 	"image"
 	"image/color"
-	"image/draw"
 	"image/png"
 	"sync"
 	"time"
@@ -302,10 +301,7 @@ func (cpu *CPU) handleJoypad() {
 
 func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 	if cpu.debug.on {
-		// fill OAM screen in uni-color
-		OAMScreen := cpu.GPU.OAM
-		c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
-		draw.Draw(OAMScreen, OAMScreen.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
+		cpu.GPU.FillOAM()
 	}
 
 	for i := 0; i < 40; i++ {
