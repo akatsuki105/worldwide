@@ -184,56 +184,56 @@ func setIcon() {
 func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
 	if cpu.debug.on {
-		debugScreen, _ := ebiten.NewImage(int(debugWidth), int(debugHeight), ebiten.FilterDefault)
-		debugScreen.Fill(color.RGBA{35, 27, 167, 255})
+		dScreen, _ := ebiten.NewImage(int(debugWidth), int(debugHeight), ebiten.FilterDefault)
+		dScreen.Fill(color.RGBA{35, 27, 167, 255})
 		{
 			// debug screen
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(10), float64(25))
-			debugScreen.DrawImage(display, op)
+			dScreen.DrawImage(display, op)
 		}
 
 		// debug FPS
 		title := fmt.Sprintf("GameBoy FPS: %d", fps)
-		ebitenutil.DebugPrintAt(debugScreen, title, 10, 5)
+		ebitenutil.DebugPrintAt(dScreen, title, 10, 5)
 
 		// debug register
-		ebitenutil.DebugPrintAt(debugScreen, cpu.debugRegister(), 340, 5)
-		ebitenutil.DebugPrintAt(debugScreen, cpu.debugIOMap(), 490, 5)
+		ebitenutil.DebugPrintAt(dScreen, cpu.debugRegister(), 340, 5)
+		ebitenutil.DebugPrintAt(dScreen, cpu.debugIOMap(), 490, 5)
 
 		// debug CPU Usage
-		ebitenutil.DebugPrintAt(debugScreen, "CPU", 340, 120)
-		cpu.debug.monitor.CPU.DrawUsage(debugScreen, 342, 140, cpu.isBoost())
+		ebitenutil.DebugPrintAt(dScreen, "CPU", 340, 120)
+		cpu.debug.monitor.CPU.DrawUsage(dScreen, 342, 140, cpu.isBoost())
 
 		bgMap := cpu.GPU.Debug.BGMap()
 		if bgMap != nil {
 			// debug BG
-			ebitenutil.DebugPrintAt(debugScreen, "BG map", 10, 320)
+			ebitenutil.DebugPrintAt(dScreen, "BG map", 10, 320)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(10), float64(340))
-			debugScreen.DrawImage(bgMap, op)
+			dScreen.DrawImage(bgMap, op)
 		}
 
 		{
 			// debug tiles
-			ebitenutil.DebugPrintAt(debugScreen, "Tiles", 200, 320)
+			ebitenutil.DebugPrintAt(dScreen, "Tiles", 200, 320)
 			tile := cpu.GPU.GetTileData()
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(200), float64(340))
-			debugScreen.DrawImage(tile, op)
+			dScreen.DrawImage(tile, op)
 		}
 
 		// debug OAM
 		if cpu.GPU.OAM != nil {
-			cpu.debugPrintOAM(debugScreen)
+			cpu.debugPrintOAM(dScreen)
 		}
 
 		op := &ebiten.DrawImageOptions{}
 		windowX, windowY := cpu.debug.Window.Size()
 		op.GeoM.Scale(windowX/debugWidth, windowY/debugHeight)
-		screen.DrawImage(debugScreen, op)
+		screen.DrawImage(dScreen, op)
 	} else {
 		if !skipRender && cpu.Config.Display.HQ2x {
 			display = cpu.GPU.HQ2x()
