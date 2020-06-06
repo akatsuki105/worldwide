@@ -321,7 +321,7 @@ func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 			}
 
 			if cpu.debug.on {
-				OAMProperty[i] = [4]byte{byte(Y), byte(X), byte(tileIndex), attr}
+				OAMProperty[i] = [4]byte{byte(Y + 16), byte(X + 8), byte(tileIndex), attr}
 			}
 		}
 	}
