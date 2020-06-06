@@ -29,12 +29,11 @@ const (
 )
 
 var (
-	wait        sync.WaitGroup
-	frames      = 0
-	second      = time.Tick(time.Second)
-	skipRender  bool
-	fps         = 0
-	OAMProperty = [40][4]byte{}
+	wait       sync.WaitGroup
+	frames     = 0
+	second     = time.Tick(time.Second)
+	skipRender bool
+	fps        = 0
 )
 
 // Render レンダリングを行う
@@ -316,7 +315,7 @@ func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 			}
 
 			if cpu.debug.on {
-				OAMProperty[i] = [4]byte{byte(Y + 16), byte(X + 8), byte(tileIndex), attr}
+				cpu.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIndex), attr)
 			}
 		}
 	}

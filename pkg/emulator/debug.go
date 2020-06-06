@@ -179,7 +179,7 @@ func (cpu *CPU) debugPrintOAM(screen *ebiten.Image) {
 	for col := 0; col < 8; col++ {
 		for row := 0; row < 5; row++ {
 			i := row*8 + col
-			Y, X, index, attr := OAMProperty[i][0], OAMProperty[i][1], OAMProperty[i][2], OAMProperty[i][3]
+			Y, X, index, attr := cpu.GPU.OAMProperty(i)
 			properties[col] += fmt.Sprintf("%02x\n%02x\n%02x\n%02x\n\n", Y, X, index, attr)
 		}
 	}

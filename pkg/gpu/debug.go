@@ -14,10 +14,11 @@ type tileData struct {
 }
 
 type Debug struct {
-	On       bool
-	tileData tileData
-	OAM      *image.RGBA   // OAMをまとめたもの
-	bgMap    *ebiten.Image // 背景のみ
+	On          bool
+	tileData    tileData
+	OAM         *image.RGBA // OAMをまとめたもの
+	oamProperty [40][4]byte
+	bgMap       *ebiten.Image // 背景のみ
 }
 
 const (
@@ -106,4 +107,15 @@ func (d *Debug) FillOAM() {
 
 func (d *Debug) UpdateOAM() {
 
+}
+
+func (d *Debug) OAMProperty(index int) (byte, byte, byte, byte) {
+	Y := d.oamProperty[index][0]
+	X := d.oamProperty[index][1]
+	tileIndex := d.oamProperty[index][2]
+	attr := d.oamProperty[index][3]
+	return Y, X, tileIndex, attr
+}
+func (d *Debug) SetOAMProperty(index int, X, Y, tileIndex, attr byte) {
+	d.oamProperty[index] = [4]byte{Y, X, tileIndex, attr}
 }
