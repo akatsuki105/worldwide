@@ -7,8 +7,17 @@ import (
 
 // History - CPU instruction log
 type History struct {
+	flag   bool
 	ptr    uint
 	buffer [10]string
+}
+
+func (h *History) Flag() bool {
+	return h.flag
+}
+
+func (h *History) SetFlag(flag bool) {
+	h.flag = flag
 }
 
 func (h *History) SetHistory(bank byte, PC uint16, opcode byte) {

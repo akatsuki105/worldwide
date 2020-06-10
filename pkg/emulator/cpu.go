@@ -363,6 +363,7 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 	if debug {
 		cpu.Config.Display.HQ2x = false
 		cpu.Config.Display.FPS30 = true
+		cpu.debug.history.SetFlag(cpu.Config.Debug.History)
 		cpu.debug.Break.ParseBreakpoints(cpu.Config.Debug.BreakPoints)
 	}
 }
@@ -409,6 +410,9 @@ func (cpu *CPU) exec() bool {
 
 	halt := cpu.halt
 	if !cpu.halt {
+		if cpu.debug.on && cpu.debug.history.Flag() {
+			cpu.debug.history.SetHistory(bank, PC, bytecode)
+		}
 
 		if handler != nil {
 			handler(cpu, operand1, operand2)

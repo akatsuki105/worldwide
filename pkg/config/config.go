@@ -53,6 +53,7 @@ type Joypad struct {
 // Debug config
 type Debug struct {
 	BreakPoints []string `toml:"breakpoints"`
+	History     bool     `toml:"history"`
 }
 
 func Init() *Config {
@@ -91,6 +92,7 @@ threshold = 0.7 # How reactive axis is
 [debug]
 # "BANK:PC;Cond" e.g. "00:0460;SP==c0f3", "01:ffff;"
 breakpoints = []
+history = false # history uses a lot of CPU resource
 `
 	ioutil.WriteFile(tomlName, []byte(cfgText), 0666)
 	toml.Decode(cfgText, cfg)
