@@ -44,7 +44,7 @@ TEST18=mooneye-gb/ei_timing/
 TEST19=mooneye-gb/if_ie_registers/
 TEST20=mooneye-gb/pop_timing/
 TEST21=mooneye-gb/rapid_di_ei/
-TEST22=mooneye-gb/halt_ime0_nointr_timing/
+TEST22=mooneye-gb/halt_ime0_ei/
 
 define compare
 	go run ./cmd/ --test="./test/$1actual.jpg" ./test/$1rom.gb
