@@ -89,7 +89,7 @@ func (cpu *CPU) timer(cycle int) {
 		cpu.cycle.div -= 64
 	}
 
-	if (TAC>>2)%2 == 1 {
+	if (TAC>>2)&0x01 == 1 {
 		cpu.cycle.tac += cycle
 		switch TAC % 4 {
 		case 0:
@@ -119,7 +119,7 @@ func (cpu *CPU) timer(cycle int) {
 		TIMABefore := cpu.RAM[TIMAIO]
 		TIMAAfter := TIMABefore + 1
 		if TIMAAfter < TIMABefore {
-			// オーバーフローしたとき
+			// overflow occurs
 			TIMAAfter = uint8(cpu.RAM[TMAIO])
 			cpu.RAM[TIMAIO] = TIMAAfter
 			cpu.setTimerFlag()
