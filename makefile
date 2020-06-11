@@ -47,6 +47,10 @@ TEST21=mooneye-gb/rapid_di_ei/
 TEST22=mooneye-gb/halt_ime0_ei/
 TEST23=mooneye-gb/halt_ime1_timing/
 
+TIM_TEST0=mooneye-gb/timer/div_write/
+TIM_TEST4=mooneye-gb/timer/tim01/
+TIM_TEST9=mooneye-gb/timer/tim11_div_trigger/
+
 define compare
 	go run ./cmd/ --test="./test/$1actual.jpg" ./test/$1rom.gb
 	-diff "./test/$1actual.jpg" "./test/$1expected.jpg" && echo "$1 OK"
@@ -103,3 +107,13 @@ test:
 	./test/$(TEST21)actual.jpg \
 	./test/$(TEST22)actual.jpg \
 	./test/$(TEST23)actual.jpg \
+
+.SILENT:
+timer-test:
+	-$(call compare,$(TIM_TEST0))
+	-$(call compare,$(TIM_TEST4))
+	-$(call compare,$(TIM_TEST9))
+
+	-rm -f ./test/$(TIM_TEST0)actual.jpg \
+	./test/$(TIM_TEST4)actual.jpg \
+	./test/$(TIM_TEST9)actual.jpg \

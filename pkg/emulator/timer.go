@@ -156,3 +156,10 @@ func (cpu *CPU) timer(cycle int) {
 		}
 	}
 }
+
+func (cpu *CPU) resetTimer() {
+	cpu.cycle.div = 0
+	cpu.RAM[DIVIO] = 0
+
+	cpu.cycle.tac = 0
+}
