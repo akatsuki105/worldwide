@@ -48,8 +48,10 @@ TEST22=mooneye-gb/halt_ime0_ei/
 TEST23=mooneye-gb/halt_ime1_timing/
 
 TIM_TEST0=mooneye-gb/timer/div_write/
+TIM_TEST2=mooneye-gb/timer/tim00/
 TIM_TEST4=mooneye-gb/timer/tim01/
 TIM_TEST6=mooneye-gb/timer/tim10/
+TIM_TEST8=mooneye-gb/timer/tim11/
 TIM_TEST9=mooneye-gb/timer/tim11_div_trigger/
 
 define compare
@@ -112,11 +114,15 @@ test:
 .SILENT:
 timer-test:
 	-$(call compare,$(TIM_TEST0))
+	-$(call compare,$(TIM_TEST2))
 	-$(call compare,$(TIM_TEST4))
 	-$(call compare,$(TIM_TEST6))
+	-$(call compare,$(TIM_TEST8))
 	-$(call compare,$(TIM_TEST9))
 
 	-rm -f ./test/$(TIM_TEST0)actual.jpg \
+	./test/$(TIM_TEST2)actual.jpg \
 	./test/$(TIM_TEST4)actual.jpg \
 	./test/$(TIM_TEST6)actual.jpg \
+	./test/$(TIM_TEST8)actual.jpg \
 	./test/$(TIM_TEST9)actual.jpg \
