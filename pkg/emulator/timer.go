@@ -103,8 +103,8 @@ func (cpu *CPU) timer(cycle int) {
 				tickFlag = true
 			}
 		case 2:
-			if cpu.cycle.tac >= 12 {
-				cpu.cycle.tac -= 12
+			if cpu.cycle.tac >= 16 {
+				cpu.cycle.tac -= 16
 				tickFlag = true
 			}
 		case 3:
