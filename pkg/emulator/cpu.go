@@ -22,17 +22,6 @@ const (
 	LCDMode
 )
 
-type Cycle struct {
-	tac      int // タイマー用
-	div      int // DIVタイマー用
-	scanline int // スキャンライン用
-	serial   int
-}
-
-type Timer struct {
-	Cycle
-}
-
 // ROMBank - 0x4000-0x7fff
 type ROMBank struct {
 	ptr  uint8
@@ -80,7 +69,6 @@ type CPU struct {
 	Serial serial.Serial
 
 	romdir string // ロムがあるところのディレクトリパス
-	OAMDMA OAMDMA
 
 	IMESwitch
 	debug Debug

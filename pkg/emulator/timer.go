@@ -1,5 +1,18 @@
 package emulator
 
+type Cycle struct {
+	tac      int // タイマー用
+	div      int // DIVタイマー用
+	scanline int // スキャンライン用
+	serial   int
+}
+
+type Timer struct {
+	Cycle
+	OAMDMA
+	TIMADelay int
+}
+
 type OAMDMA struct {
 	start   uint16
 	ptr     uint16
