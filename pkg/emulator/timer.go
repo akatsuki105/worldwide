@@ -7,10 +7,15 @@ type Cycle struct {
 	serial   int
 }
 
+type TIMAReload struct {
+	flag  bool
+	value byte
+}
+
 type Timer struct {
 	Cycle
 	OAMDMA
-	TIMADelay int
+	TIMAReload
 }
 
 type OAMDMA struct {
@@ -132,13 +137,21 @@ func (cpu *CPU) timer(cycle int) {
 		}
 	}
 
+	if cpu.TIMAReload.flag {
+		cpu.TIMAReload.flag = false
+		cpu.RAM[TIMAIO] = cpu.TIMAReload.value
+	}
+
 	if tickFlag {
 		TIMABefore := cpu.RAM[TIMAIO]
 		TIMAAfter := TIMABefore + 1
 		if TIMAAfter < TIMABefore {
 			// overflow occurs
-			TIMAAfter = uint8(cpu.RAM[TMAIO])
-			cpu.RAM[TIMAIO] = TIMAAfter
+			cpu.TIMAReload = TIMAReload{
+				flag:  true,
+				value: uint8(cpu.RAM[TMAIO]),
+			}
+			cpu.RAM[TIMAIO] = 0
 			cpu.setTimerFlag()
 		} else {
 			cpu.RAM[TIMAIO] = TIMAAfter
