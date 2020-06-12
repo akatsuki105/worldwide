@@ -29,6 +29,10 @@ type Cycle struct {
 	serial   int
 }
 
+type Timer struct {
+	Cycle
+}
+
 // ROMBank - 0x4000-0x7fff
 type ROMBank struct {
 	ptr  uint8
@@ -58,7 +62,7 @@ type CPU struct {
 	Config    *config.Config
 	mode      int
 	// timer関連
-	Cycle
+	Timer
 	serialTick chan int
 	ROMBank
 	RAMBank
