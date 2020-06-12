@@ -93,21 +93,25 @@ func (cpu *CPU) timer(cycle int) {
 		cpu.cycle.tac += cycle
 		switch TAC % 4 {
 		case 0:
+			// 4096Hz (1024/4 cycle)
 			if cpu.cycle.tac >= 256 {
 				cpu.cycle.tac -= 256
 				tickFlag = true
 			}
 		case 1:
+			// 262144Hz (16/4 cycle)
 			if cpu.cycle.tac >= 4 {
 				cpu.cycle.tac -= 4
 				tickFlag = true
 			}
 		case 2:
+			// 65536Hz (64/4 cycle)
 			if cpu.cycle.tac >= 16 {
 				cpu.cycle.tac -= 16
 				tickFlag = true
 			}
 		case 3:
+			// 16384Hz (256/4 cycle)
 			if cpu.cycle.tac >= 64 {
 				cpu.cycle.tac -= 64
 				tickFlag = true
