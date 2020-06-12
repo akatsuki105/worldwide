@@ -1,5 +1,23 @@
 package emulator
 
+type Cycle struct {
+	tac      int // タイマー用
+	div      int // DIVタイマー用
+	scanline int // スキャンライン用
+	serial   int
+}
+
+type TIMAReload struct {
+	flag  bool
+	value byte
+}
+
+type Timer struct {
+	Cycle
+	OAMDMA
+	TIMAReload
+}
+
 type OAMDMA struct {
 	start   uint16
 	ptr     uint16
@@ -68,60 +86,72 @@ func (cpu *CPU) timer(cycle int) {
 
 	// シリアル通信のクロック管理
 	if cpu.Config.Network.Network && cpu.Serial.TransferFlag > 0 {
-		cpu.cycle.serial += cycle
-		if cpu.cycle.serial > 128*8 {
+		cpu.Cycle.serial += cycle
+		if cpu.Cycle.serial > 128*8 {
 			cpu.Serial.TransferFlag = 0
 			close(cpu.serialTick)
-			cpu.cycle.serial = 0
+			cpu.Cycle.serial = 0
 			cpu.serialTick = make(chan int)
 		}
 	} else {
-		cpu.cycle.serial = 0
+		cpu.Cycle.serial = 0
 	}
 
 	// スキャンライン
-	cpu.cycle.scanline += cycle
+	cpu.Cycle.scanline += cycle
 
 	// DIVレジスタ
-	cpu.cycle.div += cycle
-	if cpu.cycle.div >= 64 {
+	cpu.Cycle.div += cycle
+	if cpu.Cycle.div >= 64 {
 		cpu.RAM[DIVIO]++
-		cpu.cycle.div -= 64
+		cpu.Cycle.div -= 64
 	}
 
-	if (TAC>>2)%2 == 1 {
-		cpu.cycle.tac += cycle
+	if (TAC>>2)&0x01 == 1 {
+		cpu.Cycle.tac += cycle
 		switch TAC % 4 {
 		case 0:
-			if cpu.cycle.tac >= 256 {
-				cpu.cycle.tac -= 256
+			// 4096Hz (1024/4 cycle)
+			if cpu.Cycle.tac >= 256 {
+				cpu.Cycle.tac -= 256
 				tickFlag = true
 			}
 		case 1:
-			if cpu.cycle.tac >= 4 {
-				cpu.cycle.tac -= 4
+			// 262144Hz (16/4 cycle)
+			if cpu.Cycle.tac >= 4 {
+				cpu.Cycle.tac -= 4
 				tickFlag = true
 			}
 		case 2:
-			if cpu.cycle.tac >= 12 {
-				cpu.cycle.tac -= 12
+			// 65536Hz (64/4 cycle)
+			if cpu.Cycle.tac >= 16 {
+				cpu.Cycle.tac -= 16
 				tickFlag = true
 			}
 		case 3:
-			if cpu.cycle.tac >= 64 {
-				cpu.cycle.tac -= 64
+			// 16384Hz (256/4 cycle)
+			if cpu.Cycle.tac >= 64 {
+				cpu.Cycle.tac -= 64
 				tickFlag = true
 			}
 		}
+	}
+
+	if cpu.TIMAReload.flag {
+		cpu.TIMAReload.flag = false
+		cpu.RAM[TIMAIO] = cpu.TIMAReload.value
 	}
 
 	if tickFlag {
 		TIMABefore := cpu.RAM[TIMAIO]
 		TIMAAfter := TIMABefore + 1
 		if TIMAAfter < TIMABefore {
-			// オーバーフローしたとき
-			TIMAAfter = uint8(cpu.RAM[TMAIO])
-			cpu.RAM[TIMAIO] = TIMAAfter
+			// overflow occurs
+			cpu.TIMAReload = TIMAReload{
+				flag:  true,
+				value: uint8(cpu.RAM[TMAIO]),
+			}
+			cpu.RAM[TIMAIO] = 0
 			cpu.setTimerFlag()
 		} else {
 			cpu.RAM[TIMAIO] = TIMAAfter
@@ -155,4 +185,11 @@ func (cpu *CPU) timer(cycle int) {
 			}
 		}
 	}
+}
+
+func (cpu *CPU) resetTimer() {
+	cpu.Cycle.div = 0
+	cpu.RAM[DIVIO] = 0
+
+	cpu.Cycle.tac = 0
 }

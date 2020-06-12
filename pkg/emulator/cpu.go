@@ -22,13 +22,6 @@ const (
 	LCDMode
 )
 
-type Cycle struct {
-	tac      int // タイマー用
-	div      int // DIVタイマー用
-	scanline int // スキャンライン用
-	serial   int
-}
-
 // ROMBank - 0x4000-0x7fff
 type ROMBank struct {
 	ptr  uint8
@@ -58,7 +51,7 @@ type CPU struct {
 	Config    *config.Config
 	mode      int
 	// timer関連
-	cycle      Cycle
+	Timer
 	serialTick chan int
 	ROMBank
 	RAMBank
@@ -76,7 +69,6 @@ type CPU struct {
 	Serial serial.Serial
 
 	romdir string // ロムがあるところのディレクトリパス
-	OAMDMA OAMDMA
 
 	IMESwitch
 	debug Debug
@@ -520,16 +512,16 @@ func (cpu *CPU) exec() bool {
 func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
 	cpu.setOAMRAMMode()
-	for cpu.cycle.scanline <= 20*cpu.boost {
+	for cpu.Cycle.scanline <= 20*cpu.boost {
 		if inBreak := cpu.exec(); inBreak {
 			return 0, 0, false
 		}
 	}
 
 	// LCD Driver mode3
-	cpu.cycle.scanline -= 20 * cpu.boost
+	cpu.Cycle.scanline -= 20 * cpu.boost
 	cpu.setLCDMode()
-	for cpu.cycle.scanline <= 42*cpu.boost {
+	for cpu.Cycle.scanline <= 42*cpu.boost {
 		if inBreak := cpu.exec(); inBreak {
 			return 0, 0, false
 		}
@@ -538,14 +530,14 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	scrollX, scrollY := cpu.GPU.GetScroll()
 
 	// HBlank mode0
-	cpu.cycle.scanline -= 42 * cpu.boost
+	cpu.Cycle.scanline -= 42 * cpu.boost
 	cpu.setHBlankMode()
-	for cpu.cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
+	for cpu.Cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
 		if inBreak := cpu.exec(); inBreak {
 			return 0, 0, false
 		}
 	}
-	cpu.cycle.scanline -= (cyclePerLine - (20 + 42)) * cpu.boost
+	cpu.Cycle.scanline -= (cyclePerLine - (20 + 42)) * cpu.boost
 
 	cpu.incrementLY()
 	return scrollX, scrollY, true
@@ -554,9 +546,9 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 // VBlank
 func (cpu *CPU) execVBlank() {
 	for {
-		cpu.cycle.scanline = 0
+		cpu.Cycle.scanline = 0
 
-		for cpu.cycle.scanline < cyclePerLine*cpu.boost {
+		for cpu.Cycle.scanline < cyclePerLine*cpu.boost {
 			if inBreak := cpu.exec(); inBreak {
 				return
 			}
@@ -567,7 +559,7 @@ func (cpu *CPU) execVBlank() {
 			break
 		}
 	}
-	cpu.cycle.scanline = 0
+	cpu.Cycle.scanline = 0
 }
 
 func (cpu *CPU) isBoost() bool {

@@ -68,7 +68,6 @@ func (cpu *CPU) getVBlankFlag() bool {
 func (cpu *CPU) setVBlankFlag() {
 	IF := cpu.fetchIO(IFIO) | 0x01
 	cpu.setIO(IFIO, IF)
-	cpu.halt = false
 }
 
 func (cpu *CPU) clearVBlankFlag() {
@@ -109,7 +108,6 @@ func (cpu *CPU) getLCDSTATFlag() bool {
 func (cpu *CPU) setLCDSTATFlag() {
 	IF := cpu.fetchIO(IFIO) | 0x02
 	cpu.setIO(IFIO, IF)
-	cpu.halt = false
 }
 
 func (cpu *CPU) clearLCDSTATFlag() {
@@ -153,7 +151,6 @@ func (cpu *CPU) getSerialFlag() bool {
 func (cpu *CPU) setSerialFlag() {
 	IF := cpu.fetchIO(IFIO) | 0x08
 	cpu.setIO(IFIO, IF)
-	cpu.halt = false
 }
 
 func (cpu *CPU) clearSerialFlag() {
@@ -194,7 +191,6 @@ func (cpu *CPU) getJoypadFlag() bool {
 func (cpu *CPU) setJoypadFlag() {
 	IF := cpu.fetchIO(IFIO) | 0x10
 	cpu.setIO(IFIO, IF)
-	cpu.halt = false
 }
 
 func (cpu *CPU) clearJoypadFlag() {

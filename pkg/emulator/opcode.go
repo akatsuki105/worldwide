@@ -1156,20 +1156,24 @@ func CALL(cpu *CPU, operand1, operand2 int) {
 
 // DI Disable Interrupt
 func (cpu *CPU) DI(operand1, operand2 int) {
-	if operand1 == OPERAND_NONE && operand2 == OPERAND_NONE {
-		cpu.Reg.IME = false
-		cpu.Reg.PC++
-		if cpu.IMESwitch.Working && cpu.IMESwitch.Value {
-			cpu.IMESwitch.Working = false // https://gbdev.gg8.se/wiki/articles/Interrupts 『The effect of EI is delayed by one instruction. This means that EI followed immediately by DI does not allow interrupts between the EI and the DI.』
-		}
-	} else {
-		errMsg := fmt.Sprintf("Error: DI %s %s", operand1, operand2)
-		panic(errMsg)
+	cpu.Reg.IME = false
+	cpu.Reg.PC++
+	if cpu.IMESwitch.Working && cpu.IMESwitch.Value {
+		cpu.IMESwitch.Working = false // https://gbdev.gg8.se/wiki/articles/Interrupts 『The effect of EI is delayed by one instruction. This means that EI followed immediately by DI does not allow interrupts between the EI and the DI.』
 	}
 }
 
 // EI Enable Interrupt
 func (cpu *CPU) EI(operand1, operand2 int) {
+	// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
+	next := cpu.FetchMemory8(cpu.Reg.PC + 1) // next opcode
+	HALT := byte(0x76)
+	if next == HALT {
+		cpu.Reg.IME = true
+		cpu.Reg.PC++
+		return
+	}
+
 	if !cpu.IMESwitch.Working {
 		cpu.IMESwitch = IMESwitch{
 			Count:   2,

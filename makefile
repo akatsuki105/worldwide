@@ -44,7 +44,16 @@ TEST18=mooneye-gb/ei_timing/
 TEST19=mooneye-gb/if_ie_registers/
 TEST20=mooneye-gb/pop_timing/
 TEST21=mooneye-gb/rapid_di_ei/
-TEST22=mooneye-gb/halt_ime0_nointr_timing/
+TEST22=mooneye-gb/halt_ime0_ei/
+TEST23=mooneye-gb/halt_ime1_timing/
+
+TIM_TEST0=mooneye-gb/timer/div_write/
+TIM_TEST2=mooneye-gb/timer/tim00/
+TIM_TEST4=mooneye-gb/timer/tim01/
+TIM_TEST6=mooneye-gb/timer/tim10/
+TIM_TEST8=mooneye-gb/timer/tim11/
+TIM_TEST9=mooneye-gb/timer/tim11_div_trigger/
+TIM_TEST10=mooneye-gb/timer/tima_reload/
 
 define compare
 	go run ./cmd/ --test="./test/$1actual.jpg" ./test/$1rom.gb
@@ -76,6 +85,7 @@ test:
 	-$(call compare,$(TEST20))
 	-$(call compare,$(TEST21))
 	-$(call compare,$(TEST22))
+	-$(call compare,$(TEST23))
 
 	-rm -f ./test/$(TEST0)actual.jpg \
 	./test/$(TEST1)actual.jpg \
@@ -100,3 +110,22 @@ test:
 	./test/$(TEST20)actual.jpg \
 	./test/$(TEST21)actual.jpg \
 	./test/$(TEST22)actual.jpg \
+	./test/$(TEST23)actual.jpg \
+
+.SILENT:
+timer-test:
+	-$(call compare,$(TIM_TEST0))
+	-$(call compare,$(TIM_TEST2))
+	-$(call compare,$(TIM_TEST4))
+	-$(call compare,$(TIM_TEST6))
+	-$(call compare,$(TIM_TEST8))
+	-$(call compare,$(TIM_TEST9))
+	-$(call compare,$(TIM_TEST10))
+
+	-rm -f ./test/$(TIM_TEST0)actual.jpg \
+	./test/$(TIM_TEST2)actual.jpg \
+	./test/$(TIM_TEST4)actual.jpg \
+	./test/$(TIM_TEST6)actual.jpg \
+	./test/$(TIM_TEST8)actual.jpg \
+	./test/$(TIM_TEST9)actual.jpg \
+	./test/$(TIM_TEST10)actual.jpg \
