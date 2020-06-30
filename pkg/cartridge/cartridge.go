@@ -16,6 +16,7 @@ type Cartridge struct {
 	ROMSize uint8
 	RAMSize uint8
 	MBC     int
+	Debug   *Debug
 }
 
 // ParseCartridge - カートリッジ情報を読み取る
@@ -32,4 +33,6 @@ func (cart *Cartridge) ParseCartridge(rom []byte) {
 	cart.Type = uint8(rom[0x0147])
 	cart.ROMSize = uint8(rom[0x0148])
 	cart.RAMSize = uint8(rom[0x0149])
+
+	cart.Debug = cart.newDebug()
 }

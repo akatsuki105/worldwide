@@ -23,7 +23,6 @@ This emulator can play almost all ROMs work without problems and has many featur
 - [x] GameBoy Color ROM support
 - [x] Multi-platform support
 - [x] Joypad support
-- [x] [WebAssembly partial support](https://akatsuki-py.github.io/Worldwide/wasm.html)
 - [x] MBC1, MBC2, MBC3, MBC5 support
 - [x] RTC
 - [x] System save
@@ -54,7 +53,7 @@ You can play this emulator in debug mode.
 ./worldwide.exe --debug "***.gb"
 ```
 
-<img src="https://user-images.githubusercontent.com/37920078/81895677-c8fc7f00-95ed-11ea-8377-8f83d68f191e.PNG">
+<img src="https://imgur.com/YxQF9AF.png">
 
 ## 🔨 Build
 
