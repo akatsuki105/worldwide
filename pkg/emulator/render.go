@@ -201,6 +201,9 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(dScreen, cpu.debugRegister(), 340, 5)
 		ebitenutil.DebugPrintAt(dScreen, cpu.debugIOMap(), 490, 5)
 
+		// debug Cartridge
+		ebitenutil.DebugPrintAt(dScreen, cpu.Cartridge.Debug.String(), 680, 5)
+
 		cpuUsageX := 340
 		// debug history (optional)
 		if cpu.debug.history.Flag() {
