@@ -55,6 +55,14 @@ You can play this emulator in debug mode.
 
 <img src="https://imgur.com/YxQF9AF.png">
 
+## ✨ HQ2x
+
+You can play games in HQ2x(high-resolution) mode.
+
+HQ2x can be enabled in config file.
+
+<img src="https://imgur.com/bu6WanY.png" width="320px"> <img src="https://imgur.com/OntekWj.png" width="320px">
+
 ## 🔨 Build
 
 For those who want to build from source code.

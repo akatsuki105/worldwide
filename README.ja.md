@@ -1,8 +1,10 @@
 ![logo](./logo.png)
 
 # 🌏 Worldwide
-[![Build Status](https://travis-ci.com/Akatsuki-py/Worldwide.svg?branch=master)](https://travis-ci.com/Akatsuki-py/Worldwide)
+![Go](https://github.com/Akatsuki-py/Worldwide/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
+[![GitHub stars](https://img.shields.io/github/stars/Akatsuki-py/Worldwide)](https://github.com/Akatsuki-py/Worldwide/stargazers)
+[![GitHub license](https://img.shields.io/github/license/Akatsuki-py/Worldwide)](https://github.com/Akatsuki-py/Worldwide/blob/master/LICENSE)
 
 Go言語で書かれたゲームボーイカラーエミュレータです。  
 
@@ -18,11 +20,7 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 - [x] ゲームボーイカラーのソフトに対応
 - [x] WindowsやLinuxなど様々なプラットフォームに対応
 - [x] いくつかのゲームパッドをサポート
-- [x] [WebAssemblyでエミュレータの一部機能ををWebアプリとして実装](https://akatsuki-py.github.io/Worldwide/wasm.html)
-- [x] MBC1に対応
-- [x] MBC2に対応
-- [x] MBC3に対応
-- [x] MBC5に対応
+- [x] MBC1, MBC2, MBC3, MBC5に対応
 - [x] RTCの実装
 - [x] セーブ機能をサポート(得られたsavファイルは実機やBGBなどの一般的なエミュレータで利用できます)
 - [x] クイックセーブのサポート
@@ -30,10 +28,10 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 - [x] ゲームボーイモードでパレットカラーの変更をサポート
 - [x] ローカルネットワーク内のゲームボーイの通信機能をサポート(未対応のROMもあります テトリス、ポケモン赤などが動作します)
 - [x] ラズパイ対応
+- [x] デバッガー
+- [x] ハイレゾ化  
 - [ ] ローカルネットワーク内のゲームボーイカラーの通信機能をサポート
 - [ ] ネットワークをまたいだ通信機能のサポート
-- [ ] GUIの操作メニュー
-- [ ] wasm版のサウンドのサポート
 - [ ] スーパーゲームボーイのエミュレーション機能
 
 ## 🎮 使い方
@@ -44,17 +42,36 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 ./worldwide.exe "***.gb" # or ***.gbc
 ```
 
+## 🐛 デバッガー
+
+デバッガーモードも搭載しています。
+
+```sh
+./worldwide.exe --debug "***.gb"
+```
+
+## ✨ HQ2x
+
+HQ2xアルゴリズムを用いた高画質化機能も備わっています。
+
+設定ファイルから有効化できます。
+
+<img src="https://imgur.com/bu6WanY.png" width="320px"> <img src="https://imgur.com/OntekWj.png" width="320px">
+
 ## 🔨 ビルド
 
 ソースコードからビルドしたい方向けです。
 
 requirements
-- go 1.13
+- Go 1.14
 - make
 
 ```sh
 make
 ./worldwide "***.gb" # ./worldwide.exe on Windows
+
+# or
+make run ROM="***.gb"
 ```
 
 ## 📥 ダウンロード
@@ -78,9 +95,3 @@ make
 | <kbd>D + S</kbd>     | クイックセーブ  |
 | <kbd>L</kbd>         | クイックロード |
 
-## 💻 Web版の紹介
-
-Goのwasmビルド機能を利用して作成した[Webアプリ版](https://akatsuki-py.github.io/Worldwide/)もあります。
-
-
-<img src="https://imgur.com/7ZJxQIu.png">
