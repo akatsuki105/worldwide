@@ -70,13 +70,13 @@ func (cpu *CPU) timer(cycle int) {
 		return
 	}
 
-	if cpu.Timer.Reset {
-		cpu.Timer.Reset = false
-		cpu.resetTimer()
-	}
-
 	TAC := cpu.RAM[TACIO]
 	tickFlag := false
+
+	if cpu.Timer.Reset {
+		cpu.Timer.Reset = false
+		tickFlag = cpu.resetTimer()
+	}
 
 	// DI,EIの遅延処理
 	if cpu.IMESwitch.Working {
@@ -193,7 +193,7 @@ func (cpu *CPU) timer(cycle int) {
 	}
 }
 
-func (cpu *CPU) resetTimer() {
+func (cpu *CPU) resetTimer() bool {
 	cpu.Cycle.div = 0
 	cpu.RAM[DIVIO] = 0
 
@@ -206,32 +206,21 @@ func (cpu *CPU) resetTimer() {
 		switch TAC % 4 {
 		case 0:
 			// 4096Hz (1024/4 cycle)
+			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim00_div_trigger.s
 			tickFlag = old >= 512/4
 		case 1:
 			// 262144Hz (16/4 cycle)
+			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim01_div_trigger.s
 			tickFlag = old >= 8/4
 		case 2:
 			// 65536Hz (64/4 cycle)
+			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim10_div_trigger.s
 			tickFlag = old >= 32/4
 		case 3:
 			// 16384Hz (256/4 cycle)
+			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim11_div_trigger.s
 			tickFlag = old >= 128/4
 		}
 	}
-
-	if tickFlag {
-		TIMABefore := cpu.RAM[TIMAIO]
-		TIMAAfter := TIMABefore + 1
-		if TIMAAfter < TIMABefore {
-			// overflow occurs
-			cpu.TIMAReload = TIMAReload{
-				flag:  true,
-				value: uint8(cpu.RAM[TMAIO]),
-			}
-			cpu.RAM[TIMAIO] = 0
-			cpu.setTimerFlag()
-		} else {
-			cpu.RAM[TIMAIO] = TIMAAfter
-		}
-	}
+	return tickFlag
 }
