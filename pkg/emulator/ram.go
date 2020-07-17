@@ -238,7 +238,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		}
 
 	case addr == DIVIO:
-		cpu.resetTimer()
+		cpu.Timer.Reset = true
 
 	case addr == IFIO:
 		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7]は常に1

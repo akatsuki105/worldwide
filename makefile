@@ -49,8 +49,11 @@ TEST23=mooneye-gb/halt_ime1_timing/
 
 TIM_TEST0=mooneye-gb/timer/div_write/
 TIM_TEST2=mooneye-gb/timer/tim00/
+TIM_TEST3=mooneye-gb/timer/tim00_div_trigger/
 TIM_TEST4=mooneye-gb/timer/tim01/
+TIM_TEST5=mooneye-gb/timer/tim01_div_trigger/
 TIM_TEST6=mooneye-gb/timer/tim10/
+TIM_TEST7=mooneye-gb/timer/tim10_div_trigger/
 TIM_TEST8=mooneye-gb/timer/tim11/
 TIM_TEST9=mooneye-gb/timer/tim11_div_trigger/
 TIM_TEST10=mooneye-gb/timer/tima_reload/
@@ -116,8 +119,11 @@ test:
 timer-test:
 	-$(call compare,$(TIM_TEST0))
 	-$(call compare,$(TIM_TEST2))
+	-$(call compare,$(TIM_TEST3))
 	-$(call compare,$(TIM_TEST4))
+	-$(call compare,$(TIM_TEST5))
 	-$(call compare,$(TIM_TEST6))
+	-$(call compare,$(TIM_TEST7))
 	-$(call compare,$(TIM_TEST8))
 	-$(call compare,$(TIM_TEST9))
 	-$(call compare,$(TIM_TEST10))

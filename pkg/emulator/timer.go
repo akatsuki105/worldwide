@@ -16,6 +16,7 @@ type Timer struct {
 	Cycle
 	OAMDMA
 	TIMAReload
+	Reset bool
 }
 
 type OAMDMA struct {
@@ -67,6 +68,11 @@ func (cpu *CPU) clearTimerFlag() {
 func (cpu *CPU) timer(cycle int) {
 	if cycle == 0 {
 		return
+	}
+
+	if cpu.Timer.Reset {
+		cpu.Timer.Reset = false
+		cpu.resetTimer()
 	}
 
 	TAC := cpu.RAM[TACIO]
@@ -191,5 +197,41 @@ func (cpu *CPU) resetTimer() {
 	cpu.Cycle.div = 0
 	cpu.RAM[DIVIO] = 0
 
+	old := cpu.Cycle.tac
 	cpu.Cycle.tac = 0
+
+	tickFlag := false
+	TAC := cpu.RAM[TACIO]
+	if (TAC>>2)&0x01 == 1 {
+		switch TAC % 4 {
+		case 0:
+			// 4096Hz (1024/4 cycle)
+			tickFlag = old >= 512/4
+		case 1:
+			// 262144Hz (16/4 cycle)
+			tickFlag = old >= 8/4
+		case 2:
+			// 65536Hz (64/4 cycle)
+			tickFlag = old >= 32/4
+		case 3:
+			// 16384Hz (256/4 cycle)
+			tickFlag = old >= 128/4
+		}
+	}
+
+	if tickFlag {
+		TIMABefore := cpu.RAM[TIMAIO]
+		TIMAAfter := TIMABefore + 1
+		if TIMAAfter < TIMABefore {
+			// overflow occurs
+			cpu.TIMAReload = TIMAReload{
+				flag:  true,
+				value: uint8(cpu.RAM[TMAIO]),
+			}
+			cpu.RAM[TIMAIO] = 0
+			cpu.setTimerFlag()
+		} else {
+			cpu.RAM[TIMAIO] = TIMAAfter
+		}
+	}
 }
