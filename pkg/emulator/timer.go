@@ -146,6 +146,7 @@ func (cpu *CPU) timer(cycle int) {
 	if cpu.TIMAReload.flag {
 		cpu.TIMAReload.flag = false
 		cpu.RAM[TIMAIO] = cpu.TIMAReload.value
+		cpu.setTimerFlag() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
 	}
 
 	if tickFlag {
@@ -158,7 +159,6 @@ func (cpu *CPU) timer(cycle int) {
 				value: uint8(cpu.RAM[TMAIO]),
 			}
 			cpu.RAM[TIMAIO] = 0
-			cpu.setTimerFlag()
 		} else {
 			cpu.RAM[TIMAIO] = TIMAAfter
 		}
