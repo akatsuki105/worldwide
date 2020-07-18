@@ -58,6 +58,7 @@ TIM_TEST8=mooneye-gb/timer/tim11/
 TIM_TEST9=mooneye-gb/timer/tim11_div_trigger/
 TIM_TEST10=mooneye-gb/timer/tima_reload/
 TIM_TEST11=mooneye-gb/timer/tima_write_reloading/
+TIM_TEST12=mooneye-gb/timer/tma_write_reloading/
 
 define compare
 	go run ./cmd/ --test="./test/$1actual.jpg" ./test/$1rom.gb
@@ -129,6 +130,7 @@ timer-test:
 	-$(call compare,$(TIM_TEST9))
 	-$(call compare,$(TIM_TEST10))
 	-$(call compare,$(TIM_TEST11))
+	-$(call compare,$(TIM_TEST12))
 
 	-rm -f ./test/$(TIM_TEST0)actual.jpg \
 	./test/$(TIM_TEST2)actual.jpg \
@@ -138,3 +140,4 @@ timer-test:
 	./test/$(TIM_TEST9)actual.jpg \
 	./test/$(TIM_TEST10)actual.jpg \
 	./test/$(TIM_TEST11)actual.jpg \
+	./test/$(TIM_TEST12)actual.jpg \

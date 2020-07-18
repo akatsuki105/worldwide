@@ -250,6 +250,14 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 			cpu.RAM[TIMAIO] = value
 		}
 
+	case addr == TMAIO:
+		if cpu.TIMAReload.flag {
+			cpu.TIMAReload.value = value
+		} else if cpu.TIMAReload.after {
+			cpu.RAM[TIMAIO] = value
+		}
+		cpu.RAM[TMAIO] = value
+
 	case addr == IFIO:
 		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7]は常に1
 

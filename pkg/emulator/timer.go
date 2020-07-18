@@ -10,7 +10,7 @@ type Cycle struct {
 type TIMAReload struct {
 	flag  bool
 	value byte
-	after bool
+	after bool // ref: [B] in https://gbdev.io/pandocs/#timer-overflow-behaviour
 }
 
 type Timer struct {
