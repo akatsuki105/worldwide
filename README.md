@@ -13,7 +13,10 @@ GameBoyColor emulator written in golang.
 This emulator can play almost all ROMs work without problems and has many features.
 
 
-<img src="https://imgur.com/rCduRUc.gif">
+<img src="https://imgur.com/RrOKzJB.png" width="320px"> <img src="https://imgur.com/yIIlkKq.png" width="320px">
+
+<img src="https://imgur.com/02YAzow.png" width="320px"> <img src="https://imgur.com/QCXeV3B.png" width="320px">
+
 
 ## 🚩 Features & TODO list
 - [x] 60fps
