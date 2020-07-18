@@ -1509,7 +1509,9 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
 			panic(errMsg)
 		}
 
-		cpu.timer(cycle - 1)
+		if cycle > 1 {
+			cpu.timer(cycle - 1)
+		}
 	} else {
 		errMsg := fmt.Sprintf("Error: PREFIXCB %s %s", operand1, operand2)
 		panic(errMsg)
@@ -1591,7 +1593,7 @@ func (cpu *CPU) RLC(operand1, operand2 int) {
 			value &= 0xfe
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit7 = value >> 7
@@ -1718,7 +1720,7 @@ func (cpu *CPU) RRC(operand1, operand2 int) {
 			value &= 0x7f
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit0 = value % 2
@@ -1858,7 +1860,7 @@ func (cpu *CPU) RL(operand1, operand2 int) {
 			value &= 0xfe
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	default:
 		errMsg := fmt.Sprintf("Error: RL %s %s", operand1, operand2)
 		panic(errMsg)
@@ -1990,7 +1992,7 @@ func (cpu *CPU) RR(operand1, operand2 int) {
 			value &= 0x7f
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	default:
 		errMsg := fmt.Sprintf("Error: RR %s %s", operand1, operand2)
 		panic(errMsg)
@@ -2047,7 +2049,7 @@ func (cpu *CPU) SLA(operand1, operand2 int) {
 		bit7 = value >> 7
 		value = (value << 1)
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit7 = value >> 7
@@ -2151,7 +2153,7 @@ func (cpu *CPU) SRA(operand1, operand2 int) {
 			value &= 0x7f
 		}
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
 		value = cpu.getAReg()
 		bit0 = value % 2
@@ -2227,7 +2229,7 @@ func (cpu *CPU) SWAP(operand1, operand2 int) {
 		data47 := data >> 4
 		value = (data03 << 4) | data47
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	case OPERAND_A:
 		A := cpu.getAReg()
 		A03 := A & 0x0f
@@ -2288,7 +2290,7 @@ func (cpu *CPU) SRL(operand1, operand2 int) {
 		bit0 = value % 2
 		value = (value >> 1)
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	case OPERAND_A:
 		value = cpu.getAReg()
 		bit0 = value % 2
@@ -2412,7 +2414,7 @@ func (cpu *CPU) RES(operand1, operand2 int) {
 		value := cpu.FetchMemory8(cpu.Reg.HL) & mask
 		cpu.timer(1)
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	case OPERAND_A:
 		mask := ^(byte(1) << targetBit)
 		A := cpu.getAReg() & mask
@@ -2474,7 +2476,7 @@ func (cpu *CPU) SET(operand1, operand2 int) {
 		value := cpu.FetchMemory8(cpu.Reg.HL) | mask
 		cpu.timer(1)
 		cpu.SetMemory8(cpu.Reg.HL, value)
-		cpu.timer(3)
+		cpu.timer(2)
 	case OPERAND_A:
 		mask := byte(1) << targetBit
 		A := cpu.getAReg() | mask

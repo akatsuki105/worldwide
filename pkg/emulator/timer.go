@@ -66,10 +66,12 @@ func (cpu *CPU) clearTimerFlag() {
 }
 
 func (cpu *CPU) timer(cycle int) {
-	if cycle == 0 {
-		return
+	for i := 0; i < cycle; i++ {
+		cpu.tick()
 	}
+}
 
+func (cpu *CPU) tick() {
 	TAC := cpu.RAM[TACIO]
 	tickFlag := false
 
@@ -80,19 +82,16 @@ func (cpu *CPU) timer(cycle int) {
 
 	// DI,EIの遅延処理
 	if cpu.IMESwitch.Working {
-		for i := 0; i < cycle; i++ {
-			cpu.IMESwitch.Count--
-			if cpu.IMESwitch.Count == 0 {
-				cpu.Reg.IME = cpu.IMESwitch.Value
-				cpu.IMESwitch.Working = false
-				break
-			}
+		cpu.IMESwitch.Count--
+		if cpu.IMESwitch.Count == 0 {
+			cpu.Reg.IME = cpu.IMESwitch.Value
+			cpu.IMESwitch.Working = false
 		}
 	}
 
 	// シリアル通信のクロック管理
 	if cpu.Config.Network.Network && cpu.Serial.TransferFlag > 0 {
-		cpu.Cycle.serial += cycle
+		cpu.Cycle.serial++
 		if cpu.Cycle.serial > 128*8 {
 			cpu.Serial.TransferFlag = 0
 			close(cpu.serialTick)
@@ -104,17 +103,17 @@ func (cpu *CPU) timer(cycle int) {
 	}
 
 	// スキャンライン
-	cpu.Cycle.scanline += cycle
+	cpu.Cycle.scanline++
 
 	// DIVレジスタ
-	cpu.Cycle.div += cycle
+	cpu.Cycle.div++
 	if cpu.Cycle.div >= 64 {
 		cpu.RAM[DIVIO]++
 		cpu.Cycle.div -= 64
 	}
 
 	if (TAC>>2)&0x01 == 1 {
-		cpu.Cycle.tac += cycle
+		cpu.Cycle.tac++
 		switch TAC % 4 {
 		case 0:
 			// 4096Hz (1024/4 cycle)
@@ -166,28 +165,22 @@ func (cpu *CPU) timer(cycle int) {
 
 	// OAMDMA
 	if cpu.OAMDMA.ptr > 0 {
-		for i := 0; i < cycle; i++ {
-			if cpu.OAMDMA.ptr == 160 {
-				cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
-				cpu.RAM[OAM] = 0xff
-			} else if cpu.OAMDMA.ptr < 160 {
-				cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
-			}
+		if cpu.OAMDMA.ptr == 160 {
+			cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
+			cpu.RAM[OAM] = 0xff
+		} else if cpu.OAMDMA.ptr < 160 {
+			cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
+		}
 
-			// OAMDMAを1カウント進める(重複しているときはそっちのカウントも進める)
-			cpu.OAMDMA.ptr--
-			if cpu.OAMDMA.reptr > 0 {
-				cpu.OAMDMA.reptr--
+		// OAMDMAを1カウント進める(重複しているときはそっちのカウントも進める)
+		cpu.OAMDMA.ptr--
+		if cpu.OAMDMA.reptr > 0 {
+			cpu.OAMDMA.reptr--
 
-				if cpu.OAMDMA.reptr == 160 {
-					cpu.OAMDMA.start = cpu.OAMDMA.restart
-					cpu.OAMDMA.ptr = 160
-					cpu.OAMDMA.reptr = 0
-				}
-			}
-
-			if cpu.OAMDMA.ptr == 0 {
-				break
+			if cpu.OAMDMA.reptr == 160 {
+				cpu.OAMDMA.start = cpu.OAMDMA.restart
+				cpu.OAMDMA.ptr = 160
+				cpu.OAMDMA.reptr = 0
 			}
 		}
 	}
