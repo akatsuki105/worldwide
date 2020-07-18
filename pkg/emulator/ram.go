@@ -244,6 +244,8 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		if cpu.TIMAReload.flag {
 			cpu.TIMAReload.flag = false
 			cpu.RAM[TIMAIO] = value
+		} else if cpu.TIMAReload.after {
+			cpu.RAM[TIMAIO] = cpu.TIMAReload.value
 		} else {
 			cpu.RAM[TIMAIO] = value
 		}

@@ -10,6 +10,7 @@ type Cycle struct {
 type TIMAReload struct {
 	flag  bool
 	value byte
+	after bool
 }
 
 type Timer struct {
@@ -142,9 +143,13 @@ func (cpu *CPU) tick() {
 		}
 	}
 
+	if cpu.TIMAReload.after {
+		cpu.TIMAReload.after = false
+	}
 	if cpu.TIMAReload.flag {
 		cpu.TIMAReload.flag = false
 		cpu.RAM[TIMAIO] = cpu.TIMAReload.value
+		cpu.TIMAReload.after = true
 		cpu.setTimerFlag() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
 	}
 
@@ -156,6 +161,7 @@ func (cpu *CPU) tick() {
 			cpu.TIMAReload = TIMAReload{
 				flag:  true,
 				value: uint8(cpu.RAM[TMAIO]),
+				after: false,
 			}
 			cpu.RAM[TIMAIO] = 0
 		} else {
