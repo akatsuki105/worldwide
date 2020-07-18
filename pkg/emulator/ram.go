@@ -240,6 +240,14 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == DIVIO:
 		cpu.Timer.Reset = true
 
+	case addr == TIMAIO:
+		if cpu.TIMAReload.flag {
+			cpu.TIMAReload.flag = false
+			cpu.RAM[TIMAIO] = value
+		} else {
+			cpu.RAM[TIMAIO] = value
+		}
+
 	case addr == IFIO:
 		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7]は常に1
 
