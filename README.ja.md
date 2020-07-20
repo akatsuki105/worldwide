@@ -10,7 +10,8 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 
 ほぼ全てのROMが問題なく動作し、サウンド機能やセーブ機能、一部通信機能など幅広い機能を備えたエミュレータです。
 
-<img src="https://imgur.com/rCduRUc.gif">
+<img src="https://imgur.com/RrOKzJB.png" width="320px"> <img src="https://imgur.com/yIIlkKq.png" width="320px"><br/>
+<img src="https://imgur.com/02YAzow.png" width="320px"> <img src="https://imgur.com/QCXeV3B.png" width="320px">
 
 ## 🚩 このエミュレータの特徴 & 今後実装予定の機能
 - [x] 60fpsで動作
