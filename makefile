@@ -48,6 +48,7 @@ TEST22=mooneye-gb/halt_ime0_ei/
 TEST23=mooneye-gb/halt_ime1_timing/
 
 TIM_TEST0=mooneye-gb/timer/div_write/
+TIM_TEST1=mooneye-gb/timer/rapid_toggle/
 TIM_TEST2=mooneye-gb/timer/tim00/
 TIM_TEST3=mooneye-gb/timer/tim00_div_trigger/
 TIM_TEST4=mooneye-gb/timer/tim01/
@@ -120,6 +121,7 @@ test:
 .SILENT:
 timer-test:
 	-$(call compare,$(TIM_TEST0))
+	-$(call compare,$(TIM_TEST1))
 	-$(call compare,$(TIM_TEST2))
 	-$(call compare,$(TIM_TEST3))
 	-$(call compare,$(TIM_TEST4))
@@ -133,9 +135,13 @@ timer-test:
 	-$(call compare,$(TIM_TEST12))
 
 	-rm -f ./test/$(TIM_TEST0)actual.jpg \
+	./test/$(TIM_TEST1)actual.jpg \
 	./test/$(TIM_TEST2)actual.jpg \
+	./test/$(TIM_TEST3)actual.jpg \
 	./test/$(TIM_TEST4)actual.jpg \
+	./test/$(TIM_TEST5)actual.jpg \
 	./test/$(TIM_TEST6)actual.jpg \
+	./test/$(TIM_TEST7)actual.jpg \
 	./test/$(TIM_TEST8)actual.jpg \
 	./test/$(TIM_TEST9)actual.jpg \
 	./test/$(TIM_TEST10)actual.jpg \

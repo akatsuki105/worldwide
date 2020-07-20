@@ -238,7 +238,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		}
 
 	case addr == DIVIO:
-		cpu.Timer.Reset = true
+		cpu.Timer.ResetAll = true
 
 	case addr == TIMAIO:
 		if cpu.TIMAReload.flag {
@@ -257,6 +257,11 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 			cpu.RAM[TIMAIO] = value
 		}
 		cpu.RAM[TMAIO] = value
+
+	case addr == TACIO:
+		cpu.Timer.TAC.Change = true
+		cpu.Timer.TAC.Old = cpu.RAM[TACIO]
+		cpu.RAM[TACIO] = value
 
 	case addr == IFIO:
 		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7]は常に1

@@ -5,6 +5,7 @@ type Cycle struct {
 	div      int // DIVタイマー用
 	scanline int // スキャンライン用
 	serial   int
+	sys      uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
 }
 
 type TIMAReload struct {
@@ -17,7 +18,11 @@ type Timer struct {
 	Cycle
 	OAMDMA
 	TIMAReload
-	Reset bool
+	ResetAll bool
+	TAC      struct {
+		Change bool
+		Old    byte
+	}
 }
 
 type OAMDMA struct {
@@ -76,9 +81,23 @@ func (cpu *CPU) tick() {
 	TAC := cpu.RAM[TACIO]
 	tickFlag := false
 
-	if cpu.Timer.Reset {
-		cpu.Timer.Reset = false
+	if cpu.Timer.ResetAll {
+		cpu.Timer.ResetAll = false
 		tickFlag = cpu.resetTimer()
+	}
+	if cpu.Timer.TAC.Change && !tickFlag {
+		cpu.Timer.TAC.Change = false
+		clocks := [4]uint16{1024 / 4, 16 / 4, 64 / 4, 256 / 4}
+		oldTAC, newTAC := cpu.Timer.TAC.Old, cpu.RAM[TACIO]
+		oldClock, newClock := clocks[oldTAC&0b11], clocks[newTAC&0b11]
+		oldEnable, newEnable := oldTAC&0b100 > 0, newTAC&0b100 > 0
+		if oldEnable {
+			if newEnable {
+				tickFlag = cpu.Cycle.sys&(oldClock/2) > 0
+			} else {
+				tickFlag = cpu.Cycle.sys&(oldClock/2) > 0 && cpu.Cycle.sys&(newClock/2) == 0
+			}
+		}
 	}
 
 	// DI,EIの遅延処理
@@ -105,6 +124,9 @@ func (cpu *CPU) tick() {
 
 	// スキャンライン
 	cpu.Cycle.scanline++
+
+	// 16 bit system counter
+	cpu.Cycle.sys++
 
 	// DIVレジスタ
 	cpu.Cycle.div++
@@ -193,6 +215,7 @@ func (cpu *CPU) tick() {
 }
 
 func (cpu *CPU) resetTimer() bool {
+	cpu.Cycle.sys = 0
 	cpu.Cycle.div = 0
 	cpu.RAM[DIVIO] = 0
 
