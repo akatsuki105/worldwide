@@ -546,8 +546,6 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 // VBlank
 func (cpu *CPU) execVBlank() {
 	for {
-		cpu.Cycle.scanline = 0
-
 		for cpu.Cycle.scanline < cyclePerLine*cpu.boost {
 			if inBreak := cpu.exec(); inBreak {
 				return
@@ -558,6 +556,7 @@ func (cpu *CPU) execVBlank() {
 		if LY == 0 {
 			break
 		}
+		cpu.Cycle.scanline = 0
 	}
 	cpu.Cycle.scanline = 0
 }
