@@ -46,6 +46,7 @@ TEST20=mooneye-gb/pop_timing/
 TEST21=mooneye-gb/rapid_di_ei/
 TEST22=mooneye-gb/halt_ime0_ei/
 TEST23=mooneye-gb/halt_ime1_timing/
+TEST24=mooneye-gb/halt_ime0_nointr_timing/
 
 TIM_TEST0=mooneye-gb/timer/div_write/
 TIM_TEST1=mooneye-gb/timer/rapid_toggle/
@@ -92,6 +93,7 @@ test:
 	-$(call compare,$(TEST21))
 	-$(call compare,$(TEST22))
 	-$(call compare,$(TEST23))
+	-$(call compare,$(TEST24))
 
 	-rm -f ./test/$(TEST0)actual.jpg \
 	./test/$(TEST1)actual.jpg \
@@ -117,6 +119,7 @@ test:
 	./test/$(TEST21)actual.jpg \
 	./test/$(TEST22)actual.jpg \
 	./test/$(TEST23)actual.jpg \
+	./test/$(TEST24)actual.jpg \
 
 .SILENT:
 timer-test:
