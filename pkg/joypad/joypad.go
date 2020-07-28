@@ -19,8 +19,6 @@ const (
 	Pressed = iota + 1
 	Save
 	Load
-	Expand
-	Collapse
 	Pause
 )
 
@@ -141,14 +139,6 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 	}
 	if btnLoadData() {
 		result = Load
-	}
-
-	// expand
-	if btnExpandDisplay() {
-		result = Expand
-	}
-	if btnCollapseDisplay() {
-		result = Collapse
 	}
 
 	if btnPause() {

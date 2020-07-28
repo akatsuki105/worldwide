@@ -268,18 +268,6 @@ func (cpu *CPU) handleJoypad() {
 			cpu.Sound.Off()
 			cpu.loadData()
 			cpu.Sound.On()
-		case joypad.Expand:
-			if !cpu.Config.Display.HQ2x && !cpu.debug.on {
-				cpu.Expand *= 2
-				time.Sleep(time.Millisecond * 400)
-				ebiten.SetScreenScale(float64(cpu.Expand))
-			}
-		case joypad.Collapse:
-			if !cpu.Config.Display.HQ2x && cpu.Expand >= 2 && !cpu.debug.on {
-				cpu.Expand /= 2
-				time.Sleep(time.Millisecond * 400)
-				ebiten.SetScreenScale(float64(cpu.Expand))
-			}
 		case joypad.Pause:
 			p := &cpu.debug.pause
 			b := &cpu.debug.Break
