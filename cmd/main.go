@@ -73,25 +73,18 @@ func Run() int {
 		return 0
 	}
 
+	ebiten.SetWindowResizable(true)
 	ebiten.SetRunnableInBackground(true)
+	ebiten.SetWindowTitle("Worldwide")
+
 	if *debug {
-		width, height := ebiten.MonitorSize()
-		width, height = width*9/10, height*9/10
-		if width >= 1280 && height >= 740 {
-			width, height = 1280, 740
-		}
-		cpu.SetWindowSize(width, height)
-		if err := ebiten.Run(cpu.Render, width, height, 1, "Worldwide(debug)"); err != nil {
-			return 1
-		}
-	} else if cpu.Config.Display.HQ2x {
-		if err := ebiten.Run(cpu.Render, 160*2, 144*2, 1, "Worldwide"); err != nil {
-			return 1
-		}
+		ebiten.SetWindowSize(1270, 740)
 	} else {
-		if err := ebiten.Run(cpu.Render, 160, 144, float64(cpu.Expand), "Worldwide"); err != nil {
-			return 1
-		}
+		ebiten.SetWindowSize(160*2, 144*2)
+	}
+
+	if err := ebiten.RunGame(cpu); err != nil {
+		return 1
 	}
 	return 0
 }
