@@ -27,7 +27,7 @@ This emulator can play almost all ROMs work without problems and has many featur
 - [x] Joypad support
 - [x] MBC1, MBC2, MBC3, MBC5 support
 - [x] RTC
-- [x] System save
+- [x] SRAM save
 - [x] Quick save
 - [x] Resizable window
 - [x] Pallete color change in DMG
@@ -97,7 +97,5 @@ Please download [here](https://github.com/Akatsuki-py/Worldwide/releases).
 | <kbd>Z</kbd>         | B button      |
 | <kbd>Enter</kbd>     | Start button  |
 | <kbd>Right shift</kbd> | Select button |
-| <kbd>E</kbd>         | Expand display  |
-| <kbd>R</kbd>         | Collapse display |
 | <kbd>D + S</kbd>     | Memory Dump  |
 | <kbd>L</kbd>         | Memory Load |

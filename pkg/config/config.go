@@ -21,9 +21,8 @@ type Config struct {
 
 // Display config
 type Display struct {
-	Expand int  `toml:"expand"`
-	HQ2x   bool `toml:"hq2x"`  // エミュレータのハイレゾ化が有効かどうか
-	FPS30  bool `toml:"fps30"` // fpsを30に下げるモードかどうか
+	HQ2x  bool `toml:"hq2x"`  // エミュレータのハイレゾ化が有効かどうか
+	FPS30 bool `toml:"fps30"` // fpsを30に下げるモードかどうか
 }
 
 // Pallete for DMG
@@ -66,7 +65,6 @@ func Init() *Config {
 
 	// create config
 	cfgText := `[display]
-expand = 2 # window expansion
 hq2x = false # use HQ2x scaling mode
 fps30 = true # reduce fps 30
 

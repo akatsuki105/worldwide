@@ -60,8 +60,7 @@ type CPU struct {
 	// サウンド
 	Sound apu.APU
 	// 画面
-	GPU    gpu.GPU
-	Expand uint
+	GPU gpu.GPU
 	// RTC
 	RTC   rtc.RTC
 	boost int // 倍速か
@@ -332,7 +331,6 @@ func (cpu *CPU) Init(romdir string, debug bool) {
 
 	cpu.GPU.Init(debug)
 	cpu.Config = config.Init()
-	cpu.Expand = uint(cpu.Config.Display.Expand)
 	cpu.boost = 1
 
 	cpu.initNetwork()

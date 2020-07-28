@@ -91,8 +91,6 @@ make run ROM="***.gb"
 | <kbd>Z</kbd>         | B ボタン      |
 | <kbd>Enter</kbd>     | Start ボタン  |
 | <kbd>Right shift</kbd> | Select ボタン |
-| <kbd>E</kbd>         | ウィンドウの拡大  |
-| <kbd>R</kbd>         | ウィンドウの縮小 |
 | <kbd>D + S</kbd>     | クイックセーブ  |
 | <kbd>L</kbd>         | クイックロード |
 
