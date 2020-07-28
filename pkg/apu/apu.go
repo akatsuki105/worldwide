@@ -51,7 +51,8 @@ func (a *APU) Init() {
 	a.Chn3 = NewChannel()
 	a.Chn4 = NewChannel()
 
-	player, err := oto.NewPlayer(sampleRate, 1, 1, sampleRate/30)
+	context, err := oto.NewContext(sampleRate, 1, 1, sampleRate/30)
+	player := context.NewPlayer()
 	if err != nil {
 		log.Fatalf("Failed to start audio: %v", err)
 	}
