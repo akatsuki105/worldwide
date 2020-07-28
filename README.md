@@ -97,7 +97,5 @@ Please download [here](https://github.com/Akatsuki-py/Worldwide/releases).
 | <kbd>Z</kbd>         | B button      |
 | <kbd>Enter</kbd>     | Start button  |
 | <kbd>Right shift</kbd> | Select button |
-| <kbd>E</kbd>         | Expand display  |
-| <kbd>R</kbd>         | Collapse display |
 | <kbd>D + S</kbd>     | Memory Dump  |
 | <kbd>L</kbd>         | Memory Load |

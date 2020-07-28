@@ -12,7 +12,7 @@ type Joypad struct {
 }
 
 type keyList struct {
-	A, B, Start, Select, Horizontal, Vertical, Expand, Collapse uint
+	A, B, Start, Select, Horizontal, Vertical uint
 }
 
 const (
