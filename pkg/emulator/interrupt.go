@@ -249,22 +249,27 @@ func (cpu *CPU) handleInterrupt() {
 
 		if intr.VBlank.IE && intr.VBlank.IF {
 			cpu.triggerVBlank()
+			return
 		}
 
 		if intr.LCDSTAT.IE && intr.LCDSTAT.IF {
 			cpu.triggerLCDC()
+			return
 		}
 
 		if intr.Timer.IE && intr.Timer.IF {
 			cpu.triggerTimer()
+			return
 		}
 
 		if intr.Serial.IE && intr.Serial.IF {
 			cpu.triggerSerial()
+			return
 		}
 
 		if intr.Joypad.IE && intr.Joypad.IF {
 			cpu.triggerJoypad()
+			return
 		}
 	}
 }
