@@ -181,7 +181,10 @@ func btnSelect(pad uint) bool {
 }
 
 func keyUp(threshold float64) bool {
-	if ebiten.GamepadAxis(0, 1) > threshold {
+	if threshold > 0 && ebiten.GamepadAxis(0, 1) > threshold {
+		return true
+	}
+	if threshold < 0 && ebiten.GamepadAxis(0, 1) < threshold {
 		return true
 	}
 
@@ -189,7 +192,10 @@ func keyUp(threshold float64) bool {
 }
 
 func keyDown(threshold float64) bool {
-	if ebiten.GamepadAxis(0, 1) < -threshold {
+	if threshold > 0 && -ebiten.GamepadAxis(0, 1) > threshold {
+		return true
+	}
+	if threshold < 0 && -ebiten.GamepadAxis(0, 1) < threshold {
 		return true
 	}
 
@@ -197,7 +203,10 @@ func keyDown(threshold float64) bool {
 }
 
 func keyRight(threshold float64) bool {
-	if ebiten.GamepadAxis(0, 0) > threshold {
+	if threshold > 0 && ebiten.GamepadAxis(0, 0) > threshold {
+		return true
+	}
+	if threshold < 0 && ebiten.GamepadAxis(0, 0) > -threshold {
 		return true
 	}
 
@@ -205,19 +214,14 @@ func keyRight(threshold float64) bool {
 }
 
 func keyLeft(threshold float64) bool {
-	if ebiten.GamepadAxis(0, 0) < -threshold {
+	if threshold > 0 && ebiten.GamepadAxis(0, 0) < -threshold {
+		return true
+	}
+	if threshold < 0 && ebiten.GamepadAxis(0, 0) < threshold {
 		return true
 	}
 
 	return ebiten.IsKeyPressed(ebiten.KeyLeft)
-}
-
-func btnExpandDisplay() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyE)
-}
-
-func btnCollapseDisplay() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyR)
 }
 
 func btnSaveData() bool {
