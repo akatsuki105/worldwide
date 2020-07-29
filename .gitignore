@@ -1,11 +1,16 @@
+# bin
 *.exe
+*.app
+worldwide
 worldwide.wasm
+
+# config
 *.sav
 *.ini
 *.toml
+
 public/
 game/
 dump/
-worldwide
 sav/
 .DS_store

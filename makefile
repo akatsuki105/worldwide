@@ -2,11 +2,21 @@ TARGET = worldwide
 
 ifeq ($(OS),Windows_NT)
     TARGET = worldwide.exe
+else ifeq  ($(shell uname),Darwin)
+	TARGET = worldwide.app
 endif
 
 .PHONY: all
 all:
 	go build -o $(TARGET) -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
+
+
+.PHONY: windows
+windows:
+	GOOS=windows GOARCH=amd64 go build -o worldwide.exe -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
+.PHONY: osx
+osx:
+	GOOS=darwin GOARCH=amd64 go build -o worldwide.app -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
 
 .PHONY: run
 run:
@@ -18,7 +28,7 @@ endif
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET)
+	rm -f worldwide.exe worldwide.app ./worldwide
 
 .PHONY: test
 

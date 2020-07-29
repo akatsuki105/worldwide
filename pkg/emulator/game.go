@@ -14,8 +14,6 @@ func (cpu *CPU) Update(screen *ebiten.Image) error {
 		cpu.debug.monitor.CPU.Reset()
 	}
 
-	cpu.renderScreen(screen)
-
 	if frames%3 == 0 {
 		cpu.handleJoypad()
 	}
@@ -139,8 +137,8 @@ func (cpu *CPU) Update(screen *ebiten.Image) error {
 	return nil
 }
 
-func (cpu *CPU) Draw(screen *ebiten.Image) error {
-	return nil
+func (cpu *CPU) Draw(screen *ebiten.Image) {
+	cpu.renderScreen(screen)
 }
 
 func (cpu *CPU) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
