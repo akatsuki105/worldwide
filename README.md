@@ -70,7 +70,7 @@ HQ2x can be enabled in config file.
 For those who want to build from source code.
 
 Requirements
-- Go 1.14
+- Go 1.15
 - make
 
 ```sh

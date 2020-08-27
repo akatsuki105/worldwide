@@ -15,6 +15,11 @@ import (
 
 var version string
 
+const (
+	ExitCodeOK int = iota
+	ExitCodeError
+)
+
 func main() {
 	os.Exit(Run())
 }
@@ -31,29 +36,22 @@ func Run() int {
 
 	// バージョンオプションが指定されたときはバージョンを表示して終了する
 	if *showVersion {
-		fmt.Println("Worldwide: ", version)
-		return 0
+		fmt.Println("Worldwide:", getVersion())
+		return ExitCodeOK
 	}
 
-	fp := flag.Arg(0)
+	romPath := flag.Arg(0)
 	cur, _ := os.Getwd()
 
 	cpu := &emulator.CPU{}
-
-	// ROMファイルのパスを取得する
-	romPath, err := selectROM(fp)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
 
 	romDir := filepath.Dir(romPath)
 
 	// ROMファイルを読み込む
 	romData, err := readROM(romPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
+		fmt.Fprintf(os.Stderr, "ROM Error: %s\n", err)
+		return ExitCodeError
 	}
 
 	cpu.Cartridge.ParseCartridge(romData)
@@ -70,7 +68,7 @@ func Run() int {
 		sec := 60
 		cpu.Sound.Off()
 		cpu.DebugExec(30*sec, *outputScreen)
-		return 0
+		return ExitCodeOK
 	}
 
 	ebiten.SetWindowResizable(true)
@@ -84,21 +82,21 @@ func Run() int {
 	}
 
 	if err := ebiten.RunGame(cpu); err != nil {
-		return 1
+		return ExitCodeError
 	}
-	return 0
+	return ExitCodeOK
 }
 
-func selectROM(p string) (string, error) {
-	if p == "" {
-		return p, fmt.Errorf("please input ROM file path")
+func getVersion() string {
+	if version == "" {
+		return "develop"
 	}
-	return p, nil
+	return version
 }
 
 func readROM(path string) ([]byte, error) {
 	if path == "" {
-		return []byte{}, errors.New("please select gb or gbc file path")
+		return []byte{}, errors.New("please select .gb or .gbc file path")
 	}
 	if filepath.Ext(path) != ".gb" && filepath.Ext(path) != ".gbc" {
 		return []byte{}, errors.New("please select .gb or .gbc file")
@@ -106,7 +104,7 @@ func readROM(path string) ([]byte, error) {
 
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		panic(err)
+		return []byte{}, errors.New("fail to read file")
 	}
 	return bytes, nil
 }
