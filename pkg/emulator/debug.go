@@ -8,8 +8,8 @@ import (
 	"image/jpeg"
 	"os"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 // Debug - Info used in debug mode
@@ -172,7 +172,7 @@ func (cpu *CPU) debugPrintOAM(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(4, 4)
 	op.GeoM.Translate(float64(750), float64(340))
-	OAMScreen, _ := ebiten.NewImageFromImage(cpu.GPU.OAM, ebiten.FilterDefault)
+	OAMScreen := ebiten.NewImageFromImage(cpu.GPU.OAM)
 	screen.DrawImage(OAMScreen, op)
 
 	properties := [8]string{}

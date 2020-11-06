@@ -10,7 +10,7 @@ import (
 
 	"gbc/pkg/emulator"
 
-	"github.com/hajimehoshi/ebiten"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
 var version string
@@ -72,7 +72,6 @@ func Run() int {
 	}
 
 	ebiten.SetWindowResizable(true)
-	ebiten.SetRunnableInBackground(true)
 	ebiten.SetWindowTitle("Worldwide")
 
 	if *debug {

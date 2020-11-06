@@ -4,7 +4,7 @@ import (
 	"image"
 	"image/color"
 
-	"github.com/hajimehoshi/ebiten"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
 type CPU struct {
@@ -44,7 +44,7 @@ func (c *CPU) DrawUsage(screen *ebiten.Image, x, y int, boost bool) {
 		}
 	}
 
-	gaugeEbiten, _ := ebiten.NewImageFromImage(gauge, ebiten.FilterDefault)
+	gaugeEbiten := ebiten.NewImageFromImage(gauge)
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(x), float64(y))
 	screen.DrawImage(gaugeEbiten, op)

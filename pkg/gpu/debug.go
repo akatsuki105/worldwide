@@ -5,7 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 
-	"github.com/hajimehoshi/ebiten"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
 type tileData struct {
@@ -52,7 +52,7 @@ func (d *Debug) initTileData() {
 }
 
 func (d *Debug) GetTileData() *ebiten.Image {
-	result, _ := ebiten.NewImageFromImage(d.tileData.overall, ebiten.FilterDefault)
+	result := ebiten.NewImageFromImage(d.tileData.overall)
 	return result
 }
 
