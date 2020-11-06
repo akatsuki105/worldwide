@@ -1,7 +1,7 @@
 package joypad
 
 import (
-	"github.com/hajimehoshi/ebiten"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
 // Joypad Joypadの入力を管理する

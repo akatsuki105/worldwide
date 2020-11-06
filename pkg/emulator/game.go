@@ -4,10 +4,10 @@ import (
 	"gbc/pkg/gpu"
 	"gbc/pkg/util"
 
-	"github.com/hajimehoshi/ebiten"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
-func (cpu *CPU) Update(screen *ebiten.Image) error {
+func (cpu *CPU) Update() error {
 
 	if frames == 0 {
 		setIcon()

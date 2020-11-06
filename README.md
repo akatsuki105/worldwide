@@ -1,10 +1,10 @@
 ![logo](./logo.png)
 
 # 🌏 Worldwide
-![Go](https://github.com/Akatsuki-py/Worldwide/workflows/Go/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
-[![GitHub stars](https://img.shields.io/github/stars/Akatsuki-py/Worldwide)](https://github.com/Akatsuki-py/Worldwide/stargazers)
-[![GitHub license](https://img.shields.io/github/license/Akatsuki-py/Worldwide)](https://github.com/Akatsuki-py/Worldwide/blob/master/LICENSE)
+![Go](https://github.com/pokemium/Worldwide/workflows/Go/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pokemium/Worldwide)](https://goreportcard.com/report/github.com/pokemium/Worldwide)
+[![GitHub stars](https://img.shields.io/github/stars/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/stargazers)
+[![GitHub license](https://img.shields.io/github/license/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/blob/master/LICENSE)
 
 日本語のドキュメントは[こちら](./README.ja.md)
 
@@ -41,7 +41,7 @@ This emulator can play almost all ROMs work without problems and has many featur
 
 ## 🎮 Usage
 
-Download worldwide.exe from [here](https://github.com/Akatsuki-py/Worldwide/releases).
+Download worldwide.exe from [here](https://github.com/pokemium/Worldwide/releases).
 
 ```sh
 ./worldwide.exe "***.gb" # or ***.gbc
@@ -83,7 +83,7 @@ make run ROM="***.gb"
 
 ## 📥 Download
 
-Please download [here](https://github.com/Akatsuki-py/Worldwide/releases).
+Please download [here](https://github.com/pokemium/Worldwide/releases).
 
 ## 📄 Command 
 

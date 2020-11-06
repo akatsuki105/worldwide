@@ -1,10 +1,10 @@
 ![logo](./logo.png)
 
 # 🌏 Worldwide
-![Go](https://github.com/Akatsuki-py/Worldwide/workflows/Go/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Akatsuki-py/Worldwide)](https://goreportcard.com/report/github.com/Akatsuki-py/Worldwide)
-[![GitHub stars](https://img.shields.io/github/stars/Akatsuki-py/Worldwide)](https://github.com/Akatsuki-py/Worldwide/stargazers)
-[![GitHub license](https://img.shields.io/github/license/Akatsuki-py/Worldwide)](https://github.com/Akatsuki-py/Worldwide/blob/master/LICENSE)
+![Go](https://github.com/pokemium/Worldwide/workflows/Go/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pokemium/Worldwide)](https://goreportcard.com/report/github.com/pokemium/Worldwide)
+[![GitHub stars](https://img.shields.io/github/stars/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/stargazers)
+[![GitHub license](https://img.shields.io/github/license/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/blob/master/LICENSE)
 
 Go言語で書かれたゲームボーイカラーエミュレータです。  
 
@@ -37,7 +37,7 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 
 ## 🎮 使い方
 
-[ここ](https://github.com/Akatsuki-py/Worldwide/releases)からダウンロードした後次のように起動します。
+[ここ](https://github.com/pokemium/Worldwide/releases)からダウンロードした後次のように起動します。
 
 ```sh
 ./worldwide.exe "***.gb" # or ***.gbc
@@ -77,7 +77,7 @@ make run ROM="***.gb"
 
 ## 📥 ダウンロード
 
-[ここ](https://github.com/Akatsuki-py/Worldwide/releases)からダウンロードできます。最新版をダウンロードすることをお勧めします。
+[ここ](https://github.com/pokemium/Worldwide/releases)からダウンロードできます。最新版をダウンロードすることをお勧めします。
 
 ## 📄 コマンド
 

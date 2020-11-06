@@ -4,8 +4,8 @@ import (
 	"image"
 	"image/color"
 
-	hq2x "github.com/Akatsuki-py/hq2xgo"
-	"github.com/hajimehoshi/ebiten"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
+	hq2x "github.com/pokemium/hq2xgo"
 )
 
 type VRAM struct {
@@ -44,7 +44,7 @@ const (
 // Init GPU
 func (g *GPU) Init(debug bool) {
 	g.display = image.NewRGBA(image.Rect(0, 0, 160, 144))
-	g.hq2x, _ = ebiten.NewImage(320, 288, ebiten.FilterDefault)
+	g.hq2x = ebiten.NewImage(320, 288)
 
 	g.Debug.On = debug
 	if debug {
@@ -58,7 +58,7 @@ func (g *GPU) GetDisplay(hq2x bool) *ebiten.Image {
 	if hq2x {
 		return g.hq2x
 	}
-	display, _ := ebiten.NewImageFromImage(g.display, ebiten.FilterDefault)
+	display := ebiten.NewImageFromImage(g.display)
 	return display
 }
 
@@ -70,7 +70,7 @@ func (g *GPU) GetOriginal() *image.RGBA {
 // HQ2x - scaling display data using HQ2x
 func (g *GPU) HQ2x() *ebiten.Image {
 	tmp, _ := hq2x.HQ2x(g.display)
-	g.hq2x, _ = ebiten.NewImageFromImage(tmp, ebiten.FilterDefault)
+	g.hq2x = ebiten.NewImageFromImage(tmp)
 	return g.hq2x
 }
 

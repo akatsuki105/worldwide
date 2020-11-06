@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
+	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 const (
@@ -43,7 +43,7 @@ func setIcon() {
 func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 	display := cpu.GPU.GetDisplay(cpu.Config.Display.HQ2x)
 	if cpu.debug.on {
-		dScreen, _ := ebiten.NewImage(int(debugWidth), int(debugHeight), ebiten.FilterDefault)
+		dScreen := ebiten.NewImage(int(debugWidth), int(debugHeight))
 		dScreen.Fill(color.RGBA{35, 27, 167, 255})
 		{
 			// debug screen
