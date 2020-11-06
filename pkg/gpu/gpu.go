@@ -4,8 +4,8 @@ import (
 	"image"
 	"image/color"
 
-	hq2x "github.com/Akatsuki-py/hq2xgo"
 	ebiten "github.com/hajimehoshi/ebiten/v2"
+	hq2x "github.com/pokemium/hq2xgo"
 )
 
 type VRAM struct {
