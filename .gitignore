@@ -14,3 +14,4 @@ game/
 dump/
 sav/
 .DS_store
+cpu.pprof
