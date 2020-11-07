@@ -41,11 +41,14 @@ This emulator can play almost all ROMs work without problems and has many featur
 
 ## 🎮 Usage
 
-Download worldwide.exe from [here](https://github.com/pokemium/Worldwide/releases).
+Download the prebuilt executable files from [here](https://github.com/pokemium/Worldwide/releases).
 
 ```sh
-./worldwide.exe "***.gb" # or ***.gbc
+./worldwide.exe [filename]
 ```
+
+Only files with `.gb` or `.gbc` suffix are allowed.
+The configuration file `worldwide.toml` will be created when you run the emulator for the first time.
 
 ## 🐛 Debug
 
@@ -73,11 +76,13 @@ Requirements
 - Go 1.15
 - make
 
-```sh
-make
-./worldwide "***.gb" # ./worldwide.exe on Windows
+You should get one of the following executable file:
+* `worldwide.exe` for Microsoft Windows
+* `worldwide.app` for macOS
+* `worldwide` for GNU/Linux and \*BSD
 
-# or
+You can specify the ROM to execute:
+```sh
 make run ROM="***.gb"
 ```
 
