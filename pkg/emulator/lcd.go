@@ -55,17 +55,15 @@ func (cpu *CPU) setLCDMode() {
 }
 
 func (cpu *CPU) incrementLY() {
-	LY := uint8(cpu.FetchMemory8(LYIO))
+	LY := cpu.FetchMemory8(LYIO)
 	LY++
 	if LY == 144 {
 		// VBlank期間フラグを立てる
 		cpu.setVBlankMode()
 		cpu.setVBlankFlag()
 	}
-	if LY > 153 {
-		LY = 0
-	}
-	cpu.RAM[LYIO] = byte(LY)
+	LY %= 154 // LY = LY >= 154 ? 0 : LY
+	cpu.RAM[LYIO] = LY
 	cpu.compareLYC(LY)
 }
 
@@ -79,9 +77,10 @@ func (cpu *CPU) compareLYC(LY uint8) {
 		if (STAT>>6)&0x01 == 1 {
 			cpu.setLCDSTATFlag()
 		}
-	} else {
-		// LCDC STAT IOポートの一致フラグをクリアする
-		STAT := cpu.FetchMemory8(LCDSTATIO) & 0b11111011
-		cpu.SetMemory8(LCDSTATIO, STAT)
+		return
 	}
+
+	// LCDC STAT IOポートの一致フラグをクリアする
+	STAT := cpu.FetchMemory8(LCDSTATIO) & 0b11111011
+	cpu.SetMemory8(LCDSTATIO, STAT)
 }

@@ -15,16 +15,14 @@ func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, useWindow,
 	var BGMapAddr uint16
 	LCDC := g.LCDC
 	if useWindow {
+		BGMapAddr = 0x9800 + uint16(index)
 		if LCDC&0x40 != 0 {
 			BGMapAddr = 0x9c00 + uint16(index)
-		} else {
-			BGMapAddr = 0x9800 + uint16(index)
 		}
 	} else {
+		BGMapAddr = 0x9800 + uint16(index)
 		if LCDC&0x08 != 0 {
 			BGMapAddr = 0x9c00 + uint16(index)
-		} else {
-			BGMapAddr = 0x9800 + uint16(index)
 		}
 	}
 	tileNumber := g.VRAM.Bank[0][BGMapAddr-0x8000] // BG Mapから該当の画面の場所のタイル番号を取得
@@ -34,11 +32,9 @@ func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, useWindow,
 	}
 
 	// 背景属性取得
-	var attr byte
+	attr := byte(0)
 	if isCGB {
 		attr = g.VRAM.Bank[1][BGMapAddr-0x8000]
-	} else {
-		attr = 0
 	}
 
 	tileDataOffset := uint16(tileNumber)*8 + uint16(lineNumber) // 何枚目のタイルか*8 + タイルの何行目か = 描画対象のタイルデータのオフセット

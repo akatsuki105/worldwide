@@ -1,38 +1,27 @@
-TARGET = worldwide
+NAME := worldwide
+BINDIR := ./build
+VERSION := $(shell git describe --tags 2>/dev/null)
+LDFLAGS := -X 'main.version=$(VERSION)'
 
-ifeq ($(OS),Windows_NT)
-    TARGET = worldwide.exe
-else ifeq  ($(shell uname),Darwin)
-	TARGET = worldwide.app
-endif
-
-.PHONY: all
-all:
-	go build -o $(TARGET) -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
+.PHONY: build
+build:
+	@go build -tags macos -o $(BINDIR)/darwin-amd64/$(NAME) -ldflags "$(LDFLAGS)" ./cmd/
 
 .PHONY: ci
 ci:
 	go build -o gbc ./cmd/ && echo "OK" && rm -rf gbc
 
+.PHONY: build-linux
+build-linux:
+	@GOOS=linux GOARCH=amd64 go build -tags windows -o $(BINDIR)/linux-amd64/$(NAME) -ldflags "$(LDFLAGS)" ./cmd/
 
-.PHONY: windows
-windows:
-	GOOS=windows GOARCH=amd64 go build -o worldwide.exe -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
-.PHONY: osx
-osx:
-	GOOS=darwin GOARCH=amd64 go build -o worldwide.app -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
-
-.PHONY: run
-run:
-	make all
-ifeq ($(DEBUG), on)
-	$(eval DEBUG_FLAG = --debug)
-endif
-	./$(TARGET) $(DEBUG_FLAG) ${ROM}
+.PHONY: build-windows
+build-windows:
+	@GOOS=windows GOARCH=amd64 go build -tags windows -o $(BINDIR)/windows-amd64/$(NAME).exe -ldflags "$(LDFLAGS)" ./cmd/
 
 .PHONY: clean
 clean:
-	rm -f worldwide.exe worldwide.app ./worldwide
+	@-rm -rf $(BINDIR)
 
 .PHONY: test
 
@@ -77,12 +66,13 @@ TIM_TEST11=mooneye-gb/timer/tima_write_reloading/
 TIM_TEST12=mooneye-gb/timer/tma_write_reloading/
 
 define compare
-	go run ./cmd/ --test="./test/$1actual.jpg" ./test/$1rom.gb
+	./$(BINDIR)/darwin-amd64/$(NAME) --test="./test/$1actual.jpg" ./test/$1rom.gb
 	-diff "./test/$1actual.jpg" "./test/$1expected.jpg" && echo "$1 OK"
 endef
 
 .SILENT:
 test:
+	make build
 	-$(call compare,$(TEST0))
 	-$(call compare,$(TEST1))
 	-$(call compare,$(TEST2))
@@ -137,6 +127,7 @@ test:
 
 .SILENT:
 timer-test:
+	make build
 	-$(call compare,$(TIM_TEST0))
 	-$(call compare,$(TIM_TEST1))
 	-$(call compare,$(TIM_TEST2))

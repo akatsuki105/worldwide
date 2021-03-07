@@ -66,7 +66,7 @@ func Init() *Config {
 	// create config
 	cfgText := `[display]
 hq2x = false # use HQ2x scaling mode
-fps30 = true # reduce fps 30
+fps30 = false # reduce fps 30
 
 [pallete]
 # DMG Color Pallete [R, G, B]

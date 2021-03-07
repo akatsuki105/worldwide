@@ -1,7 +1,6 @@
 package emulator
 
 import (
-	"fmt"
 	"gbc/pkg/cartridge"
 )
 
@@ -360,29 +359,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 
 // ROMバンクの切り替え
 func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
-	switchFlag := false
-
-	switch cpu.Cartridge.ROMSize {
-	case 0:
-	case 1:
-		switchFlag = (newROMBankPtr < 4)
-	case 2:
-		switchFlag = (newROMBankPtr < 8)
-	case 3:
-		switchFlag = (newROMBankPtr < 16)
-	case 4:
-		switchFlag = (newROMBankPtr < 32)
-	case 5:
-		switchFlag = (newROMBankPtr < 64)
-	case 6:
-		switchFlag = (newROMBankPtr < 128)
-	case 7:
-		switchFlag = (newROMBankPtr <= 255)
-	default:
-		errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
-		panic(errorMsg)
-	}
-
+	switchFlag := (newROMBankPtr < (2 << cpu.Cartridge.ROMSize))
 	if switchFlag {
 		cpu.ROMBank.ptr = newROMBankPtr
 	}

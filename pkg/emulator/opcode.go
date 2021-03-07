@@ -912,7 +912,7 @@ func (cpu *CPU) HALT(operand1, operand2 int) {
 
 	// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 	if !cpu.Reg.IME {
-		IE, IF := cpu.fetchIO(IEIO), cpu.fetchIO(IFIO)
+		IE, IF := cpu.RAM[IEIO], cpu.RAM[IFIO]
 		pending := IE&IF != 0
 		if pending {
 			// Some pending
@@ -922,9 +922,7 @@ func (cpu *CPU) HALT(operand1, operand2 int) {
 			cpu.Reg.PC = PC
 
 			// IME turns on due to EI delay.
-			if cpu.Reg.IME {
-				cpu.halt = true
-			}
+			cpu.halt = cpu.Reg.IME
 		}
 	}
 }

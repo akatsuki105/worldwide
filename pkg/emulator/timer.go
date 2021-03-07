@@ -74,6 +74,7 @@ func (cpu *CPU) clearTimerFlag() {
 func (cpu *CPU) timer(cycle int) {
 	for i := 0; i < cycle; i++ {
 		cpu.tick()
+		cpu.Sound.Buffer(4, cpu.boost)
 	}
 }
 

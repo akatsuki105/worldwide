@@ -97,5 +97,3 @@ Please download [here](https://github.com/pokemium/Worldwide/releases).
 | <kbd>Z</kbd>         | B button      |
 | <kbd>Enter</kbd>     | Start button  |
 | <kbd>Right shift</kbd> | Select button |
-| <kbd>D + S</kbd>     | Memory Dump  |
-| <kbd>L</kbd>         | Memory Load |

@@ -42,18 +42,7 @@ func (g *GPU) FetchSPRPalleteIncrement() bool {
 }
 
 func (g *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transparent bool) {
-	var pallete byte
-	switch tileType {
-	case BGP:
-		pallete = g.Palette.DMGPallte[0]
-	case OBP0:
-		pallete = g.Palette.DMGPallte[1]
-	case OBP1:
-		pallete = g.Palette.DMGPallte[2]
-	default:
-		errMsg := fmt.Sprintf("parsePallete Error: BG Pallete tile type is invalid. %d", tileType)
-		panic(errMsg)
-	}
+	pallete := g.Palette.DMGPallte[tileType]
 
 	transparent = false // 非透明
 
@@ -63,12 +52,8 @@ func (g *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transparen
 		if tileType == OBP0 || tileType == OBP1 {
 			transparent = true
 		}
-	case 1:
-		RGB = (pallete >> 2) % 4
-	case 2:
-		RGB = (pallete >> 4) % 4
-	case 3:
-		RGB = (pallete >> 6) % 4
+	case 1, 2, 3:
+		RGB = (pallete >> (2 * colorNumber)) % 4
 	default:
 		errMsg := fmt.Sprintf("parsePallete Error: BG Pallete number is invalid. %d", colorNumber)
 		panic(errMsg)

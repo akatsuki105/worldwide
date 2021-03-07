@@ -100,12 +100,13 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 
 		op := &ebiten.DrawImageOptions{}
 		screen.DrawImage(dScreen, op)
-	} else {
-		if !skipRender && cpu.Config.Display.HQ2x {
-			display = cpu.GPU.HQ2x()
-		}
-		screen.DrawImage(display, nil)
+		return
 	}
+
+	if !skipRender && cpu.Config.Display.HQ2x {
+		display = cpu.GPU.HQ2x()
+	}
+	screen.DrawImage(display, nil)
 }
 
 func (cpu *CPU) handleJoypad() {
@@ -118,14 +119,6 @@ func (cpu *CPU) handleJoypad() {
 			if cpu.Reg.IME && cpu.getJoypadEnable() {
 				cpu.setJoypadFlag()
 			}
-		case joypad.Save:
-			cpu.Sound.Off()
-			cpu.dumpData()
-			cpu.Sound.On()
-		case joypad.Load:
-			cpu.Sound.Off()
-			cpu.loadData()
-			cpu.Sound.On()
 		case joypad.Pause:
 			p := &cpu.debug.pause
 			b := &cpu.debug.Break
@@ -143,10 +136,8 @@ func (cpu *CPU) handleJoypad() {
 			if !p.Delay() {
 				if p.On() {
 					p.SetOff(30)
-					cpu.Sound.On()
 				} else {
 					p.SetOn(30)
-					cpu.Sound.Off()
 				}
 			}
 		}

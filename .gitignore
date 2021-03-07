@@ -10,6 +10,7 @@ worldwide.wasm
 *.toml
 
 public/
+build/
 game/
 dump/
 sav/

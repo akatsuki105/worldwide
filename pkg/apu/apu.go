@@ -1,11 +1,13 @@
+// +build macos
+
 package apu
 
 // サウンドはgoboyのコードをベースに自分のエミュレータに合うように改造(というかほぼコピペ。。。)
 
 import (
+	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"time"
 
 	"github.com/hajimehoshi/oto"
@@ -15,96 +17,112 @@ const (
 	sampleRate = 44100
 	twoPi      = 2 * math.Pi
 	perSample  = 1 / float64(sampleRate)
+
+	cpuTicksPerSample    = float64(4194304) / sampleRate
+	maxFrameBufferLength = 5000
+	volume               = 0.07
 )
 
-// APU Audio Processor Unit
+// APU is the GameBoy's audio processing unit. Audio comprises four
+// channels, each one controlled by a set of registers.
+//
+// Channels 1 and 2 are both Square channels, channel 3 is a arbitrary
+// waveform channel which can be set in RAM, and channel 4 outputs noise.
 type APU struct {
-	Memory [52]byte
+	playing bool
 
-	Chn1, Chn2, Chn3, Chn4 *Channel
+	memory      [52]byte
+	waveformRAM []byte
 
-	LVol, RVol float64
+	player                 *oto.Player
+	chn1, chn2, chn3, chn4 *Channel
+	tickCounter            float64
+	lVol, rVol             float64
 
-	// TODO: waveform RAM
-	WaveformRAM []byte
-
-	enabled bool
+	audioBuffer chan [2]byte
 }
 
 // Init the sound emulation for a Gameboy.
-func (a *APU) Init() {
-	a.WaveformRAM = make([]byte, 0x20)
+func (a *APU) Init(sound bool) {
+	a.playing = sound
+	a.waveformRAM = make([]byte, 0x20)
+	a.audioBuffer = make(chan [2]byte, maxFrameBufferLength)
 
 	// Sets waveform ram to:
 	// 00 FF 00 FF  00 FF 00 FF  00 FF 00 FF  00 FF 00 FF
 	for x := 0x0; x < 0x20; x++ {
 		if x&2 == 0 {
-			a.WaveformRAM[x] = 0x00
+			a.waveformRAM[x] = 0x00
 		} else {
-			a.WaveformRAM[x] = 0xFF
+			a.waveformRAM[x] = 0xFF
 		}
 	}
 
 	// Create the channels with their sounds
-	a.Chn1 = NewChannel()
-	a.Chn2 = NewChannel()
-	a.Chn3 = NewChannel()
-	a.Chn4 = NewChannel()
+	a.chn1 = NewChannel()
+	a.chn2 = NewChannel()
+	a.chn3 = NewChannel()
+	a.chn4 = NewChannel()
 
-	context, err := oto.NewContext(sampleRate, 1, 1, sampleRate/30)
-	player := context.NewPlayer()
-	if err != nil {
-		log.Fatalf("Failed to start audio: %v", err)
+	const bufferSeconds = 120
+
+	if sound {
+		context, err := oto.NewContext(sampleRate, 2, 1, sampleRate/bufferSeconds)
+		if err != nil {
+			log.Fatalf("Failed to start audio: %v", err)
+		}
+		a.player = context.NewPlayer()
+		a.playSound(bufferSeconds)
 	}
-	a.enabled = true
-	go a.play(player)
 }
 
-func (a *APU) On() {
-	a.enabled = true
+// Starts a goroutine which plays the sound
+func (a *APU) playSound(bufferSeconds int) {
+	frameTime := time.Second / time.Duration(bufferSeconds)
+	ticker := time.NewTicker(frameTime)
+	targetSamples := sampleRate / bufferSeconds
+	go func() {
+		var reading [2]byte
+		var buffer []byte
+		for range ticker.C {
+			fbLen := len(a.audioBuffer)
+			if fbLen >= targetSamples/2 {
+				newBuffer := make([]byte, fbLen*2)
+				for i := 0; i < fbLen*2; i += 2 {
+					reading = <-a.audioBuffer
+					newBuffer[i], newBuffer[i+1] = reading[0], reading[1]
+				}
+				buffer = newBuffer
+			}
+
+			_, err := a.player.Write(buffer)
+			if err != nil {
+				log.Printf("error sampling: %v", err)
+			}
+		}
+	}()
 }
 
-func (a *APU) Off() {
-	a.enabled = false
-}
-
-// Time in seconds which to buffer ahead of the emulation.
-const bufferTime = 0.05
-
-func (a *APU) play(player *oto.Player) {
-	start := time.Now()
-	counter := 0
-	var totalSamples int64 = 0
-	for c := range time.Tick(time.Second / 60) {
-		// Calculate the expected samples since the start adding on the buffer
-		expectedSamples := int64(math.Ceil((c.Sub(start).Seconds() + bufferTime) * sampleRate))
-		newSamples := expectedSamples - totalSamples
-		totalSamples = expectedSamples
-		if newSamples <= 0 {
-			continue
-		}
-
-		// Populate the buffer by sampling the channels
-		buffer := make([]byte, newSamples)
-		vol := (a.LVol + a.RVol) / 10
-		for i := range buffer {
-			// TODO: output stereo channels instead of combining
-			val := (a.Chn1.Sample() + a.Chn2.Sample() + a.Chn3.Sample() + a.Chn4.Sample()) / 4
-			buffer[i] = byte(float64(val) * vol)
-		}
-
-		if a.enabled {
-			// TODO: handle error
-			player.Write(buffer)
-			counter++
-		}
-
-		if counter == 180 {
-			counter = 0
-			start = time.Now()
-			totalSamples = 0
-		}
+func (a *APU) Buffer(cpuTicks int, speed int) {
+	if !a.playing {
+		return
 	}
+	a.tickCounter += float64(cpuTicks) / float64(speed)
+	if a.tickCounter < cpuTicksPerSample {
+		return
+	}
+	a.tickCounter -= cpuTicksPerSample
+
+	chn1l, chn1r := a.chn1.Sample()
+	chn2l, chn2r := a.chn2.Sample()
+	chn3l, chn3r := a.chn3.Sample()
+	chn4l, chn4r := a.chn4.Sample()
+
+	valL := (chn1l + chn2l + chn3l + chn4l) / 4
+	valR := (chn1r + chn2r + chn3r + chn4r) / 4
+
+	lVol, rVol := valL*a.lVol*volume, valR*a.rVol*volume
+	a.audioBuffer <- [2]byte{byte(lVol), byte(rVol)}
 }
 
 var soundMask = []byte{
@@ -115,216 +133,7 @@ var soundMask = []byte{
 	/* 0xFF24 */ 0xFF, 0xFF, 0x80,
 }
 
-var sound3Volume = map[byte]float64{0: 0, 1: 1, 2: 0.5, 3: 0.25}
-
-// Read returns a value from the APU.
-func (a *APU) Read(address uint16) byte {
-	if address >= 0xFF30 {
-		return a.WaveformRAM[address-0xFF30]
-	}
-	return a.Memory[address-0xFF00] & soundMask[address-0xFF10]
-}
-
-// Write a value to the APU registers.
-func (a *APU) Write(address uint16, value byte) {
-	a.Memory[address-0xFF00] = value
-
-	switch address {
-	// Channel 1
-	case 0xFF14:
-		if address == 0xFF14 && value&0x80 == 0x80 {
-			a.start1()
-		}
-		frequencyValue := uint16(a.Memory[0x14]&0x7)<<8 | uint16(a.Memory[0x13])
-		a.Chn1.frequency = 131072 / (2048 - float64(frequencyValue))
-	case 0xFF11:
-		pattern := (a.Memory[0x11] & 0xC0) >> 6
-		a.Chn1.generator = Square(squareLimits[pattern])
-
-	// Channel 2
-	case 0xFF19:
-		if address == 0xFF19 && value&0x80 == 0x80 {
-			a.start2()
-		}
-		frequencyValue := uint16(a.Memory[0x19]&0x7)<<8 | uint16(a.Memory[0x18])
-		a.Chn2.frequency = 131072 / (2048 - float64(frequencyValue))
-	case 0xFF16:
-		pattern := (a.Memory[0x16] & 0xC0) >> 6
-		a.Chn2.generator = Square(squareLimits[pattern])
-
-	// Channel 3
-	case 0xFF1A:
-		// TODO: simplify
-		soundOn := a.Memory[0x1A]&0x80 == 0x80
-		if soundOn {
-			a.Chn3.envelopeStepsInit = 1
-		} else {
-			a.Chn3.envelopeStepsInit = 0
-		}
-	case 0xFF1E, 0xFF1F:
-		if address == 0xFF1E && value&0x80 == 0x80 {
-			a.start3()
-		}
-		frequencyValue := uint16(a.Memory[0x1E]&0x7)<<8 | uint16(a.Memory[0x1D])
-		a.Chn3.frequency = 65536 / (2048 - float64(frequencyValue))
-	case 0xFF1C:
-		// Output level
-		value := (a.Memory[0x1C] & 0x60) >> 5
-		a.Chn3.amplitude = sound3Volume[value]
-
-	// Channel 4
-	case 0xFF22:
-		shiftClock := float64((value & 0xF0) >> 4)
-		// TODO: counter step width
-		divRatio := float64(value & 0x7)
-		if divRatio == 0 {
-			divRatio = 0.5
-		}
-		a.Chn4.frequency = 524288 / divRatio / math.Pow(2, shiftClock+1)
-	case 0xFF23:
-		if value&0x80 == 0x80 {
-			a.Chn4.generator = Noise()
-			a.start4()
-		}
-
-	case 0xFF24:
-		// Volume control
-		a.LVol = float64((a.Memory[0x24]&0x70)>>4) / 7
-		a.RVol = float64(a.Memory[0x24]&0x7) / 7
-
-	case 0xFF25:
-		// Channel control
-		// Right output for each channel
-		output1r := a.Memory[0x25]&0x1 == 0x1
-		output2r := a.Memory[0x25]&0x2 == 0x2
-		output3r := a.Memory[0x25]&0x4 == 0x4
-		output4r := a.Memory[0x25]&0x8 == 0x8
-
-		// Left output for each channel
-		output1l := a.Memory[0x25]&0x10 == 0x10
-		output2l := a.Memory[0x25]&0x20 == 0x20
-		output3l := a.Memory[0x25]&0x40 == 0x40
-		output4l := a.Memory[0x25]&0x80 == 0x80
-
-		a.Chn1.on = output1r || output1l
-		a.Chn2.on = output2r || output2l
-		a.Chn3.on = output3r || output3l
-		a.Chn4.on = output4r || output4l
-	}
-	// TODO: if writing to FF26 bit 7 destroy all contents (also cannot access)
-}
-
-// WriteWaveform writes a value to the waveform ram.
-func (a *APU) WriteWaveform(address uint16, value byte) {
-	soundIndex := (address - 0xFF30) * 2
-	a.WaveformRAM[soundIndex] = byte((value>>4)&0xF) * 0x11
-	a.WaveformRAM[soundIndex+1] = byte(value&0xF) * 0x11
-}
-
-// ToggleSoundChannel toggles a sound channel for debugging.
-func (a *APU) ToggleSoundChannel(channel int) {
-	switch channel {
-	case 1:
-		a.Chn1.debugOff = !a.Chn1.debugOff
-	case 2:
-		a.Chn2.debugOff = !a.Chn2.debugOff
-	case 3:
-		a.Chn3.debugOff = !a.Chn3.debugOff
-	case 4:
-		a.Chn4.debugOff = !a.Chn4.debugOff
-	}
-	log.Printf("Toggle Channel %v mute", channel)
-}
-
-// Start the 1st sound channel.
-func (a *APU) start1() {
-	selection := (a.Memory[0x14] & 0x40) >> 6 // 1 = stop when length in NR11 expires
-	length := a.Memory[0x11] & 0x3F
-
-	// Envelope settings
-	envVolume, envDirection, envSweep := a.extractEnvelope(a.Memory[0x12])
-
-	// Sweep
-	sweepTime := (a.Memory[0x10] & 0x70) >> 4
-	sweepDirection := a.Memory[0x10] >> 3 // 1 = decrease
-	sweepNumber := a.Memory[0x10] & 0x7
-
-	duration := -1
-	if selection == 1 {
-		duration = int(float64(length)*(1/64)) * sampleRate
-	}
-
-	a.Chn1.Reset(duration)
-	a.Chn1.envelopeSteps = int(envVolume)
-	a.Chn1.envelopeStepsInit = int(envVolume)
-	a.Chn1.envelopeSamples = int(envSweep) * sampleRate / 64
-	a.Chn1.envelopeIncreasing = envDirection == 1
-
-	a.Chn1.sweepStepLen = sweepTime
-	a.Chn1.sweepSteps = sweepNumber
-	a.Chn1.sweepIncrease = sweepDirection == 0
-}
-
-// Start the 2nd sound channel.
-func (a *APU) start2() {
-	selection := (a.Memory[0x19] & 0x40) >> 6 // 1 = stop when length in NR24 expires
-	length := a.Memory[0x16] & 0x3F
-
-	// Envelope settings
-	envVolume, envDirection, envSweep := a.extractEnvelope(a.Memory[0x17])
-
-	duration := -1
-	if selection == 1 {
-		duration = int(float64(length)*(1/64)) * sampleRate
-	}
-
-	a.Chn2.Reset(duration)
-	a.Chn2.envelopeSteps = int(envVolume)
-	a.Chn2.envelopeStepsInit = int(envVolume)
-	a.Chn2.envelopeSamples = int(envSweep) * sampleRate / 64
-	a.Chn2.envelopeIncreasing = envDirection == 1
-}
-
-// Start the 3rd sound channel.
-func (a *APU) start3() {
-	selection := (a.Memory[0x1E] & 0x40) >> 6 // 1 = stop when length in NR31 expires
-	length := a.Memory[0x1B]
-
-	duration := -1
-	if selection == 1 {
-		duration = int((256-float64(length))*(1/256)) * sampleRate
-	}
-	a.Chn3.generator = Waveform(a.WaveformRAM)
-	a.Chn3.Reset(duration)
-}
-
-// Start the 4th sound channel.
-func (a *APU) start4() {
-	selection := (a.Memory[0x23] & 0x40) >> 6 // 1 = stop when length in NR44 expires
-	length := a.Memory[0x20] & 0x3F
-
-	// Envelope settings
-	envVolume, envDirection, envSweep := a.extractEnvelope(a.Memory[0x21])
-
-	duration := -1
-	if selection == 1 {
-		duration = int(float64(61-length)*(1/256)) * sampleRate
-	}
-
-	a.Chn4.Reset(duration)
-	a.Chn4.envelopeSteps = int(envVolume)
-	a.Chn4.envelopeStepsInit = int(envVolume)
-	a.Chn4.envelopeSamples = int(envSweep) * sampleRate / 64
-	a.Chn4.envelopeIncreasing = envDirection == 1
-}
-
-// Extract some envelope variables from a byte.
-func (a *APU) extractEnvelope(val byte) (volume, direction, sweep byte) {
-	volume = (val & 0xF0) >> 4
-	direction = (val & 0x8) >> 3 // 1 or 0
-	sweep = val & 0x7
-	return
-}
+var channel3Volume = map[byte]float64{0: 0, 1: 1, 2: 0.5, 3: 0.25}
 
 var squareLimits = map[byte]float64{
 	0: -0.25, // 12.5% ( _-------_-------_------- )
@@ -333,153 +142,213 @@ var squareLimits = map[byte]float64{
 	3: 0.5,   // 75%   ( ______--______--______-- )
 }
 
-// WaveGenerator is a function which can be used for generating waveform
-// samples for different channels.
-type WaveGenerator func(t float64) byte
-
-// Square returns a square wave generator with a given mod. This is used
-// for channels 1 and 2.
-func Square(mod float64) WaveGenerator {
-	return func(t float64) byte {
-		if math.Sin(t) <= mod {
-			return 0xFF
-		}
-		return 0
+// Read returns a value from the APU.
+func (a *APU) Read(address uint16) byte {
+	if address >= 0xFF30 {
+		return a.waveformRAM[address-0xFF30]
 	}
+	// TODO: we should modify the sound memory as we're sampling
+	return a.memory[address-0xFF00] & soundMask[address-0xFF10]
 }
 
-// Waveform returns a wave generator for some waveform ram. This is used
-// by channel 3.
-func Waveform(ram []byte) WaveGenerator {
-	return func(t float64) byte {
-		idx := int(math.Floor(t/twoPi*32)) % 0x20
-		return ram[idx]
-	}
-}
+// Write a value to the APU registers.
+func (a *APU) Write(address uint16, value byte) {
+	a.memory[address-0xFF00] = value
 
-// Noise returns a wave generator for a noise channel. This is used by
-// channel 4.
-func Noise() WaveGenerator {
-	var last float64
-	var val byte
-	return func(t float64) byte {
-		if t-last > twoPi {
-			last = t
-			val = byte(rand.Intn(2)) * 0xFF
-		}
-		return val
-	}
-}
-
-// NewChannel returns a new sound channel using a sampling function.
-func NewChannel() *Channel {
-	return &Channel{}
-}
-
-// Channel represents one of four Gameboy sound channels.
-type Channel struct {
-	frequency float64
-	generator WaveGenerator
-	time      float64
-	amplitude float64
-
-	// Duration in samples
-	duration int
-
-	envelopeTime       int
-	envelopeSteps      int
-	envelopeStepsInit  int
-	envelopeSamples    int
-	envelopeIncreasing bool
-
-	sweepTime     float64
-	sweepStepLen  byte
-	sweepSteps    byte
-	sweepStep     byte
-	sweepIncrease bool
-
-	on bool
-	// Debug flag to turn off sound output
-	debugOff bool
-}
-
-// Sample returns a single sample for streaming the sound output. Each sample
-// will increase the internal timer based on the global sample rate.
-func (chn *Channel) Sample() (output uint16) {
-	step := chn.frequency * twoPi / float64(sampleRate)
-	chn.time += step
-	if chn.shouldPlay() && chn.on {
-		// Take the sample value from the generator
-		if !chn.debugOff {
-			output = uint16(float64(chn.generator(chn.time)) * chn.amplitude)
-		}
-		if chn.duration > 0 {
-			chn.duration--
-		}
-	}
-	chn.updateEnvelope()
-	chn.updateSweep()
-	return output
-}
-
-// Reset the channel to some default variables for the sweep, amplitude,
-// envelope and duration.
-func (chn *Channel) Reset(duration int) {
-	chn.amplitude = 1
-	chn.envelopeTime = 0
-	chn.sweepTime = 0
-	chn.sweepStep = 0
-	chn.duration = duration
-}
-
-// Returns if the channel should be playing or not.
-func (chn *Channel) shouldPlay() bool {
-	return (chn.duration == -1 || chn.duration > 0) &&
-		chn.generator != nil && chn.envelopeStepsInit > 0
-}
-
-// Update the state of the channels envelope.
-func (chn *Channel) updateEnvelope() {
-	if chn.envelopeSamples > 0 {
-		chn.envelopeTime += 1
-		if chn.envelopeSteps > 0 && chn.envelopeTime >= chn.envelopeSamples {
-			chn.envelopeTime -= chn.envelopeSamples
-			chn.envelopeSteps--
-			if chn.envelopeSteps == 0 {
-				chn.amplitude = 0
-			} else if chn.envelopeIncreasing {
-				chn.amplitude = 1 - float64(chn.envelopeSteps)/float64(chn.envelopeStepsInit)
-			} else {
-				chn.amplitude = float64(chn.envelopeSteps) / float64(chn.envelopeStepsInit)
+	switch address {
+	// Channel 1
+	case 0xFF10:
+		// -PPP NSSS Sweep period, negate, shift
+		a.chn1.sweepStepLen = (a.memory[0x10] & 0b111_0000) >> 4
+		a.chn1.sweepSteps = a.memory[0x10] & 0b111
+		a.chn1.sweepIncrease = a.memory[0x10]&0b1000 == 0 // 1 = decrease
+	case 0xFF11:
+		// DDLL LLLL Duty, Length load
+		duty := (value & 0b1100_0000) >> 6
+		a.chn1.generator = Square(squareLimits[duty])
+		a.chn1.length = int(value & 0b0011_1111)
+	case 0xFF12:
+		// VVVV APPP - Starting volume, Envelop add mode, period
+		envVolume, envDirection, envSweep := a.extractEnvelope(value)
+		a.chn1.envelopeVolume = int(envVolume)
+		a.chn1.envelopeSamples = int(envSweep) * sampleRate / 64
+		a.chn1.envelopeIncreasing = envDirection == 1
+	case 0xFF13:
+		// FFFF FFFF Frequency LSB
+		frequencyValue := uint16(a.memory[0x14]&0b111)<<8 | uint16(value)
+		a.chn1.frequency = 131072 / (2048 - float64(frequencyValue))
+	case 0xFF14:
+		// TL-- -FFF Trigger, Length Enable, Frequencu MSB
+		frequencyValue := uint16(value&0b111)<<8 | uint16(a.memory[0x13])
+		a.chn1.frequency = 131072 / (2048 - float64(frequencyValue))
+		if value&0b1000_0000 != 0 {
+			if a.chn1.length == 0 {
+				a.chn1.length = 64
 			}
-		}
-	}
-}
-
-var sweepTimes = map[byte]float64{
-	1: 7.8 / 1000,
-	2: 15.6 / 1000,
-	3: 23.4 / 1000,
-	4: 31.3 / 1000,
-	5: 39.1 / 1000,
-	6: 46.9 / 1000,
-	7: 54.7 / 1000,
-}
-
-// Update the state of the channels sweep.
-func (chn *Channel) updateSweep() {
-	if chn.sweepStep < chn.sweepSteps {
-		t := sweepTimes[chn.sweepStepLen]
-		chn.sweepTime += perSample
-		if chn.sweepTime > t {
-			chn.sweepTime -= t
-			chn.sweepStep += 1
-
-			if chn.sweepIncrease {
-				chn.frequency += chn.frequency / math.Pow(2, float64(chn.sweepStep))
-			} else {
-				chn.frequency -= chn.frequency / math.Pow(2, float64(chn.sweepStep))
+			duration := -1
+			if value&0b100_0000 != 0 { // 1 = use length
+				duration = int(float64(a.chn1.length)*(1/64)) * sampleRate
 			}
+			a.chn1.Reset(duration)
+			a.chn1.envelopeSteps = a.chn1.envelopeVolume
+			a.chn1.envelopeStepsInit = a.chn1.envelopeVolume
+			// TODO: Square 1's sweep does several things (see frequency sweep).
 		}
+
+	// Channel 2
+	case 0xFF15:
+		// ---- ---- Not used
+	case 0xFF16:
+		// DDLL LLLL Duty, Length load (64-L)
+		pattern := (value & 0b1100_0000) >> 6
+		a.chn2.generator = Square(squareLimits[pattern])
+		a.chn2.length = int(value & 0b11_1111)
+	case 0xFF17:
+		// VVVV APPP Starting volume, Envelope add mode, period
+		envVolume, envDirection, envSweep := a.extractEnvelope(value)
+		a.chn2.envelopeVolume = int(envVolume)
+		a.chn2.envelopeSamples = int(envSweep) * sampleRate / 64
+		a.chn2.envelopeIncreasing = envDirection == 1
+	case 0xFF18:
+		// FFFF FFFF Frequency LSB
+		frequencyValue := uint16(a.memory[0x19]&0b111)<<8 | uint16(value)
+		a.chn2.frequency = 131072 / (2048 - float64(frequencyValue))
+	case 0xFF19:
+		// TL-- -FFF Trigger, Length enable, Frequency MSB
+		if value&0b1000_0000 != 0 {
+			if a.chn2.length == 0 {
+				a.chn2.length = 64
+			}
+			duration := -1
+			if value&0b100_0000 != 0 {
+				duration = int(float64(a.chn2.length)*(1/64)) * sampleRate
+			}
+			a.chn2.Reset(duration)
+			a.chn2.envelopeSteps = a.chn2.envelopeVolume
+			a.chn2.envelopeStepsInit = a.chn2.envelopeVolume
+		}
+		frequencyValue := uint16(value&0b111)<<8 | uint16(a.memory[0x18])
+		a.chn2.frequency = 131072 / (2048 - float64(frequencyValue))
+
+	// Channel 3
+	case 0xFF1A:
+		// E--- ---- DAC power
+		a.chn3.envelopeStepsInit = int((value & 0b1000_0000) >> 7)
+	case 0xFF1B:
+		// LLLL LLLL Length load
+		a.chn3.length = int(value)
+	case 0xFF1C:
+		// -VV- ---- Volume code
+		selection := (value & 0b110_0000) >> 5
+		a.chn3.amplitude = channel3Volume[selection]
+	case 0xFF1D:
+		// FFFF FFFF Frequency LSB
+		frequencyValue := uint16(a.memory[0x1E]&0b111)<<8 | uint16(value)
+		a.chn3.frequency = 65536 / (2048 - float64(frequencyValue))
+	case 0xFF1E:
+		// TL-- -FFF Trigger, Length enable, Frequency MSB
+		if value&0b1000_0000 != 0 {
+			if a.chn3.length == 0 {
+				a.chn3.length = 256
+			}
+			duration := -1
+			if value&0b100_0000 != 0 { // 1 = use length
+				duration = int((256-float64(a.chn3.length))*(1/256)) * sampleRate
+			}
+			a.chn3.generator = Waveform(func(i int) byte { return a.waveformRAM[i] })
+			a.chn3.duration = duration
+		}
+		frequencyValue := uint16(value&0b111)<<8 | uint16(a.memory[0x1D])
+		a.chn3.frequency = 65536 / (2048 - float64(frequencyValue))
+
+	// Channel 4
+	case 0xFF1F:
+		// ---- ---- Not used
+	case 0xFF20:
+		// --LL LLLL Length load
+		a.chn4.length = int(value & 0b11_1111)
+	case 0xFF21:
+		// VVVV APPP Starting volume, Envelope add mode, period
+		envVolume, envDirection, envSweep := a.extractEnvelope(value)
+		a.chn4.envelopeVolume = int(envVolume)
+		a.chn4.envelopeSamples = int(envSweep) * sampleRate / 64
+		a.chn4.envelopeIncreasing = envDirection == 1
+	case 0xFF22:
+		// SSSS WDDD Clock shift, Width mode of LFSR, Divisor code
+		shiftClock := float64((value & 0b1111_0000) >> 4)
+		// TODO: counter step width
+		divRatio := float64(value & 0b111)
+		if divRatio == 0 {
+			divRatio = 0.5
+		}
+		a.chn4.frequency = 524288 / divRatio / math.Pow(2, shiftClock+1)
+	case 0xFF23:
+		// TL-- ---- Trigger, Length enable
+		if value&0x80 == 0x80 {
+			duration := -1
+			if value&0b100_0000 != 0 { // 1 = use length
+				duration = int(float64(61-a.chn4.length)*(1/256)) * sampleRate
+			}
+			a.chn4.generator = Noise()
+			a.chn4.Reset(duration)
+			a.chn4.envelopeSteps = a.chn4.envelopeVolume
+			a.chn4.envelopeStepsInit = a.chn4.envelopeVolume
+		}
+
+	case 0xFF24:
+		// Volume control
+		a.lVol = float64((a.memory[0x24]&0x70)>>4) / 7
+		a.rVol = float64(a.memory[0x24]&0x7) / 7
+
+	case 0xFF25:
+		// Channel control
+		a.chn1.onR = value&0x1 != 0
+		a.chn2.onR = value&0x2 != 0
+		a.chn3.onR = value&0x4 != 0
+		a.chn4.onR = value&0x8 != 0
+		a.chn1.onL = value&0x10 != 0
+		a.chn2.onL = value&0x20 != 0
+		a.chn3.onL = value&0x40 != 0
+		a.chn4.onL = value&0x80 != 0
 	}
+	// TODO: if writing to FF26 bit 7 destroy all contents (also cannot access)
+}
+
+// WriteWaveform writes a value to the waveform ram.
+func (a *APU) WriteWaveform(address uint16, value byte) {
+	soundIndex := (address - 0xFF30) * 2
+	a.waveformRAM[soundIndex] = (value >> 4) & 0xF * 0x11
+	a.waveformRAM[soundIndex+1] = value & 0xF * 0x11
+}
+
+// ToggleSoundChannel toggles a sound channel for debugging.
+func (a *APU) ToggleSoundChannel(channel int) {
+	switch channel {
+	case 1:
+		a.chn1.debugOff = !a.chn1.debugOff
+	case 2:
+		a.chn2.debugOff = !a.chn2.debugOff
+	case 3:
+		a.chn3.debugOff = !a.chn3.debugOff
+	case 4:
+		a.chn4.debugOff = !a.chn4.debugOff
+	}
+	log.Printf("Toggle Channel %v mute", channel)
+}
+
+func (a *APU) LogSoundState() {
+	fmt.Println("Channel 3")
+	fmt.Printf("  0xFF1A E--- ---- = %08b\n", a.memory[0x1A])
+	fmt.Printf("  0xFF1B LLLL LLLL = %08b\n", a.memory[0x1B])
+	fmt.Printf("  0xFF1C -VV- ---- = %08b\n", a.memory[0x1C])
+	fmt.Printf("  0xFF1D FFFF FFFF = %08b\n", a.memory[0x1D])
+	fmt.Printf("  0xFF1E TL-- -FFF = %08b\n", a.memory[0x1E])
+}
+
+// Extract some envelope variables from a byte.
+func (a *APU) extractEnvelope(val byte) (volume, direction, sweep byte) {
+	volume = (val & 0xF0) >> 4
+	direction = (val & 0x8) >> 3 // 1 or 0
+	sweep = val & 0x7
+	return
 }
