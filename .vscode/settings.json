@@ -1,8 +1,5 @@
 {
     "go.useLanguageServer": true,
-    "go.alternateTools": {
-        "go-langserver": "gopls"
-    },
     "[go]": {
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
