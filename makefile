@@ -10,6 +10,10 @@ endif
 all:
 	go build -o $(TARGET) -ldflags "-X main.version=$(shell git describe --tags)" ./cmd/
 
+.PHONY: ci
+ci:
+	go build -o gbc ./cmd/ && echo "OK" && rm -rf gbc
+
 
 .PHONY: windows
 windows:

@@ -24,7 +24,7 @@ func main() {
 	os.Exit(Run())
 }
 
-// Run - エミュレータを実行する
+// Run program
 func Run() int {
 	var (
 		showVersion  = flag.Bool("v", false, "show version")
@@ -34,7 +34,6 @@ func Run() int {
 
 	flag.Parse()
 
-	// バージョンオプションが指定されたときはバージョンを表示して終了する
 	if *showVersion {
 		fmt.Println("Worldwide:", getVersion())
 		return ExitCodeOK
@@ -47,7 +46,6 @@ func Run() int {
 
 	romDir := filepath.Dir(romPath)
 
-	// ROMファイルを読み込む
 	romData, err := readROM(romPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ROM Error: %s\n", err)
@@ -88,17 +86,17 @@ func Run() int {
 
 func getVersion() string {
 	if version == "" {
-		return "develop"
+		return "Develop"
 	}
 	return version
 }
 
 func readROM(path string) ([]byte, error) {
 	if path == "" {
-		return []byte{}, errors.New("please select .gb or .gbc file path")
+		return []byte{}, errors.New("please type .gb or .gbc file path")
 	}
 	if filepath.Ext(path) != ".gb" && filepath.Ext(path) != ".gbc" {
-		return []byte{}, errors.New("please select .gb or .gbc file")
+		return []byte{}, errors.New("please type .gb or .gbc file")
 	}
 
 	bytes, err := ioutil.ReadFile(path)
