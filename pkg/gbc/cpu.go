@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 import (
 	"fmt"
@@ -251,10 +251,10 @@ func (cpu *CPU) transferROM(bankNum int, rom []byte) {
 }
 
 func (cpu *CPU) initRegister() {
-	cpu.Reg.AF = 0x11b0 // A=01 => GB, A=11 => CGB
-	cpu.Reg.BC = 0x0013
-	cpu.Reg.DE = 0x00d8
-	cpu.Reg.HL = 0x014d
+	cpu.Reg.setAF(0x11b0) // A=01 => GB, A=11 => CGB
+	cpu.Reg.setBC(0x0013)
+	cpu.Reg.setDE(0x00d8)
+	cpu.Reg.setHL(0x014d)
 	cpu.Reg.PC = 0x0100
 	cpu.Reg.SP = 0xfffe
 }
@@ -314,20 +314,16 @@ func (cpu *CPU) initNetwork() {
 }
 
 func (cpu *CPU) initDMGPalette() {
-	color0 := cpu.Config.Pallete.Color0
-	color1 := cpu.Config.Pallete.Color1
-	color2 := cpu.Config.Pallete.Color2
-	color3 := cpu.Config.Pallete.Color3
-	gpu.InitPalette(color0, color1, color2, color3)
+	c0, c1, c2, c3 := cpu.Config.Pallete.Color0, cpu.Config.Pallete.Color1, cpu.Config.Pallete.Color2, cpu.Config.Pallete.Color3
+	gpu.InitPalette(c0, c1, c2, c3)
 }
 
-// Init CPU・メモリの初期化
+// Init cpu and ram
 func (cpu *CPU) Init(romdir string, debug bool, test bool) {
 	cpu.initRegister()
 	cpu.initIOMap()
 
-	cpu.ROMBank.ptr = 1
-	cpu.WRAMBank.ptr = 1
+	cpu.ROMBank.ptr, cpu.WRAMBank.ptr = 1, 1
 
 	cpu.GPU.Init(debug)
 	cpu.Config = config.Init()
@@ -351,20 +347,19 @@ func (cpu *CPU) Init(romdir string, debug bool, test bool) {
 
 	cpu.debug.on = debug
 	if debug {
-		cpu.Config.Display.HQ2x = false
-		cpu.Config.Display.FPS30 = true
+		cpu.Config.Display.HQ2x, cpu.Config.Display.FPS30 = false, true
 		cpu.debug.history.SetFlag(cpu.Config.Debug.History)
 		cpu.debug.Break.ParseBreakpoints(cpu.Config.Debug.BreakPoints)
 	}
 }
 
-// Exit 後始末を行う
+// Exit gbc
 func (cpu *CPU) Exit() {
 	cpu.save()
 	cpu.Serial.Exit()
 }
 
-// Exec 1サイクル
+// Exec 1cycle
 func (cpu *CPU) exec() bool {
 	bank, PC := cpu.ROMBank.ptr, cpu.Reg.PC
 

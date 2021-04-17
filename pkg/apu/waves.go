@@ -1,5 +1,3 @@
-// +build macos
-
 package apu
 
 import (

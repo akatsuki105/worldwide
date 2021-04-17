@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// GameBoy save data is SRAM core dump
 func (cpu *CPU) save() {
 	savname := fmt.Sprintf("%s/%s.sav", cpu.romdir, cpu.Cartridge.Title)
 	savfile, err := os.Create(savname)
@@ -14,7 +15,6 @@ func (cpu *CPU) save() {
 	}
 	defer savfile.Close()
 
-	// GameBoyのセーブデータはExternal RAM(0xa000-0xbfff)の単純なコアダンプ
 	var savdata []byte
 	switch cpu.Cartridge.RAMSize {
 	case 1:

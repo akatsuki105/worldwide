@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gbc/pkg/emulator"
+	"gbc/pkg/gbc"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
@@ -42,7 +42,7 @@ func Run() int {
 	romPath := flag.Arg(0)
 	cur, _ := os.Getwd()
 
-	cpu := &emulator.CPU{}
+	cpu := &gbc.CPU{}
 
 	romDir := filepath.Dir(romPath)
 

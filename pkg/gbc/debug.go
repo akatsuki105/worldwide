@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 import (
 	"fmt"
@@ -27,10 +27,10 @@ func (cpu *CPU) SetWindowSize(x, y int) {
 }
 
 func (cpu *CPU) debugRegister() string {
-	A, F := byte(cpu.Reg.AF>>8), byte(cpu.Reg.AF)
-	B, C := byte(cpu.Reg.BC>>8), byte(cpu.Reg.BC)
-	D, E := byte(cpu.Reg.DE>>8), byte(cpu.Reg.DE)
-	H, L := byte(cpu.Reg.HL>>8), byte(cpu.Reg.HL)
+	A, F := cpu.Reg.A, cpu.Reg.F
+	B, C := cpu.Reg.B, cpu.Reg.C
+	D, E := cpu.Reg.D, cpu.Reg.E
+	H, L := cpu.Reg.H, cpu.Reg.L
 
 	bank := cpu.ROMBank.ptr
 	PC := cpu.Reg.PC

@@ -149,19 +149,11 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 }
 
 func (pad *Joypad) getP14() bool {
-	JOYPAD := pad.P1
-	if JOYPAD&0x10 == 0 {
-		return true
-	}
-	return false
+	return pad.P1&0x10 == 0
 }
 
 func (pad *Joypad) getP15() bool {
-	JOYPAD := pad.P1
-	if JOYPAD&0x20 == 0 {
-		return true
-	}
-	return false
+	return pad.P1&0x20 == 0
 }
 
 func btnA(pad uint) bool {

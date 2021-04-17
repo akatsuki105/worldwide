@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 import (
 	"gbc/pkg/gpu"
@@ -60,14 +60,11 @@ func (cpu *CPU) Update() error {
 			LCDC1[y] = util.Bit(LCDC, 1) == 1
 		}
 
-		WY := uint(cpu.FetchMemory8(WYIO))
-		WX := uint(cpu.FetchMemory8(WXIO)) - 7
-
-		// 背景(ウィンドウ)描画
+		// render background(or window)
+		WY, WX := uint(cpu.FetchMemory8(WYIO)), uint(cpu.FetchMemory8(WXIO))-7
 		if !skipRender {
 			for x := 0; x < iterX; x += 8 {
-				blockX := x / 8
-				blockY := y / 8
+				blockX, blockY := x/8, y/8
 
 				var tileX, tileY uint
 				var useWindow bool

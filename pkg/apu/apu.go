@@ -1,5 +1,3 @@
-// +build macos
-
 package apu
 
 // サウンドはgoboyのコードをベースに自分のエミュレータに合うように改造(というかほぼコピペ。。。)
@@ -18,9 +16,9 @@ const (
 	twoPi      = 2 * math.Pi
 	perSample  = 1 / float64(sampleRate)
 
-	cpuTicksPerSample    = float64(4194304) / sampleRate
-	maxFrameBufferLength = 5000
-	volume               = 0.07
+	cpuTicksPerSample = float64(4194304) / sampleRate
+	streamLen         = 1472 // 2 * 2 * sampleRate * (1/120)
+	volume            = 0.07
 )
 
 // APU is the GameBoy's audio processing unit. Audio comprises four
@@ -46,7 +44,7 @@ type APU struct {
 func (a *APU) Init(sound bool) {
 	a.playing = sound
 	a.waveformRAM = make([]byte, 0x20)
-	a.audioBuffer = make(chan [2]byte, maxFrameBufferLength)
+	a.audioBuffer = make(chan [2]byte, streamLen)
 
 	// Sets waveform ram to:
 	// 00 FF 00 FF  00 FF 00 FF  00 FF 00 FF  00 FF 00 FF

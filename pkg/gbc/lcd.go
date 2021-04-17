@@ -1,9 +1,9 @@
-package emulator
+package gbc
 
 func (cpu *CPU) setHBlankMode() {
 	cpu.mode = HBlankMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
-	STAT &= 0xfc // bit0-1を00にする
+	STAT &= 0b1111_1100
 	cpu.SetMemory8(LCDSTATIO, STAT)
 
 	if cpu.GPU.HBlankDMALength > 0 {
@@ -22,25 +22,17 @@ func (cpu *CPU) setHBlankMode() {
 	}
 }
 
-func (cpu *CPU) getVBlankMode() bool {
-	STAT := cpu.FetchMemory8(LCDSTATIO)
-	if STAT&0x03 == 1 {
-		return true
-	}
-	return false
-}
-
 func (cpu *CPU) setVBlankMode() {
 	cpu.mode = VBlankMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
-	STAT = (STAT | 0x01) & 0xfd // bit0-1を01にする
+	STAT = (STAT | 0x01) & 0xfd // bit0-1: 01
 	cpu.SetMemory8(LCDSTATIO, STAT)
 }
 
 func (cpu *CPU) setOAMRAMMode() {
 	cpu.mode = OAMRAMMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
-	STAT = (STAT | 0x02) & 0xfe // bit0-1を10にする
+	STAT = (STAT | 0x02) & 0xfe // bit0-1: 10
 	cpu.SetMemory8(LCDSTATIO, STAT)
 	if (STAT & 0x20) != 0 {
 		cpu.setLCDSTATFlag()
@@ -50,15 +42,14 @@ func (cpu *CPU) setOAMRAMMode() {
 func (cpu *CPU) setLCDMode() {
 	cpu.mode = LCDMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
-	STAT |= 0x03 // bit0-1を11にする
+	STAT |= 0b11
 	cpu.SetMemory8(LCDSTATIO, STAT)
 }
 
 func (cpu *CPU) incrementLY() {
 	LY := cpu.FetchMemory8(LYIO)
 	LY++
-	if LY == 144 {
-		// VBlank期間フラグを立てる
+	if LY == 144 { // set vblank flag
 		cpu.setVBlankMode()
 		cpu.setVBlankFlag()
 	}

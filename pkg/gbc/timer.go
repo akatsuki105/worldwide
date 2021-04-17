@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 type Cycle struct {
 	tac      int // タイマー用
@@ -30,34 +30,6 @@ type OAMDMA struct {
 	ptr     uint16
 	restart uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
 	reptr   uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
-}
-
-func (cpu *CPU) getTimerEnable() bool {
-	IE := cpu.fetchIO(IEIO)
-	TimerEnable := (IE >> 2) % 2
-	if TimerEnable == 1 {
-		return true
-	}
-	return false
-}
-
-func (cpu *CPU) setTimerEnable() {
-	IE := cpu.fetchIO(IEIO) | 0x04
-	cpu.setIO(IEIO, IE)
-}
-
-func (cpu *CPU) clearTimerEnable() {
-	IE := cpu.fetchIO(IEIO) & 0xfb
-	cpu.setIO(IEIO, IE)
-}
-
-func (cpu *CPU) getTimerFlag() bool {
-	IF := cpu.fetchIO(IFIO)
-	TimerFlag := (IF >> 2) % 2
-	if TimerFlag == 1 {
-		return true
-	}
-	return false
 }
 
 func (cpu *CPU) setTimerFlag() {
@@ -216,9 +188,7 @@ func (cpu *CPU) tick() {
 }
 
 func (cpu *CPU) resetTimer() bool {
-	cpu.Cycle.sys = 0
-	cpu.Cycle.div = 0
-	cpu.RAM[DIVIO] = 0
+	cpu.Cycle.sys, cpu.Cycle.div, cpu.RAM[DIVIO] = 0, 0, 0
 
 	old := cpu.Cycle.tac
 	cpu.Cycle.tac = 0

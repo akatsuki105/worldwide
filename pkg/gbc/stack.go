@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 func (cpu *CPU) push(b byte) {
 	cpu.SetMemory8(cpu.Reg.SP-1, b)
@@ -14,77 +14,57 @@ func (cpu *CPU) pop() byte {
 // ------------ AF --------------------
 
 func (cpu *CPU) pushAF() {
-	upper := byte(cpu.Reg.AF >> 8)
-	cpu.push(upper)
+	cpu.push(cpu.Reg.A)
 	cpu.timer(1)
-
-	lower := byte(cpu.Reg.AF & 0x00f0)
-	cpu.push(lower)
+	cpu.push(cpu.Reg.F & 0x00f0)
 }
 
 func (cpu *CPU) popAF() {
-	lower := uint16(cpu.pop() & 0xf0)
+	cpu.Reg.F = cpu.pop() & 0xf0
 	cpu.timer(1)
-	upper := uint16(cpu.pop())
-	AF := (upper << 8) | lower
-	cpu.Reg.AF = AF
+	cpu.Reg.A = cpu.pop()
 }
 
 // ------------ BC --------------------
 
 func (cpu *CPU) pushBC() {
-	upper := byte(cpu.Reg.BC >> 8)
-	cpu.push(upper)
+	cpu.push(cpu.Reg.B)
 	cpu.timer(1)
-
-	lower := byte(cpu.Reg.BC & 0x00ff)
-	cpu.push(lower)
+	cpu.push(cpu.Reg.C)
 }
 
 func (cpu *CPU) popBC() {
-	lower := uint16(cpu.pop())
+	cpu.Reg.C = cpu.pop()
 	cpu.timer(1)
-	upper := uint16(cpu.pop())
-	BC := (upper << 8) | lower
-	cpu.Reg.BC = BC
+	cpu.Reg.B = cpu.pop()
 }
 
 // ------------ DE --------------------
 
 func (cpu *CPU) pushDE() {
-	upper := byte(cpu.Reg.DE >> 8)
-	cpu.push(upper) // まだOAMDMA中なのでここでのアクセスは弾かれる https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/push_timing.s
-	cpu.timer(1)    // OAMDMAが終わる
-
-	lower := byte(cpu.Reg.DE & 0x00ff)
-	cpu.push(lower)
+	cpu.push(cpu.Reg.D) // まだOAMDMA中なのでここでのアクセスは弾かれる https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/push_timing.s
+	cpu.timer(1)        // OAMDMAが終わる
+	cpu.push(cpu.Reg.E)
 }
 
 func (cpu *CPU) popDE() {
-	lower := uint16(cpu.pop())
+	cpu.Reg.E = cpu.pop()
 	cpu.timer(1)
-	upper := uint16(cpu.pop())
-	DE := (upper << 8) | lower
-	cpu.Reg.DE = DE
+	cpu.Reg.D = cpu.pop()
 }
 
 // ------------ HL --------------------
 
 func (cpu *CPU) pushHL() {
-	upper := byte(cpu.Reg.HL >> 8)
-	cpu.push(upper)
+	cpu.push(cpu.Reg.H)
 	cpu.timer(1)
-
-	lower := byte(cpu.Reg.HL & 0x00ff)
-	cpu.push(lower)
+	cpu.push(cpu.Reg.L)
 }
 
 func (cpu *CPU) popHL() {
-	lower := uint16(cpu.pop())
+	cpu.Reg.L = cpu.pop()
 	cpu.timer(1)
-	upper := uint16(cpu.pop())
-	HL := (upper << 8) | lower
-	cpu.Reg.HL = HL
+	cpu.Reg.H = cpu.pop()
 }
 
 // ------------ PC --------------------

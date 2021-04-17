@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 import (
 	"gbc/pkg/cartridge"
@@ -6,24 +6,20 @@ import (
 
 var done = make(chan int)
 
-// FetchMemory8 引数で指定したアドレスから値を取得する
+// FetchMemory8 fetch value from ram
 func (cpu *CPU) FetchMemory8(addr uint16) (value byte) {
 	switch {
-	case addr >= 0x4000 && addr < 0x8000:
-		// ROMバンク
+	case addr >= 0x4000 && addr < 0x8000: // rom bank
 		value = cpu.ROMBank.bank[cpu.ROMBank.ptr][addr-0x4000]
-	case addr >= 0x8000 && addr < 0xa000:
-		// VRAMバンク
+	case addr >= 0x8000 && addr < 0xa000: // vram bank
 		value = cpu.GPU.VRAM.Bank[cpu.GPU.VRAM.Ptr][addr-0x8000]
-	case addr >= 0xa000 && addr < 0xc000:
+	case addr >= 0xa000 && addr < 0xc000: // rtc or ram bank
 		if cpu.RTC.Mapped != 0 {
 			value = cpu.RTC.Read(byte(cpu.RTC.Mapped))
 		} else {
-			// RAMバンク
 			value = cpu.RAMBank.bank[cpu.RAMBank.ptr][addr-0xa000]
 		}
-	case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000:
-		// WRAMバンク
+	case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
 		value = cpu.WRAMBank.bank[cpu.WRAMBank.ptr][addr-0xd000]
 	case addr >= 0xff00:
 		value = cpu.fetchIO(addr)
@@ -41,19 +37,16 @@ func (cpu *CPU) fetchIO(addr uint16) (value byte) {
 		value = cpu.Serial.ReadSB()
 	case addr == SCIO:
 		value = cpu.Serial.ReadSC()
-	case (addr >= 0xff10 && addr <= 0xff26) || (addr >= 0xff30 && addr <= 0xff3f):
-		// サウンドアクセス
+	case (addr >= 0xff10 && addr <= 0xff26) || (addr >= 0xff30 && addr <= 0xff3f): // sound IO
 		value = cpu.Sound.Read(addr)
 	case addr == LCDCIO:
 		value = cpu.GPU.LCDC
 	case addr == LCDSTATIO:
 		value = cpu.GPU.LCDSTAT
-	case addr == BCPDIO:
-		// 背景パレットデータ読み込み
+	case addr == BCPDIO: // BG Palette
 		index := cpu.GPU.FetchBGPalleteIndex()
 		value = cpu.GPU.Palette.BGPallete[index]
-	case addr == OCPDIO:
-		// スプライトパレットデータ読み込み
+	case addr == OCPDIO: // OAM Palette
 		index := cpu.GPU.FetchSPRPalleteIndex()
 		value = cpu.GPU.Palette.SPRPallete[index]
 	default:
@@ -62,17 +55,15 @@ func (cpu *CPU) fetchIO(addr uint16) (value byte) {
 	return value
 }
 
-// SetMemory8 引数で指定したアドレスにvalueを書き込む
+// SetMemory8 set value into RAM
 func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 
-	if addr <= 0x7fff {
-		// ROM領域
+	if addr <= 0x7fff { // rom
 		if (addr >= 0x2000) && (addr <= 0x3fff) {
 			switch cpu.Cartridge.MBC {
-			case cartridge.MBC1:
-				// ROMバンク下位5bit
+			case cartridge.MBC1: // lower 5bit in romptr
 				if value == 0 {
-					value = 1
+					value++
 				}
 				upper2 := cpu.ROMBank.ptr >> 5
 				lower5 := value
@@ -82,32 +73,25 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				if cpu.GPU.HBlankDMALength == 0 {
 					newROMBankPtr := value & 0x7f
 					if newROMBankPtr == 0 {
-						newROMBankPtr = 1
+						newROMBankPtr++
 					}
 					cpu.switchROMBank(newROMBankPtr)
 				}
 			case cartridge.MBC5:
-				if addr < 0x3000 {
-					// 下位8bit
+				if addr < 0x3000 { // lower 8bit
 					newROMBankPtr := value
 					cpu.switchROMBank(newROMBankPtr)
-				} else {
-					// 上位1bit
-					// fmt.Println(value)
 				}
 			}
 		} else if (addr >= 0x4000) && (addr <= 0x5fff) {
 			switch cpu.Cartridge.MBC {
 			case cartridge.MBC1:
-				// RAM バンク番号または、 ROM バンク番号の上位ビット
-				if cpu.bankMode == 0 {
-					// ROMptrの上位2bitの切り替え
+				if cpu.bankMode == 0 { // switch upper 2bit in romptr
 					upper2 := value
 					lower5 := cpu.ROMBank.ptr & 0x1f
 					newROMBankPtr := (upper2 << 5) | lower5
 					cpu.switchROMBank(newROMBankPtr)
-				} else if cpu.bankMode == 1 {
-					// RAMptrの切り替え
+				} else if cpu.bankMode == 1 { // switch RAMptr
 					newRAMBankPtr := value
 					cpu.RAMBank.ptr = newRAMBankPtr
 				}
@@ -126,7 +110,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch cpu.Cartridge.MBC {
 			case cartridge.MBC1:
-				// ROM/RAM モード選択
+				// ROM/RAM mode selection
 				if value == 1 || value == 0 {
 					cpu.bankMode = uint(value)
 				}
@@ -141,26 +125,22 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 		}
 	} else {
 
-		// OAMDMA中はCPUは0xff80-0xfffeのみアクセス可能
-		if addr < 0xff80 || addr > 0xfffe {
+		if addr < 0xff80 || addr > 0xfffe { // only 0xff80-0xfffe can be accessed during OAMDMA
 			if cpu.OAMDMA.ptr > 0 && cpu.OAMDMA.ptr <= 160 {
 				return
 			}
 		}
 
 		switch {
-		case addr >= 0x8000 && addr < 0xa000:
-			// VRAM
+		case addr >= 0x8000 && addr < 0xa000: // vram
 			cpu.GPU.VRAM.Bank[cpu.GPU.VRAM.Ptr][addr-0x8000] = value
-		case addr >= 0xa000 && addr < 0xc000:
+		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if cpu.RTC.Mapped == 0 {
-				// RAM
 				cpu.RAMBank.bank[cpu.RAMBank.ptr][addr-0xa000] = value
 			} else {
 				cpu.RTC.Write(byte(cpu.RTC.Mapped), value)
 			}
-		case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000:
-			// WRAM
+		case cpu.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram
 			cpu.WRAMBank.bank[cpu.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xff00:
 			cpu.setIO(addr, value)
@@ -199,8 +179,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						success = cpu.Serial.Transfer(0)
 						select {
 						case <-done:
-							// 次の通信が催促されたら強制的に打ち切る
-							break
+							// if next transfer is requested, stop forcibly
 						default:
 						}
 					}
@@ -221,7 +200,6 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						success = cpu.Serial.Transfer(0)
 						select {
 						case <-done:
-							break
 						default:
 						}
 					}
@@ -263,24 +241,21 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.RAM[TACIO] = value
 
 	case addr == IFIO:
-		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7]は常に1
+		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7] always set
 
-	case addr == DMAIO:
-		// DMA転送
-		start := uint16(cpu.getAReg()) << 8
+	case addr == DMAIO: // dma transfer
+		start := uint16(cpu.Reg.A) << 8
 		if cpu.OAMDMA.ptr > 0 {
 			cpu.OAMDMA.restart = start
-			cpu.OAMDMA.reptr = 160 + 2 // 転送開始までにラグがある
+			cpu.OAMDMA.reptr = 160 + 2 // lag
 		} else {
 			cpu.OAMDMA.start = start
-			cpu.OAMDMA.ptr = 160 + 2 // 転送開始までにラグがある
+			cpu.OAMDMA.ptr = 160 + 2 // lag
 		}
 
-	case addr >= 0xff10 && addr <= 0xff26:
-		// サウンドアクセス
+	case addr >= 0xff10 && addr <= 0xff26: // sound io
 		cpu.Sound.Write(addr, value)
-	case addr >= 0xff30 && addr <= 0xff3f:
-		// サウンドアクセス
+	case addr >= 0xff30 && addr <= 0xff3f: // sound io
 		cpu.Sound.WriteWaveform(addr, value)
 
 	case addr == LCDCIO:
@@ -301,28 +276,25 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	case addr == OBP1IO:
 		cpu.GPU.Palette.DMGPallte[2] = value
 
-	// 以降はゲームボーイカラーのみ
-	case addr == VBKIO && cpu.GPU.HBlankDMALength == 0:
-		// VRAMバンク切り替え
+	// below case statements, gbc only
+	case addr == VBKIO && cpu.GPU.HBlankDMALength == 0: // switch vram bank
 		newVRAMBankPtr := value & 0x01
 		cpu.GPU.VRAM.Ptr = newVRAMBankPtr
 
 	case addr == HDMA5IO:
 		HDMA5 := value
-		mode := HDMA5 >> 7 // 転送モード
+		mode := HDMA5 >> 7 // transfer mode
 		if cpu.GPU.HBlankDMALength > 0 && mode == 0 {
 			cpu.GPU.HBlankDMALength = 0
 			cpu.RAM[HDMA5IO] |= 0x80
 		} else {
-			length := (int(HDMA5&0x7f) + 1) * 16 // 転送するデータ長
+			length := (int(HDMA5&0x7f) + 1) * 16 // transfer size
 
 			switch mode {
-			case 0:
-				// 汎用DMA
+			case 0: // generic dma
 				cpu.doVRAMDMATransfer(length)
-				cpu.RAM[HDMA5IO] = 0xff // 完了
-			case 1:
-				// H-Blank DMA
+				cpu.RAM[HDMA5IO] = 0xff // complete
+			case 1: // hblank dma
 				cpu.GPU.HBlankDMALength = int(HDMA5&0x7f) + 1
 				cpu.RAM[HDMA5IO] &= 0x7f
 			}
@@ -332,23 +304,20 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.GPU.Palette.CGBPallte[0] = value
 	case addr == OCPSIO:
 		cpu.GPU.Palette.CGBPallte[1] = value
-	case addr == BCPDIO:
-		// 背景パレットデータ書き込み
+	case addr == BCPDIO: // write bg palette
 		index := cpu.GPU.FetchBGPalleteIndex()
 		cpu.GPU.Palette.BGPallete[index] = value
 		if cpu.GPU.FetchBGPalleteIncrement() {
 			cpu.GPU.Palette.CGBPallte[0]++
 		}
-	case addr == OCPDIO:
-		// スプライトパレットデータ書き込み
+	case addr == OCPDIO: // write oam palette
 		index := cpu.GPU.FetchSPRPalleteIndex()
 		cpu.GPU.Palette.SPRPallete[index] = value
 		if cpu.GPU.FetchSPRPalleteIncrement() {
 			cpu.GPU.Palette.CGBPallte[1]++
 		}
 
-	case addr == SVBKIO:
-		// WRAMバンク切り替え
+	case addr == SVBKIO: // switch wram bank
 		newWRAMBankPtr := value & 0x07
 		if newWRAMBankPtr == 0 {
 			newWRAMBankPtr = 1
@@ -357,7 +326,6 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 	}
 }
 
-// ROMバンクの切り替え
 func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
 	switchFlag := (newROMBankPtr < (2 << cpu.Cartridge.ROMSize))
 	if switchFlag {
@@ -366,8 +334,8 @@ func (cpu *CPU) switchROMBank(newROMBankPtr uint8) {
 }
 
 func (cpu *CPU) doVRAMDMATransfer(length int) {
-	from := (uint16(cpu.FetchMemory8(HDMA1IO))<<8 | uint16(cpu.FetchMemory8(HDMA2IO))) & 0xfff0
-	to := ((uint16(cpu.FetchMemory8(HDMA3IO))<<8 | uint16(cpu.FetchMemory8(HDMA4IO))) & 0x1ff0) + 0x8000
+	from := (uint16(cpu.RAM[HDMA1IO])<<8 | uint16(cpu.RAM[HDMA2IO])) & 0xfff0
+	to := ((uint16(cpu.RAM[HDMA3IO])<<8 | uint16(cpu.RAM[HDMA4IO])) & 0x1ff0) + 0x8000
 
 	for i := 0; i < length; i++ {
 		value := cpu.FetchMemory8(from)
@@ -376,8 +344,6 @@ func (cpu *CPU) doVRAMDMATransfer(length int) {
 		to++
 	}
 
-	cpu.RAM[HDMA1IO] = byte(from >> 8)
-	cpu.RAM[HDMA2IO] = byte((from & 0xff))
-	cpu.RAM[HDMA3IO] = byte(to >> 8)
-	cpu.RAM[HDMA4IO] = byte(to & 0xf0)
+	cpu.RAM[HDMA1IO], cpu.RAM[HDMA2IO] = byte(from>>8), byte(from)
+	cpu.RAM[HDMA3IO], cpu.RAM[HDMA4IO] = byte(to>>8), byte(to&0xf0)
 }

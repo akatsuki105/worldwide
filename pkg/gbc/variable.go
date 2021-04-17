@@ -1,4 +1,4 @@
-package emulator
+package gbc
 
 const (
 	OAM       uint16 = 0xfe00
@@ -137,7 +137,7 @@ type Opcode struct {
 	Operand1 int
 	Operand2 int
 	Cycle1   int
-	Cycle2   int // 条件分岐がある場合
+	Cycle2   int // cond is false
 	Handler  func(*CPU, int, int)
 }
 
@@ -163,12 +163,7 @@ var opcodes [256]Opcode = [256]Opcode{
 }
 
 // issue #10
-// 0x36は実行中に3cycle分のインクリメントを行っているのでここでは0 gb-test-roms\mem_timing\individual\02-write_timing.gb
-// 0xe0は実行中に3cycle分のインクリメントを行っているのでここでは0 gb-test-roms\mem_timing\individual\02-write_timing.gb
-// 0xeaは実行中に4cycle分のインクリメントを行っているのでここでは0 gb-test-roms\mem_timing\individual\02-write_timing.gb
-// 0xf0は実行中に3cycle分のインクリメントを行っているのでここでは0 gb-test-roms\mem_timing\individual\01-read_timing.gb
-// 0xfaは実行中に4cycle分のインクリメントを行っているのでここでは0 gb-test-roms\mem_timing\individual\01-read_timing.gb
-
+// cycle0 opcode(0x36, 0xe0, 0xea, 0xf0, 0xfa) increments cycle in execution
 var prefixCBs [256]Opcode = [256]Opcode{
 	/* 0x0x */ Opcode{INS_RLC, OPERAND_B, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RLC, OPERAND_C, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RLC, OPERAND_D, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RLC, OPERAND_E, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RLC, OPERAND_H, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RLC, OPERAND_L, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RLC, OPERAND_HL_PAREN, OPERAND_NONE, 0, 0, nil}, Opcode{INS_RLC, OPERAND_A, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_B, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_C, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_D, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_E, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_H, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_L, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RRC, OPERAND_HL_PAREN, OPERAND_NONE, 0, 0, nil}, Opcode{INS_RRC, OPERAND_A, OPERAND_NONE, 2, 2, nil},
 	/* 0x1x */ Opcode{INS_RL, OPERAND_B, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RL, OPERAND_C, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RL, OPERAND_D, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RL, OPERAND_E, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RL, OPERAND_H, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RL, OPERAND_L, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RL, OPERAND_HL_PAREN, OPERAND_NONE, 0, 0, nil}, Opcode{INS_RL, OPERAND_A, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_B, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_C, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_D, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_E, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_H, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_L, OPERAND_NONE, 2, 2, nil}, Opcode{INS_RR, OPERAND_HL_PAREN, OPERAND_NONE, 0, 0, nil}, Opcode{INS_RR, OPERAND_A, OPERAND_NONE, 2, 2, nil},

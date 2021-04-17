@@ -8,10 +8,10 @@ const (
 	MBC5
 )
 
-// Cartridge - ROMヘッダから得られたカードリッジ情報
+// Cartridge - Cartridge info from ROM Header
 type Cartridge struct {
 	Title   string
-	IsCGB   bool // 0x80 or 0xc0 => ゲームボーイカラーで true
+	IsCGB   bool // gameboy color ROM is true
 	Type    uint8
 	ROMSize uint8
 	RAMSize uint8
@@ -19,7 +19,7 @@ type Cartridge struct {
 	Debug   *Debug
 }
 
-// ParseCartridge - カートリッジ情報を読み取る
+// ParseCartridge - read cartridge info from byte slice
 func (cart *Cartridge) ParseCartridge(rom []byte) {
 	var titleBuf []byte
 	for i := 0x0134; i < 0x0143; i++ {

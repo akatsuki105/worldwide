@@ -27,7 +27,7 @@ type LatchedRTC struct {
 	DH byte
 }
 
-// Init クロックを開始する
+// Init rtc clock
 func (rtc *RTC) Init() {
 	rtc.Working = true
 	for range time.Tick(time.Second) {
@@ -71,7 +71,7 @@ func (rtc *RTC) Read(target byte) byte {
 	return 0
 }
 
-// Latch ラッチする
+// Latch rtc
 func (rtc *RTC) Latch() {
 	rtc.LatchedRTC.S = rtc.S
 	rtc.LatchedRTC.M = rtc.M
@@ -98,7 +98,7 @@ func (rtc *RTC) Write(target, value byte) {
 
 func (rtc *RTC) incrementSecond() {
 	rtc.S++
-	// 1分経過
+	// pass one minute
 	if rtc.S == 60 {
 		rtc.incrementMinute()
 	}
@@ -107,7 +107,7 @@ func (rtc *RTC) incrementSecond() {
 func (rtc *RTC) incrementMinute() {
 	rtc.M++
 	rtc.S = 0
-	// 1時間経過
+	// pass 1 hour
 	if rtc.M == 60 {
 		rtc.incrementHour()
 	}
@@ -116,7 +116,7 @@ func (rtc *RTC) incrementMinute() {
 func (rtc *RTC) incrementHour() {
 	rtc.H++
 	rtc.M = 0
-	// 1日経過
+	// pass a day
 	if rtc.H == 24 {
 		rtc.incrementDay()
 	}
@@ -126,15 +126,15 @@ func (rtc *RTC) incrementDay() {
 	previousDL := rtc.DL
 	rtc.DL++
 	rtc.H = 0
-	// 256日経過
+	// pass 256 days
 	if rtc.DL < previousDL {
 		rtc.DL = 0
 		if rtc.DH&0x01 == 1 {
-			// 日付最上位bitが1
+			// msb on day is set
 			rtc.DH |= 0x80
 			rtc.DH &= 0x7f
 		} else {
-			// 日付最上位bitが0
+			// msb on day is clear
 			rtc.DH |= 0x01
 		}
 	}
@@ -190,12 +190,11 @@ func (rtc *RTC) Sync(value []byte) {
 	rtc.LatchedRTC.DH = value[36]
 
 	lastSaveTime := (int64(value[43]) << 24) | (int64(value[42]) << 16) | (int64(value[41]) << 8) | int64(value[40])
-	// fmt.Println(time.Now(), time.Unix(lastSaveTime, 0))
 	delta := int(time.Now().Unix()-lastSaveTime) / 60
 	rtc.advance(delta)
 }
 
-// Advance 指定した分だけRTCを進める
+// Advance rtc clock
 func (rtc *RTC) advance(minutes int) {
 	for i := 0; i < minutes; i++ {
 		rtc.incrementMinute()
