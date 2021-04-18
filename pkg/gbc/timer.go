@@ -1,5 +1,7 @@
 package gbc
 
+import "gbc/pkg/util"
+
 type Cycle struct {
 	tac      int // タイマー用
 	div      int // DIVタイマー用
@@ -33,14 +35,12 @@ type OAMDMA struct {
 }
 
 func (cpu *CPU) setTimerFlag() {
-	IF := cpu.fetchIO(IFIO) | 0x04
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x04)
 	cpu.halt = false
 }
 
 func (cpu *CPU) clearTimerFlag() {
-	IF := cpu.fetchIO(IFIO) & 0xfb
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xfb)
 }
 
 func (cpu *CPU) timer(cycle int) {
@@ -108,7 +108,7 @@ func (cpu *CPU) tick() {
 		cpu.Cycle.div -= 64
 	}
 
-	if (TAC>>2)&0x01 == 1 {
+	if util.Bit(TAC, 2) {
 		cpu.Cycle.tac++
 		switch TAC % 4 {
 		case 0:
@@ -195,7 +195,7 @@ func (cpu *CPU) resetTimer() bool {
 
 	tickFlag := false
 	TAC := cpu.RAM[TACIO]
-	if (TAC>>2)&0x01 == 1 {
+	if util.Bit(TAC, 2) {
 		switch TAC % 4 {
 		case 0:
 			// 4096Hz (1024/4 cycle)

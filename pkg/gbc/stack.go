@@ -70,8 +70,7 @@ func (cpu *CPU) popHL() {
 // ------------ PC --------------------
 
 func (cpu *CPU) pushPC() {
-	upper := byte(cpu.Reg.PC >> 8)
-	lower := byte(cpu.Reg.PC & 0x00ff)
+	upper, lower := byte(cpu.Reg.PC>>8), byte(cpu.Reg.PC)
 	cpu.push(upper)
 	cpu.push(lower)
 }
@@ -88,6 +87,5 @@ func (cpu *CPU) pushPCCALL() {
 func (cpu *CPU) popPC() {
 	lower := uint16(cpu.pop())
 	upper := uint16(cpu.pop())
-	PC := (upper << 8) | lower
-	cpu.Reg.PC = PC
+	cpu.Reg.PC = (upper << 8) | lower
 }

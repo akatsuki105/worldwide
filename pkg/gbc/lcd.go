@@ -1,5 +1,7 @@
 package gbc
 
+import "gbc/pkg/util"
+
 func (cpu *CPU) setHBlankMode() {
 	cpu.mode = HBlankMode
 	STAT := cpu.FetchMemory8(LCDSTATIO)
@@ -65,7 +67,7 @@ func (cpu *CPU) compareLYC(LY uint8) {
 		STAT := cpu.FetchMemory8(LCDSTATIO) | 0x04
 		cpu.SetMemory8(LCDSTATIO, STAT)
 
-		if (STAT>>6)&0x01 == 1 {
+		if util.Bit(STAT, 6) {
 			cpu.setLCDSTATFlag()
 		}
 		return

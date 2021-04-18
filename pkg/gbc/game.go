@@ -8,12 +8,10 @@ import (
 )
 
 func (cpu *CPU) Update() error {
-
 	if frames == 0 {
 		setIcon()
 		cpu.debug.monitor.CPU.Reset()
 	}
-
 	if frames%3 == 0 {
 		cpu.handleJoypad()
 	}
@@ -21,8 +19,7 @@ func (cpu *CPU) Update() error {
 	frames++
 	cpu.debug.monitor.CPU.Reset()
 
-	p := &cpu.debug.pause
-	b := &cpu.debug.Break
+	p, b := &cpu.debug.pause, &cpu.debug.Break
 	if p.Delay() {
 		p.DecrementDelay()
 	}
@@ -33,31 +30,26 @@ func (cpu *CPU) Update() error {
 	skipRender = (cpu.Config.Display.FPS30) && (frames%2 == 1)
 
 	LCDC := cpu.FetchMemory8(LCDCIO)
-	scrollX, scrollY := cpu.GPU.GetScroll()
+	scrollX, scrollY := uint(cpu.GPU.Scroll[0]), uint(cpu.GPU.Scroll[1])
 	scrollPixelX := scrollX % 8
 
-	iterX := width
-	iterY := height
+	iterX, iterY := width, height
 	if scrollPixelX > 0 {
 		iterX += 8
 	}
 
-	// 背景描画 + CPU稼働
+	// render bg and run cpu
 	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
-
-		// CPU works
 		scx, scy, ok := cpu.execScanline()
 		if !ok {
 			break
 		}
 		scrollX, scrollY = scx, scy
-
 		scrollPixelX = scrollX % 8
 
-		LCDC = cpu.FetchMemory8(LCDCIO)
 		if y < height {
-			LCDC1[y] = util.Bit(LCDC, 1) == 1
+			LCDC1[y] = util.Bit(cpu.FetchMemory8(LCDCIO), 1)
 		}
 
 		// render background(or window)
@@ -67,44 +59,41 @@ func (cpu *CPU) Update() error {
 				blockX, blockY := x/8, y/8
 
 				var tileX, tileY uint
-				var useWindow bool
+				var isWin bool
 				var entryX int
 
-				lineNumber := y % 8 // タイルの何行目を描画するか
+				lineIdx := y % 8 // タイルの何行目を描画するか
 				entryY := gpu.EntryY{}
-				if util.Bit(LCDC, 5) == 1 && (WY <= uint(y)) && (WX <= uint(x)) {
-					tileX = ((uint(x) - WX) / 8) % 32
-					tileY = ((uint(y) - WY) / 8) % 32
-					useWindow = true
+				if util.Bit(LCDC, 5) && (WY <= uint(y)) && (WX <= uint(x)) {
+					tileX, tileY = ((uint(x)-WX)/8)%32, ((uint(y)-WY)/8)%32
+					isWin = true
 
 					entryX = blockX * 8
 					entryY.Block = blockY * 8
 					entryY.Offset = y % 8
 				} else {
-					tileX = (scrollX + uint(x)) / 8 % 32
-					tileY = (scrollY + uint(y)) / 8 % 32
-					useWindow = false
+					tileX, tileY = (scrollX+uint(x))/8%32, (scrollY+uint(y))/8%32
+					isWin = false
 
 					entryX = blockX*8 - int(scrollPixelX)
 					entryY.Block = blockY * 8
 					entryY.Offset = y % 8
-					lineNumber = (int(scrollY) + y) % 8
+					lineIdx = (int(scrollY) + y) % 8
 				}
 
-				if util.Bit(LCDC, 7) == 1 {
-					cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, useWindow, cpu.Cartridge.IsCGB, lineNumber)
+				if util.Bit(LCDC, 7) {
+					cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, cpu.Cartridge.IsCGB, lineIdx)
 				}
 			}
 		}
 	}
 
-	// デバッグモードのときはBGマップとタイルデータを保存
+	// save bgmap and tiledata on debug mode
 	if cpu.debug.on {
 		if !skipRender {
-			bg := cpu.GPU.GetDisplay(false)
+			bg := cpu.GPU.Display(false)
 			cpu.GPU.Debug.SetBGMap(bg)
 		}
-
 		if frames%4 == 0 {
 			go func() {
 				cpu.GPU.UpdateTileData(cpu.Cartridge.IsCGB)
@@ -113,16 +102,11 @@ func (cpu *CPU) Update() error {
 	}
 
 	if !skipRender {
-		// スプライト描画
-		cpu.renderSprite(&LCDC1)
-
-		// 背景優先のpixelを描画していく
-		cpu.GPU.SetBGPriorPixels()
+		cpu.renderSprite(&LCDC1)   // render sprite
+		cpu.GPU.SetBGPriorPixels() // render bg has higher priority
 	}
 
-	// VBlank
 	cpu.execVBlank()
-
 	if cpu.debug.on {
 		select {
 		case <-second:

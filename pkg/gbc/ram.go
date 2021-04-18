@@ -44,11 +44,9 @@ func (cpu *CPU) fetchIO(addr uint16) (value byte) {
 	case addr == LCDSTATIO:
 		value = cpu.GPU.LCDSTAT
 	case addr == BCPDIO: // BG Palette
-		index := cpu.GPU.FetchBGPalleteIndex()
-		value = cpu.GPU.Palette.BGPallete[index]
+		value = cpu.GPU.Palette.BGPalette[cpu.GPU.BgPalIdx()]
 	case addr == OCPDIO: // OAM Palette
-		index := cpu.GPU.FetchSPRPalleteIndex()
-		value = cpu.GPU.Palette.SPRPallete[index]
+		value = cpu.GPU.Palette.SPRPalette[cpu.GPU.SprPalIdx()]
 	default:
 		value = cpu.RAM[addr]
 	}
@@ -79,8 +77,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				}
 			case cartridge.MBC5:
 				if addr < 0x3000 { // lower 8bit
-					newROMBankPtr := value
-					cpu.switchROMBank(newROMBankPtr)
+					cpu.switchROMBank(value)
 				}
 			}
 		} else if (addr >= 0x4000) && (addr <= 0x5fff) {
@@ -265,21 +262,20 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.GPU.LCDSTAT = value
 
 	case addr == 0xff42:
-		cpu.GPU.SetScrollY(value)
+		cpu.GPU.Scroll[1] = value
 	case addr == 0xff43:
-		cpu.GPU.SetScrollX(value)
+		cpu.GPU.Scroll[0] = value
 
 	case addr == BGPIO:
-		cpu.GPU.Palette.DMGPallte[0] = value
+		cpu.GPU.Palette.DMGPalette[0] = value
 	case addr == OBP0IO:
-		cpu.GPU.Palette.DMGPallte[1] = value
+		cpu.GPU.Palette.DMGPalette[1] = value
 	case addr == OBP1IO:
-		cpu.GPU.Palette.DMGPallte[2] = value
+		cpu.GPU.Palette.DMGPalette[2] = value
 
 	// below case statements, gbc only
 	case addr == VBKIO && cpu.GPU.HBlankDMALength == 0: // switch vram bank
-		newVRAMBankPtr := value & 0x01
-		cpu.GPU.VRAM.Ptr = newVRAMBankPtr
+		cpu.GPU.VRAM.Ptr = value & 0x01
 
 	case addr == HDMA5IO:
 		HDMA5 := value
@@ -301,26 +297,24 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		}
 
 	case addr == BCPSIO:
-		cpu.GPU.Palette.CGBPallte[0] = value
+		cpu.GPU.Palette.CGBPalette[0] = value
 	case addr == OCPSIO:
-		cpu.GPU.Palette.CGBPallte[1] = value
+		cpu.GPU.Palette.CGBPalette[1] = value
 	case addr == BCPDIO: // write bg palette
-		index := cpu.GPU.FetchBGPalleteIndex()
-		cpu.GPU.Palette.BGPallete[index] = value
-		if cpu.GPU.FetchBGPalleteIncrement() {
-			cpu.GPU.Palette.CGBPallte[0]++
+		cpu.GPU.Palette.BGPalette[cpu.GPU.BgPalIdx()] = value
+		if cpu.GPU.IsBgPalIncrement() {
+			cpu.GPU.Palette.CGBPalette[0]++
 		}
 	case addr == OCPDIO: // write oam palette
-		index := cpu.GPU.FetchSPRPalleteIndex()
-		cpu.GPU.Palette.SPRPallete[index] = value
-		if cpu.GPU.FetchSPRPalleteIncrement() {
-			cpu.GPU.Palette.CGBPallte[1]++
+		cpu.GPU.Palette.SPRPalette[cpu.GPU.SprPalIdx()] = value
+		if cpu.GPU.IsSprPalIncrement() {
+			cpu.GPU.Palette.CGBPalette[1]++
 		}
 
 	case addr == SVBKIO: // switch wram bank
 		newWRAMBankPtr := value & 0x07
 		if newWRAMBankPtr == 0 {
-			newWRAMBankPtr = 1
+			newWRAMBankPtr++
 		}
 		cpu.WRAMBank.ptr = newWRAMBankPtr
 	}

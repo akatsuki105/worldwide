@@ -1,14 +1,45 @@
 package util
 
-func Bit(b byte, n int) int {
-	switch {
-	case n < 0:
-		return 0
-	case n > 7:
-		return 0
-	default:
-		return int((b >> n) & 0x01)
+// Bit check val's idx bit
+func Bit(val interface{}, idx int) bool {
+	switch val := val.(type) {
+	case uint64:
+		if idx < 0 || idx > 63 {
+			return false
+		}
+		return (val & (1 << idx)) != 0
+
+	case uint32:
+		if idx < 0 || idx > 31 {
+			return false
+		}
+		return (val & (1 << idx)) != 0
+
+	case uint:
+		if idx < 0 || idx > 31 {
+			return false
+		}
+		return (val & (1 << idx)) != 0
+
+	case int:
+		if idx < 0 || idx > 31 {
+			return false
+		}
+		return (val & (1 << idx)) != 0
+
+	case uint16:
+		if idx < 0 || idx > 15 {
+			return false
+		}
+		return (val & (1 << idx)) != 0
+
+	case byte:
+		if idx < 0 || idx > 7 {
+			return false
+		}
+		return (val & (1 << idx)) != 0
 	}
+	return false
 }
 
 func Bool2Int(b bool) int {
@@ -16,6 +47,24 @@ func Bool2Int(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+func SetMSB(val byte, b bool) byte {
+	if b {
+		val |= 0x80
+	} else {
+		val &= 0x7f
+	}
+	return val
+}
+
+func SetLSB(val byte, b bool) byte {
+	if b {
+		val |= 1
+	} else {
+		val &= 0xfe
+	}
+	return val
 }
 
 var OpcodeToString [256][4]string = [256][4]string{

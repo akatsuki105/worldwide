@@ -29,7 +29,7 @@ const (
 func (d *Debug) initTileData() {
 	d.tileData.overall = image.NewRGBA(image.Rect(0, 0, 32*8+gridWidthY, 24*8+gridWidthX))
 
-	// gridを引く
+	// draw grid
 	gridColor := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}
 	for y := 0; y < 24*8+gridWidthX; y++ {
 		for i := 0; i < gridWidthY; i++ {
@@ -38,7 +38,7 @@ func (d *Debug) initTileData() {
 	}
 	for x := 0; x < 32*8+gridWidthY; x++ {
 		for i := 0; i < gridWidthX; i++ {
-			// 横グリッドは2本
+			// horizontal grid has two line
 			d.tileData.overall.Set(x, 8*8+i, gridColor)
 			d.tileData.overall.Set(x, 16*8+i, gridColor)
 		}
@@ -105,13 +105,8 @@ func (d *Debug) FillOAM() {
 	draw.Draw(d.OAM, d.OAM.Bounds(), &image.Uniform{c}, image.ZP, draw.Src)
 }
 
-func (d *Debug) UpdateOAM() {
-
-}
-
 func (d *Debug) OAMProperty(index int) (byte, byte, byte, byte) {
-	Y := d.oamProperty[index][0]
-	X := d.oamProperty[index][1]
+	Y, X := d.oamProperty[index][0], d.oamProperty[index][1]
 	tileIndex := d.oamProperty[index][2]
 	attr := d.oamProperty[index][3]
 	return Y, X, tileIndex, attr

@@ -1,6 +1,7 @@
 package gpu
 
 import (
+	"gbc/pkg/util"
 	"image"
 	"image/color"
 
@@ -53,13 +54,12 @@ func (g *GPU) Init(debug bool) {
 	}
 }
 
-// GetDisplay getter for display data
-func (g *GPU) GetDisplay(hq2x bool) *ebiten.Image {
+// Display returns gameboy display data
+func (g *GPU) Display(hq2x bool) *ebiten.Image {
 	if hq2x {
 		return g.hq2x
 	}
-	display := ebiten.NewImageFromImage(g.display)
-	return display
+	return ebiten.NewImageFromImage(g.display)
 }
 
 // GetOriginal - getter for display data in image.RGBA format. Function for debug.
@@ -79,8 +79,7 @@ func (g *GPU) set(x, y int, c color.RGBA) {
 }
 
 func (g *GPU) fetchTileBaseAddr() uint16 {
-	LCDC := g.LCDC
-	if LCDC&0x10 != 0 {
+	if util.Bit(g.LCDC, 4) {
 		return 0x8000
 	}
 	return 0x8800

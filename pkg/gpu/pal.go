@@ -1,12 +1,15 @@
 package gpu
 
-import "fmt"
+import (
+	"fmt"
+	"gbc/pkg/util"
+)
 
 type Palette struct {
-	DMGPallte  [3]byte // DMGのパレットデータ {BGP, OGP0, OGP1}
-	CGBPallte  [2]byte // CGBのパレットデータ {BCPSIO, OCPSIO}
-	BGPallete  [64]byte
-	SPRPallete [64]byte
+	DMGPalette [3]byte // DMG's pal data {BGP, OGP0, OGP1}
+	CGBPalette [2]byte // CGB's pal data {BCPSIO, OCPSIO}
+	BGPalette  [64]byte
+	SPRPalette [64]byte
 }
 
 // InitPalette init gameboy pallete color
@@ -17,66 +20,58 @@ func InitPalette(color0, color1, color2, color3 [3]int) {
 	colors[3] = [3]uint8{uint8(color3[0]), uint8(color3[1]), uint8(color3[2])}
 }
 
-// FetchBGPalleteIndex CGBのパレットインデックスを取得する
-func (g *GPU) FetchBGPalleteIndex() byte {
-	BCPS := g.Palette.CGBPallte[0]
+// BgPalIdx returns bg palette index for CGB
+func (g *GPU) BgPalIdx() byte {
+	BCPS := g.Palette.CGBPalette[0]
 	return BCPS & 0x3f
 }
 
-// FetchBGPalleteIncrement CGBのパレットインデックスが書き込み後にインクリメントするかを取得する
-func (g *GPU) FetchBGPalleteIncrement() bool {
-	BCPS := g.Palette.CGBPallte[0]
-	return (BCPS >> 7) == 1
+// isBGPalIncrement returns whether bg palette index is incremented after write
+func (g *GPU) IsBgPalIncrement() bool {
+	return util.Bit(g.Palette.CGBPalette[0], 7)
 }
 
-// FetchSPRPalleteIndex CGBのパレットインデックスを取得する
-func (g *GPU) FetchSPRPalleteIndex() byte {
-	OCPS := g.Palette.CGBPallte[1]
+// SprPalIdx returns spr palette index for CGB
+func (g *GPU) SprPalIdx() byte {
+	OCPS := g.Palette.CGBPalette[1]
 	return OCPS & 0x3f
 }
 
-// FetchSPRPalleteIncrement CGBのパレットインデックスが書き込み後にインクリメントするかを取得する
-func (g *GPU) FetchSPRPalleteIncrement() bool {
-	OCPS := g.Palette.CGBPallte[1]
-	return (OCPS >> 7) == 1
+// isBGPalIncrement returns whether spr palette index is incremented after write
+func (g *GPU) IsSprPalIncrement() bool {
+	return util.Bit(g.Palette.CGBPalette[1], 7)
 }
 
-func (g *GPU) parsePallete(tileType int, colorNumber byte) (RGB byte, transparent bool) {
-	pallete := g.Palette.DMGPallte[tileType]
-
-	transparent = false // 非透明
-
-	switch colorNumber {
+func (g *GPU) parsePallete(tileType int, colorIdx byte) (rgb byte, transparent bool) {
+	pal := g.Palette.DMGPalette[tileType]
+	transparent = false
+	switch colorIdx {
 	case 0:
-		RGB = (pallete >> 0) % 4
-		if tileType == OBP0 || tileType == OBP1 {
-			transparent = true
-		}
+		rgb, transparent = pal&0b11, tileType == OBP0 || tileType == OBP1
 	case 1, 2, 3:
-		RGB = (pallete >> (2 * colorNumber)) % 4
+		rgb = (pal >> (2 * colorIdx)) & 0b11
 	default:
-		errMsg := fmt.Sprintf("parsePallete Error: BG Pallete number is invalid. %d", colorNumber)
-		panic(errMsg)
+		panic(fmt.Errorf("parsePallete Error: BG Pallete number is invalid. %d", colorIdx))
 	}
-	return RGB, transparent
+	return rgb, transparent
 }
 
-func (g *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R, G, B byte, transparent bool) {
+func (g *GPU) parseCGBPallete(tileType int, palIdx, colorIdx byte) (R, G, B byte, transparent bool) {
 	transparent = false
 	switch tileType {
 	case BGP:
-		i := palleteNumber*8 + colorNumber*2
-		RGBLower, RGBUpper := uint16(g.Palette.BGPallete[i]), uint16(g.Palette.BGPallete[i+1])
+		i := palIdx*8 + colorIdx*2
+		RGBLower, RGBUpper := uint16(g.Palette.BGPalette[i]), uint16(g.Palette.BGPalette[i+1])
 		RGB := (RGBUpper << 8) | RGBLower
 		R = byte(RGB & 0b11111)                 // bit 0-4
 		G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9
 		B = byte((RGB & (0b11111 << 10)) >> 10) // bit 10-14
 	case OBP0, OBP1:
-		if colorNumber == 0 {
+		if colorIdx == 0 {
 			transparent = true
 		} else {
-			i := palleteNumber*8 + colorNumber*2
-			RGBLower, RGBUpper := uint16(g.Palette.SPRPallete[i]), uint16(g.Palette.SPRPallete[i+1])
+			i := palIdx*8 + colorIdx*2
+			RGBLower, RGBUpper := uint16(g.Palette.SPRPalette[i]), uint16(g.Palette.SPRPalette[i+1])
 			RGB := (RGBUpper << 8) | RGBLower
 			R = byte(RGB & 0b11111)                 // bit 0-4
 			G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9
@@ -84,9 +79,6 @@ func (g *GPU) parseCGBPallete(tileType int, palleteNumber, colorNumber byte) (R,
 		}
 	}
 
-	// 内部の色番号をRGB値に変換する
-	R = R * 8
-	G = G * 8
-	B = B * 8
+	R, G, B = R*8, G*8, B*8 // color idx -> RGB value
 	return R, G, B, transparent
 }

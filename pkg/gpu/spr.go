@@ -49,14 +49,14 @@ func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType i
 		bitCtr := (7 - uint(i)) // 上位何ビット目を取り出すか
 		upperColor := (upperByte >> bitCtr) & 0x01
 		lowerColor := (lowerByte >> bitCtr) & 0x01
-		colorNumber := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
+		colorIdx := (upperColor << 1) + lowerColor // 0 or 1 or 2 or 3
 
 		// 色番号からRGB値を算出する
-		RGB, isTransparent := g.parsePallete(tileType, colorNumber)
+		RGB, isTransparent := g.parsePallete(tileType, colorIdx)
 		R, G, B := colors[RGB][0], colors[RGB][1], colors[RGB][2]
 		if isCGB {
-			palleteNumber := attr & 0x07 // パレット番号 OBPn
-			R, G, B, isTransparent = g.parseCGBPallete(tileType, palleteNumber, colorNumber)
+			palIdx := attr & 0x07 // パレット番号 OBPn
+			R, G, B, isTransparent = g.parseCGBPallete(tileType, palIdx, colorIdx)
 		}
 		c := color.RGBA{R, G, B, 0xff}
 

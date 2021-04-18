@@ -483,12 +483,9 @@ func (cpu *CPU) exec() bool {
 		}
 	} else {
 		cycle = 1
-
-		// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
-		if !cpu.Reg.IME {
+		if !cpu.Reg.IME { // ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 			IE, IF := cpu.RAM[IEIO], cpu.RAM[IFIO]
-			pending := IE&IF != 0
-			if pending {
+			if pending := IE&IF > 0; pending {
 				cpu.halt = false
 			}
 		}
@@ -520,7 +517,7 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 		}
 	}
 
-	scrollX, scrollY := cpu.GPU.GetScroll()
+	scrollX, scrollY := uint(cpu.GPU.Scroll[0]), uint(cpu.GPU.Scroll[1])
 
 	// HBlank mode0
 	cpu.Cycle.scanline -= 42 * cpu.boost

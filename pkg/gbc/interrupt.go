@@ -1,5 +1,7 @@
 package gbc
 
+import "gbc/pkg/util"
+
 // IMESwitch - ${Count}サイクル後にIMEを${Value}の値に切り替える ${Working}=falseのときは無効
 type IMESwitch struct {
 	Count   uint
@@ -13,24 +15,15 @@ type intrIEIF struct {
 	}
 }
 
-func (cpu *CPU) getIEIF() intrIEIF {
+func (cpu *CPU) ieif() intrIEIF {
 	ieif := intrIEIF{}
-	IE, IF := cpu.RAM[IEIO], cpu.RAM[IFIO]
+	ieio, ifio := cpu.RAM[IEIO], cpu.RAM[IFIO]
 
-	VBlankEnable, VBlankFlag := IE&0x01 == 1, IF&0x01 == 1
-	ieif.VBlank.IE, ieif.VBlank.IF = VBlankEnable, VBlankFlag
-
-	LCDSTATEnable, LCDSTATFlag := (IE>>1)&0x01 == 1, (IF>>1)&0x01 == 1
-	ieif.LCDSTAT.IE, ieif.LCDSTAT.IF = LCDSTATEnable, LCDSTATFlag
-
-	TimerEnable, TimerFlag := (IE>>2)&0x01 == 1, (IF>>2)&0x01 == 1
-	ieif.Timer.IE, ieif.Timer.IF = TimerEnable, TimerFlag
-
-	SerialEnable, SerialFlag := (IE>>3)&0x01 == 1, (IF>>3)&0x01 == 1
-	ieif.Serial.IE, ieif.Serial.IF = SerialEnable, SerialFlag
-
-	JoypadEnable, JoypadFlag := (IE>>4)&0x01 == 1, (IF>>4)&0x01 == 1
-	ieif.Joypad.IE, ieif.Joypad.IF = JoypadEnable, JoypadFlag
+	ieif.VBlank.IE, ieif.VBlank.IF = util.Bit(ieio, 0), util.Bit(ifio, 0)
+	ieif.LCDSTAT.IE, ieif.LCDSTAT.IF = util.Bit(ieio, 1), util.Bit(ifio, 1)
+	ieif.Timer.IE, ieif.Timer.IF = util.Bit(ieio, 2), util.Bit(ifio, 2)
+	ieif.Serial.IE, ieif.Serial.IF = util.Bit(ieio, 3), util.Bit(ifio, 3)
+	ieif.Joypad.IE, ieif.Joypad.IF = util.Bit(ieio, 4), util.Bit(ifio, 4)
 
 	return ieif
 }
@@ -38,25 +31,21 @@ func (cpu *CPU) getIEIF() intrIEIF {
 // ------------ VBlank --------------------
 
 func (cpu *CPU) setVBlankFlag() {
-	IF := cpu.fetchIO(IFIO) | 0x01
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x01)
 }
 
 func (cpu *CPU) clearVBlankFlag() {
-	IF := cpu.fetchIO(IFIO) & 0xfe
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xfe)
 }
 
 // ------------ LCD STAT ------------------
 
 func (cpu *CPU) setLCDSTATFlag() {
-	IF := cpu.fetchIO(IFIO) | 0x02
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x02)
 }
 
 func (cpu *CPU) clearLCDSTATFlag() {
-	IF := cpu.fetchIO(IFIO) & 0xfd
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xfd)
 }
 
 // ------------ timer --------------------
@@ -65,44 +54,37 @@ func (cpu *CPU) clearLCDSTATFlag() {
 // ------------ Serial --------------------
 
 func (cpu *CPU) setSerialFlag() {
-	IF := cpu.fetchIO(IFIO) | 0x08
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x08)
 }
 
 func (cpu *CPU) clearSerialFlag() {
-	IF := cpu.fetchIO(IFIO) & 0xf7
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xf7)
 }
 
 // ------------ Joypad --------------------
 
 func (cpu *CPU) getJoypadEnable() bool {
-	IE := cpu.fetchIO(IEIO)
-	return (IE>>4)%2 == 1
+	return util.Bit(cpu.fetchIO(IEIO), 4)
 }
 
 func (cpu *CPU) setJoypadFlag() {
-	IF := cpu.fetchIO(IFIO) | 0x10
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x10)
 }
 
 func (cpu *CPU) clearJoypadFlag() {
-	IF := cpu.fetchIO(IFIO) & 0xef
-	cpu.setIO(IFIO, IF)
+	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xef)
 }
 
 // ------------ trigger --------------------
 
 func (cpu *CPU) triggerInterrupt() {
-	cpu.Reg.IME = false
-	cpu.halt = false
+	cpu.Reg.IME, cpu.halt = false, false
 	cpu.timer(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
 	cpu.pushPC()
 }
 
 func (cpu *CPU) triggerVBlank() {
-	LCDActive := (cpu.fetchIO(LCDCIO) >> 7) == 1
-	if LCDActive {
+	if util.Bit(cpu.fetchIO(LCDCIO), 7) {
 		cpu.clearVBlankFlag()
 		cpu.triggerInterrupt()
 		cpu.Reg.PC = 0x0040
@@ -138,7 +120,7 @@ func (cpu *CPU) triggerJoypad() {
 // 能動的な割り込みに対処する
 func (cpu *CPU) handleInterrupt() {
 	if cpu.Reg.IME {
-		intr := cpu.getIEIF()
+		intr := cpu.ieif()
 
 		if intr.VBlank.IE && intr.VBlank.IF {
 			cpu.triggerVBlank()
