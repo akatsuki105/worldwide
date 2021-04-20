@@ -30,48 +30,39 @@ func (cpu *CPU) ieif() intrIEIF {
 
 // ------------ VBlank --------------------
 
-func (cpu *CPU) setVBlankFlag() {
-	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x01)
-}
-
-func (cpu *CPU) clearVBlankFlag() {
+func (cpu *CPU) setVBlankFlag(b bool) {
+	if b {
+		cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x01)
+		return
+	}
 	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xfe)
 }
 
-// ------------ LCD STAT ------------------
-
-func (cpu *CPU) setLCDSTATFlag() {
-	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x02)
-}
-
-func (cpu *CPU) clearLCDSTATFlag() {
+func (cpu *CPU) setLCDSTATFlag(b bool) {
+	if b {
+		cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x02)
+		return
+	}
 	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xfd)
 }
 
-// ------------ timer --------------------
-// timer.go
-
-// ------------ Serial --------------------
-
-func (cpu *CPU) setSerialFlag() {
-	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x08)
-}
-
-func (cpu *CPU) clearSerialFlag() {
+func (cpu *CPU) setSerialFlag(b bool) {
+	if b {
+		cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x08)
+		return
+	}
 	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xf7)
 }
-
-// ------------ Joypad --------------------
 
 func (cpu *CPU) getJoypadEnable() bool {
 	return util.Bit(cpu.fetchIO(IEIO), 4)
 }
 
-func (cpu *CPU) setJoypadFlag() {
-	cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x10)
-}
-
-func (cpu *CPU) clearJoypadFlag() {
+func (cpu *CPU) setJoypadFlag(b bool) {
+	if b {
+		cpu.setIO(IFIO, cpu.fetchIO(IFIO)|0x10)
+		return
+	}
 	cpu.setIO(IFIO, cpu.fetchIO(IFIO)&0xef)
 }
 
@@ -85,14 +76,14 @@ func (cpu *CPU) triggerInterrupt() {
 
 func (cpu *CPU) triggerVBlank() {
 	if util.Bit(cpu.fetchIO(LCDCIO), 7) {
-		cpu.clearVBlankFlag()
+		cpu.setVBlankFlag(false)
 		cpu.triggerInterrupt()
 		cpu.Reg.PC = 0x0040
 	}
 }
 
 func (cpu *CPU) triggerLCDC() {
-	cpu.clearLCDSTATFlag()
+	cpu.setLCDSTATFlag(false)
 	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0048
 }
@@ -104,13 +95,13 @@ func (cpu *CPU) triggerTimer() {
 }
 
 func (cpu *CPU) triggerSerial() {
-	cpu.clearSerialFlag()
+	cpu.setSerialFlag(false)
 	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0058
 }
 
 func (cpu *CPU) triggerJoypad() {
-	cpu.clearJoypadFlag()
+	cpu.setJoypadFlag(false)
 	cpu.triggerInterrupt()
 	cpu.Reg.PC = 0x0060
 }

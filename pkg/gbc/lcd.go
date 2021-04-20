@@ -19,8 +19,8 @@ func (cpu *CPU) setHBlankMode() {
 		}
 	}
 
-	if (STAT & 0x08) != 0 {
-		cpu.setLCDSTATFlag()
+	if util.Bit(STAT, 3) {
+		cpu.setLCDSTATFlag(true)
 	}
 }
 
@@ -36,8 +36,8 @@ func (cpu *CPU) setOAMRAMMode() {
 	STAT := cpu.FetchMemory8(LCDSTATIO)
 	STAT = (STAT | 0x02) & 0xfe // bit0-1: 10
 	cpu.SetMemory8(LCDSTATIO, STAT)
-	if (STAT & 0x20) != 0 {
-		cpu.setLCDSTATFlag()
+	if util.Bit(STAT, 5) {
+		cpu.setLCDSTATFlag(true)
 	}
 }
 
@@ -53,7 +53,7 @@ func (cpu *CPU) incrementLY() {
 	LY++
 	if LY == 144 { // set vblank flag
 		cpu.setVBlankMode()
-		cpu.setVBlankFlag()
+		cpu.setVBlankFlag(true)
 	}
 	LY %= 154 // LY = LY >= 154 ? 0 : LY
 	cpu.RAM[LYIO] = LY
@@ -68,7 +68,7 @@ func (cpu *CPU) compareLYC(LY uint8) {
 		cpu.SetMemory8(LCDSTATIO, STAT)
 
 		if util.Bit(STAT, 6) {
-			cpu.setLCDSTATFlag()
+			cpu.setLCDSTATFlag(true)
 		}
 		return
 	}

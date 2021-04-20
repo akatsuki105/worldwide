@@ -1,10 +1,7 @@
 package gbc
 
 const (
-	flagZ = 7
-	flagN = 6
-	flagH = 5
-	flagC = 4
+	flagZ, flagN, flagH, flagC = 7, 6, 5, 4
 )
 
 func (cpu *CPU) setCSub(dst, src byte) {

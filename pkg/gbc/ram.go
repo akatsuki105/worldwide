@@ -185,7 +185,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						<-cpu.serialTick
 						cpu.Serial.Receive()
 						cpu.Serial.ClearSC()
-						cpu.setSerialFlag()
+						cpu.setSerialFlag(true)
 					}
 				}()
 			case 0x83:
@@ -205,7 +205,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						<-cpu.serialTick
 						cpu.Serial.Receive()
 						cpu.Serial.ClearSC()
-						cpu.setSerialFlag()
+						cpu.setSerialFlag(true)
 					}
 				}()
 			}

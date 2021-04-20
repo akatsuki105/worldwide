@@ -16,7 +16,7 @@ func (cpu *CPU) pop() byte {
 func (cpu *CPU) pushAF() {
 	cpu.push(cpu.Reg.A)
 	cpu.timer(1)
-	cpu.push(cpu.Reg.F & 0x00f0)
+	cpu.push(cpu.Reg.F & 0xf0)
 }
 
 func (cpu *CPU) popAF() {
@@ -42,8 +42,8 @@ func (cpu *CPU) popBC() {
 // ------------ DE --------------------
 
 func (cpu *CPU) pushDE() {
-	cpu.push(cpu.Reg.D) // まだOAMDMA中なのでここでのアクセスは弾かれる https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/push_timing.s
-	cpu.timer(1)        // OAMDMAが終わる
+	cpu.push(cpu.Reg.D)
+	cpu.timer(1)
 	cpu.push(cpu.Reg.E)
 }
 

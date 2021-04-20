@@ -228,7 +228,7 @@ func (cpu *CPU) initNetwork() {
 				<-cpu.serialTick
 				cpu.Serial.Receive()
 				cpu.Serial.ClearSC()
-				cpu.setSerialFlag()
+				cpu.setSerialFlag(true)
 			}
 		}()
 	}
