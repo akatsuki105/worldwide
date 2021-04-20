@@ -6,10 +6,9 @@ import (
 )
 
 type Palette struct {
-	DMGPalette [3]byte // DMG's pal data {BGP, OGP0, OGP1}
-	CGBPalette [2]byte // CGB's pal data {BCPSIO, OCPSIO}
-	BGPalette  [64]byte
-	SPRPalette [64]byte
+	DMGPalette            [3]byte // DMG's pal data {BGP, OGP0, OGP1}
+	CGBPalette            [2]byte // CGB's pal data {BCPSIO, OCPSIO}
+	BGPalette, SPRPalette [64]byte
 }
 
 // InitPalette init gameboy pallete color

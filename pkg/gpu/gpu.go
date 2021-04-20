@@ -44,9 +44,7 @@ const (
 
 // Init GPU
 func (g *GPU) Init(debug bool) {
-	g.display = image.NewRGBA(image.Rect(0, 0, 160, 144))
-	g.hq2x = ebiten.NewImage(320, 288)
-
+	g.display, g.hq2x = image.NewRGBA(image.Rect(0, 0, 160, 144)), ebiten.NewImage(320, 288)
 	g.Debug.On = debug
 	if debug {
 		g.initTileData()

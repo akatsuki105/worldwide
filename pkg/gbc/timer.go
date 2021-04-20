@@ -111,26 +111,22 @@ func (cpu *CPU) tick() {
 	if util.Bit(TAC, 2) {
 		cpu.Cycle.tac++
 		switch TAC % 4 {
-		case 0:
-			// 4096Hz (1024/4 cycle)
+		case 0: // 4096Hz (1024/4 cycle)
 			if cpu.Cycle.tac >= 256 {
 				cpu.Cycle.tac -= 256
 				tickFlag = true
 			}
-		case 1:
-			// 262144Hz (16/4 cycle)
+		case 1: // 262144Hz (16/4 cycle)
 			if cpu.Cycle.tac >= 4 {
 				cpu.Cycle.tac -= 4
 				tickFlag = true
 			}
-		case 2:
-			// 65536Hz (64/4 cycle)
+		case 2: // 65536Hz (64/4 cycle)
 			if cpu.Cycle.tac >= 16 {
 				cpu.Cycle.tac -= 16
 				tickFlag = true
 			}
-		case 3:
-			// 16384Hz (256/4 cycle)
+		case 3: // 16384Hz (256/4 cycle)
 			if cpu.Cycle.tac >= 64 {
 				cpu.Cycle.tac -= 64
 				tickFlag = true

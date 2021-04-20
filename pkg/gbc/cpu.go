@@ -8,7 +8,6 @@ import (
 	"gbc/pkg/apu"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
-	"gbc/pkg/debug"
 	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/rtc"
@@ -79,70 +78,36 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		cpu.RAM[i] = rom[i]
 	}
 
-	// カードリッジタイプで場合分け
 	switch cpu.Cartridge.Type {
 	case 0x00:
-		// Type : 0
 		cpu.Cartridge.MBC = cartridge.ROM
 		cpu.transferROM(2, rom)
-	case 0x01:
-		// Type : 1 => MBC1
+	case 0x01: // Type : 1 => MBC1
 		cpu.Cartridge.MBC = cartridge.MBC1
-		switch cpu.Cartridge.ROMSize {
-		case 0:
-			cpu.transferROM(2, rom)
-		case 1:
-			cpu.transferROM(4, rom)
-		case 2:
-			cpu.transferROM(8, rom)
-		case 3:
-			cpu.transferROM(16, rom)
-		case 4:
-			cpu.transferROM(32, rom)
-		case 5:
-			cpu.transferROM(64, rom)
-		case 6:
-			cpu.transferROM(128, rom)
+		switch r := int(cpu.Cartridge.ROMSize); r {
+		case 0, 1, 2, 3, 4, 5, 6:
+			cpu.transferROM(2*(r+1), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x02, 0x03:
-		// Type : 2, 3 => MBC1+RAM
+	case 0x02, 0x03: // Type : 2, 3 => MBC1+RAM
 		cpu.Cartridge.MBC = cartridge.MBC1
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
-			switch cpu.Cartridge.ROMSize {
-			case 0:
-				cpu.transferROM(2, rom)
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
-			case 4:
-				cpu.transferROM(32, rom)
-			case 5:
-				cpu.transferROM(64, rom)
-			case 6:
-				cpu.transferROM(128, rom)
+			switch r := int(cpu.Cartridge.ROMSize); r {
+			case 0, 1, 2, 3, 4, 5, 6:
+				cpu.transferROM(2*(r+1), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
 			}
 		case 3:
 			cpu.bankMode = 1
-			switch cpu.Cartridge.ROMSize {
+			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0:
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
-			case 4:
-				cpu.transferROM(32, rom)
+			case 1, 2, 3, 4:
+				cpu.transferROM(2*(r+1), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -151,34 +116,23 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x05, 0x06:
-		// Type : 5, 6 => MBC2
+	case 0x05, 0x06: // Type : 5, 6 => MBC2
 		cpu.Cartridge.MBC = cartridge.MBC2
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
-			switch cpu.Cartridge.ROMSize {
-			case 0:
-				cpu.transferROM(2, rom)
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
+			switch r := int(cpu.Cartridge.ROMSize); r {
+			case 0, 1, 2, 3:
+				cpu.transferROM(2*(r+1), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
 			}
 		case 3:
 			cpu.bankMode = 1
-			switch cpu.Cartridge.ROMSize {
+			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0:
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
+			case 1, 2, 3:
+				cpu.transferROM(2*(r+1), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -187,51 +141,20 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x0f, 0x10, 0x11, 0x12, 0x13:
-		// Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
-		cpu.Cartridge.MBC = cartridge.MBC3
-
-		cpu.RTC.Working = true
-
-		switch cpu.Cartridge.ROMSize {
-		case 0:
-			cpu.transferROM(2, rom)
-		case 1:
-			cpu.transferROM(4, rom)
-		case 2:
-			cpu.transferROM(8, rom)
-		case 3:
-			cpu.transferROM(16, rom)
-		case 4:
-			cpu.transferROM(32, rom)
-		case 5:
-			cpu.transferROM(64, rom)
-		case 6:
-			cpu.transferROM(128, rom)
+	case 0x0f, 0x10, 0x11, 0x12, 0x13: // Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
+		cpu.Cartridge.MBC, cpu.RTC.Working = cartridge.MBC3, true
+		switch r := int(cpu.Cartridge.ROMSize); r {
+		case 0, 1, 2, 3, 4, 5, 6:
+			cpu.transferROM(2*(r+1), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x19, 0x1a, 0x1b:
-		// Type : 0x19, 0x1a, 0x1b => MBC5
+	case 0x19, 0x1a, 0x1b: // Type : 0x19, 0x1a, 0x1b => MBC5
 		cpu.Cartridge.MBC = cartridge.MBC5
-		switch cpu.Cartridge.ROMSize {
-		case 0:
-			cpu.transferROM(2, rom)
-		case 1:
-			cpu.transferROM(4, rom)
-		case 2:
-			cpu.transferROM(8, rom)
-		case 3:
-			cpu.transferROM(16, rom)
-		case 4:
-			cpu.transferROM(32, rom)
-		case 5:
-			cpu.transferROM(64, rom)
-		case 6:
-			cpu.transferROM(128, rom)
-		case 7:
-			cpu.transferROM(256, rom)
+		switch r := int(cpu.Cartridge.ROMSize); r {
+		case 0, 1, 2, 3, 4, 5, 6, 7:
+			cpu.transferROM(2*(r+1), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -255,8 +178,7 @@ func (cpu *CPU) initRegister() {
 	cpu.Reg.setBC(0x0013)
 	cpu.Reg.setDE(0x00d8)
 	cpu.Reg.setHL(0x014d)
-	cpu.Reg.PC = 0x0100
-	cpu.Reg.SP = 0xfffe
+	cpu.Reg.PC, cpu.Reg.SP = 0x0100, 0xfffe
 }
 
 func (cpu *CPU) initIOMap() {
@@ -286,14 +208,12 @@ func (cpu *CPU) initIOMap() {
 	cpu.SetMemory8(LCDCIO, 0x91)
 	cpu.SetMemory8(LCDSTATIO, 0x85)
 	cpu.RAM[BGPIO] = 0xfc
-	cpu.RAM[OBP0IO] = 0xff
-	cpu.RAM[OBP1IO] = 0xff
+	cpu.RAM[OBP0IO], cpu.RAM[OBP1IO] = 0xff, 0xff
 }
 
 func (cpu *CPU) initNetwork() {
 	if cpu.Config.Network.Network {
-		your := cpu.Config.Network.Your
-		peer := cpu.Config.Network.Peer
+		your, peer := cpu.Config.Network.Your, cpu.Config.Network.Peer
 		myIP, myPort, _ := net.SplitHostPort(your)
 		peerIP, peerPort, _ := net.SplitHostPort(peer)
 		received := make(chan int)
@@ -367,31 +287,6 @@ func (cpu *CPU) exec() bool {
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
-
-	// in breakpoint
-	b := &cpu.debug.Break
-	if cpu.debug.on {
-		switch b.Flag() {
-		case debug.BreakOn:
-			return true
-		case debug.BreakOff:
-			for _, breakpoint := range b.BreakPoints() {
-				if PC != breakpoint.PC {
-					continue
-				}
-
-				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
-					if cpu.checkBreakCond(&breakpoint) {
-						b.SetFlag(debug.BreakOn)
-						cpu.debug.history.SetHistory(bank, PC, bytecode)
-						return true
-					}
-				}
-			}
-		case debug.BreakDelay:
-			b.SetFlag(debug.BreakOff)
-		}
-	}
 
 	halt := cpu.halt
 	if !cpu.halt {
