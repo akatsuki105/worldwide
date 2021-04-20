@@ -45,7 +45,7 @@ func (cpu *CPU) save() {
 		}
 	}
 
-	if cpu.RTC.Working {
+	if cpu.RTC.Enable {
 		rtcData := cpu.RTC.Dump()
 		for i := 0; i < 48; i++ {
 			savdata = append(savdata, rtcData[i])

@@ -2,36 +2,35 @@ package rtc
 
 import (
 	"fmt"
+	"gbc/pkg/util"
 	"time"
+)
+
+const (
+	S = iota
+	M
+	H
+	DL
+	DH
 )
 
 // RTC Real Time Clock
 type RTC struct {
-	Working    bool
+	Enable     bool
 	Mapped     uint
-	S          byte
-	M          byte
-	H          byte
-	DL         byte
-	DH         byte
+	Ctr        [5]byte
 	Latched    bool
 	LatchedRTC LatchedRTC
 }
 
 // LatchedRTC Latched RTC
-type LatchedRTC struct {
-	S  byte
-	M  byte
-	H  byte
-	DL byte
-	DH byte
-}
+type LatchedRTC struct{ Ctr [5]byte }
 
 // Init rtc clock
 func (rtc *RTC) Init() {
-	rtc.Working = true
+	rtc.Enable = true
 	for range time.Tick(time.Second) {
-		if rtc.Working {
+		if rtc.Enable {
 			if rtc.isActive() {
 				rtc.incrementSecond()
 			}
@@ -42,132 +41,78 @@ func (rtc *RTC) Init() {
 // Read fetch clock register
 func (rtc *RTC) Read(target byte) byte {
 	if rtc.Latched {
-		switch target {
-		case 0x08:
-			return rtc.LatchedRTC.S
-		case 0x09:
-			return rtc.LatchedRTC.M
-		case 0x0a:
-			return rtc.LatchedRTC.H
-		case 0x0b:
-			return rtc.LatchedRTC.DL
-		case 0x0c:
-			return rtc.LatchedRTC.DH
-		}
-	} else {
-		switch target {
-		case 0x08:
-			return rtc.S
-		case 0x09:
-			return rtc.M
-		case 0x0a:
-			return rtc.H
-		case 0x0b:
-			return rtc.DL
-		case 0x0c:
-			return rtc.DH
-		}
+		return rtc.LatchedRTC.Ctr[target-0x08]
 	}
-	return 0
+	return rtc.Ctr[target-0x08]
 }
 
 // Latch rtc
 func (rtc *RTC) Latch() {
-	rtc.LatchedRTC.S = rtc.S
-	rtc.LatchedRTC.M = rtc.M
-	rtc.LatchedRTC.H = rtc.H
-	rtc.LatchedRTC.DL = rtc.DL
-	rtc.LatchedRTC.DH = rtc.DH
+	for i := 0; i < 5; i++ {
+		rtc.LatchedRTC.Ctr[i] = rtc.Ctr[i]
+	}
 }
 
 // Write set clock register
 func (rtc *RTC) Write(target, value byte) {
-	switch target {
-	case 0x08:
-		rtc.S = value
-	case 0x09:
-		rtc.M = value
-	case 0x0a:
-		rtc.H = value
-	case 0x0b:
-		rtc.DL = value
-	case 0x0c:
-		rtc.DH = value
-	}
+	rtc.Ctr[target-0x08] = value
 }
 
 func (rtc *RTC) incrementSecond() {
-	rtc.S++
+	rtc.Ctr[S]++
 	// pass one minute
-	if rtc.S == 60 {
+	if rtc.Ctr[S] == 60 {
 		rtc.incrementMinute()
 	}
 }
 
 func (rtc *RTC) incrementMinute() {
-	rtc.M++
-	rtc.S = 0
+	rtc.Ctr[M]++
+	rtc.Ctr[S] = 0
 	// pass 1 hour
-	if rtc.M == 60 {
+	if rtc.Ctr[M] == 60 {
 		rtc.incrementHour()
 	}
 }
 
 func (rtc *RTC) incrementHour() {
-	rtc.H++
-	rtc.M = 0
+	rtc.Ctr[H]++
+	rtc.Ctr[M] = 0
 	// pass a day
-	if rtc.H == 24 {
+	if rtc.Ctr[H] == 24 {
 		rtc.incrementDay()
 	}
 }
 
 func (rtc *RTC) incrementDay() {
-	previousDL := rtc.DL
-	rtc.DL++
-	rtc.H = 0
+	previousDL := rtc.Ctr[DL]
+	rtc.Ctr[DL]++
+	rtc.Ctr[H] = 0
 	// pass 256 days
-	if rtc.DL < previousDL {
-		rtc.DL = 0
-		if rtc.DH&0x01 == 1 {
+	if rtc.Ctr[DL] < previousDL {
+		rtc.Ctr[DL] = 0
+		if rtc.Ctr[DH]&0x01 == 1 {
 			// msb on day is set
-			rtc.DH |= 0x80
-			rtc.DH &= 0x7f
+			rtc.Ctr[DH] |= 0x80
+			rtc.Ctr[DH] &= 0x7f
 		} else {
 			// msb on day is clear
-			rtc.DH |= 0x01
+			rtc.Ctr[DH] |= 0x01
 		}
 	}
 }
 
-func (rtc *RTC) isActive() bool {
-	return (rtc.DH&0b01000000 == 0)
-}
+func (rtc *RTC) isActive() bool { return !util.Bit(rtc.Ctr[DH], 6) }
 
 // Dump RTC on common format
 func (rtc *RTC) Dump() []byte {
 	result := make([]byte, 48)
 
-	result[0] = rtc.S
-	result[4] = rtc.M
-	result[8] = rtc.H
-	result[12] = rtc.DL
-	result[16] = rtc.DH
-	result[20] = rtc.LatchedRTC.S
-	result[24] = rtc.LatchedRTC.M
-	result[28] = rtc.LatchedRTC.H
-	result[32] = rtc.LatchedRTC.DL
-	result[36] = rtc.LatchedRTC.DH
+	result[0], result[4], result[8], result[12], result[16] = rtc.Ctr[S], rtc.Ctr[M], rtc.Ctr[H], rtc.Ctr[DL], rtc.Ctr[DH]
+	result[20], result[24], result[28], result[32], result[36] = rtc.LatchedRTC.Ctr[S], rtc.LatchedRTC.Ctr[M], rtc.LatchedRTC.Ctr[H], rtc.LatchedRTC.Ctr[DL], rtc.LatchedRTC.Ctr[DH]
 
 	now := time.Now().Unix()
-	now0_8 := byte(now)
-	now8_16 := byte(now >> 8)
-	now16_24 := byte(now >> 16)
-	now24_32 := byte(now >> 24)
-	result[40] = now0_8
-	result[41] = now8_16
-	result[42] = now16_24
-	result[43] = now24_32
+	result[40], result[41], result[42], result[43] = byte(now), byte(now>>8), byte(now>>16), byte(now>>24)
 	return result
 }
 
@@ -177,18 +122,8 @@ func (rtc *RTC) Sync(value []byte) {
 		fmt.Println("invalid RTC format")
 		return
 	}
-
-	rtc.S = value[0]
-	rtc.M = value[4]
-	rtc.H = value[8]
-	rtc.DL = value[12]
-	rtc.DH = value[16]
-	rtc.LatchedRTC.S = value[20]
-	rtc.LatchedRTC.M = value[24]
-	rtc.LatchedRTC.H = value[28]
-	rtc.LatchedRTC.DL = value[32]
-	rtc.LatchedRTC.DH = value[36]
-
+	rtc.Ctr = [5]byte{value[0], value[4], value[8], value[12], value[16]}
+	rtc.LatchedRTC.Ctr = [5]byte{value[20], value[24], value[28], value[32], value[36]}
 	lastSaveTime := (int64(value[43]) << 24) | (int64(value[42]) << 16) | (int64(value[41]) << 8) | int64(value[40])
 	delta := int(time.Now().Unix()-lastSaveTime) / 60
 	rtc.advance(delta)
