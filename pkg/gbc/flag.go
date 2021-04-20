@@ -9,13 +9,13 @@ func (cpu *CPU) setCSub(dst, src byte) {
 }
 
 func (cpu *CPU) f(idx int) bool {
-	return cpu.Reg.F&(1<<idx) != 0
+	return cpu.Reg.R[F]&(1<<idx) != 0
 }
 
 func (cpu *CPU) setF(idx int, flag bool) {
 	if flag {
-		cpu.Reg.F |= (1 << idx)
+		cpu.Reg.R[F] |= (1 << idx)
 		return
 	}
-	cpu.Reg.F &= ^(1 << idx)
+	cpu.Reg.R[F] &= ^(1 << idx)
 }

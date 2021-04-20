@@ -27,10 +27,10 @@ func (cpu *CPU) SetWindowSize(x, y int) {
 }
 
 func (cpu *CPU) debugRegister() string {
-	A, F := cpu.Reg.A, cpu.Reg.F
-	B, C := cpu.Reg.B, cpu.Reg.C
-	D, E := cpu.Reg.D, cpu.Reg.E
-	H, L := cpu.Reg.H, cpu.Reg.L
+	A, F := cpu.Reg.R[A], cpu.Reg.R[F]
+	B, C := cpu.Reg.R[B], cpu.Reg.R[C]
+	D, E := cpu.Reg.R[D], cpu.Reg.R[E]
+	H, L := cpu.Reg.R[H], cpu.Reg.R[L]
 
 	bank := cpu.ROMBank.ptr
 	PC := cpu.Reg.PC

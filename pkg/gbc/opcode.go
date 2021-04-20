@@ -33,75 +33,75 @@ func (cpu *CPU) d16Fetch() uint16 {
 
 // LD A,(BC)
 func op0x0a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.Reg.BC())
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.BC())
 	cpu.Reg.PC++
 }
 
 // LD A,(DE)
 func op0x1a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.Reg.DE())
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.DE())
 	cpu.Reg.PC++
 }
 
 // LD A,(HL+)
 func op0x2a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.setHL(cpu.Reg.HL() + 1)
 	cpu.Reg.PC++
 }
 
 // LD A,(HL-)
 func op0x3a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.setHL(cpu.Reg.HL() - 1)
 	cpu.Reg.PC++
 }
 
 // LD A,u8
 func op0x3e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.Reg.PC + 1)
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.PC + 1)
 	cpu.Reg.PC += 2
 }
 
 // LD A, B
 func op0x78(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.Reg.B
+	cpu.Reg.R[A] = cpu.Reg.R[B]
 	cpu.Reg.PC++
 }
 
 // LD A, C
 func op0x79(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.Reg.C
+	cpu.Reg.R[A] = cpu.Reg.R[C]
 	cpu.Reg.PC++
 }
 
 // LD A, D
 func op0x7a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.Reg.D
+	cpu.Reg.R[A] = cpu.Reg.R[D]
 	cpu.Reg.PC++
 }
 
 // LD A, E
 func op0x7b(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.Reg.E
+	cpu.Reg.R[A] = cpu.Reg.R[E]
 	cpu.Reg.PC++
 }
 
 // LD A, H
 func op0x7c(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.Reg.H
+	cpu.Reg.R[A] = cpu.Reg.R[H]
 	cpu.Reg.PC++
 }
 
 // LD A, L
 func op0x7d(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.Reg.L
+	cpu.Reg.R[A] = cpu.Reg.R[L]
 	cpu.Reg.PC++
 }
 
 // LD A, (HL)
 func op0x7e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.PC++
 }
 
@@ -112,15 +112,15 @@ func op0x7f(cpu *CPU, operand1, operand2 int) {
 
 // LD A, (u16)
 func op0xfa(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.A = cpu.FetchMemory8(cpu.a16FetchJP())
+	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.a16FetchJP())
 	cpu.Reg.PC += 3
 	cpu.timer(2)
 }
 
 // LD A,(FF00+C)
 func op0xf2(cpu *CPU, operand1, operand2 int) {
-	addr := 0xff00 + uint16(cpu.Reg.C)
-	cpu.Reg.A = cpu.fetchIO(addr)
+	addr := 0xff00 + uint16(cpu.Reg.R[C])
+	cpu.Reg.R[A] = cpu.fetchIO(addr)
 	cpu.Reg.PC++ // mistake?(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 }
 
@@ -128,7 +128,7 @@ func op0xf2(cpu *CPU, operand1, operand2 int) {
 
 // LD B,u8
 func op0x06(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.d8Fetch()
+	cpu.Reg.R[B] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
 }
 
@@ -139,43 +139,43 @@ func op0x40(cpu *CPU, operand1, operand2 int) {
 
 // LD B,C
 func op0x41(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.Reg.C
+	cpu.Reg.R[B] = cpu.Reg.R[C]
 	cpu.Reg.PC++
 }
 
 // LD B,D
 func op0x42(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.Reg.D
+	cpu.Reg.R[B] = cpu.Reg.R[D]
 	cpu.Reg.PC++
 }
 
 // LD B,E
 func op0x43(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.Reg.E
+	cpu.Reg.R[B] = cpu.Reg.R[E]
 	cpu.Reg.PC++
 }
 
 // LD B,H
 func op0x44(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.Reg.H
+	cpu.Reg.R[B] = cpu.Reg.R[H]
 	cpu.Reg.PC++
 }
 
 // LD B,L
 func op0x45(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.Reg.L
+	cpu.Reg.R[B] = cpu.Reg.R[L]
 	cpu.Reg.PC++
 }
 
 // LD B,(HL)
 func op0x46(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[B] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.PC++
 }
 
 // LD B,A
 func op0x47(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.B = cpu.Reg.A
+	cpu.Reg.R[B] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
@@ -184,13 +184,13 @@ func op0x47(cpu *CPU, operand1, operand2 int) {
 // LD C,u8
 func op0x0e(cpu *CPU, operand1, operand2 int) {
 	value := cpu.d8Fetch()
-	cpu.Reg.C = value
+	cpu.Reg.R[C] = value
 	cpu.Reg.PC += 2
 }
 
 // LD C,B
 func op0x48(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.C = cpu.Reg.B
+	cpu.Reg.R[C] = cpu.Reg.R[B]
 	cpu.Reg.PC++
 }
 
@@ -201,38 +201,38 @@ func op0x49(cpu *CPU, operand1, operand2 int) {
 
 // LD C,D
 func op0x4a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.C = cpu.Reg.D
+	cpu.Reg.R[C] = cpu.Reg.R[D]
 	cpu.Reg.PC++
 }
 
 // LD C,E
 func op0x4b(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.C = cpu.Reg.E
+	cpu.Reg.R[C] = cpu.Reg.R[E]
 	cpu.Reg.PC++
 }
 
 // LD C,H
 func op0x4c(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.C = cpu.Reg.H
+	cpu.Reg.R[C] = cpu.Reg.R[H]
 	cpu.Reg.PC++
 }
 
 // LD C,L
 func op0x4d(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.C = cpu.Reg.L
+	cpu.Reg.R[C] = cpu.Reg.R[L]
 	cpu.Reg.PC++
 }
 
 // LD C,(HL)
 func op0x4e(cpu *CPU, operand1, operand2 int) {
 	value := cpu.FetchMemory8(cpu.Reg.HL())
-	cpu.Reg.C = value
+	cpu.Reg.R[C] = value
 	cpu.Reg.PC++
 }
 
 // LD C,A
 func op0x4f(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.C = cpu.Reg.A
+	cpu.Reg.R[C] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
@@ -240,19 +240,19 @@ func op0x4f(cpu *CPU, operand1, operand2 int) {
 
 // LD D,u8
 func op0x16(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.d8Fetch()
+	cpu.Reg.R[D] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
 }
 
 // LD D,B
 func op0x50(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.Reg.B
+	cpu.Reg.R[D] = cpu.Reg.R[B]
 	cpu.Reg.PC++
 }
 
 // LD D,C
 func op0x51(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.Reg.C
+	cpu.Reg.R[D] = cpu.Reg.R[C]
 	cpu.Reg.PC++
 }
 
@@ -263,31 +263,31 @@ func op0x52(cpu *CPU, operand1, operand2 int) {
 
 // LD D,E
 func op0x53(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.Reg.E
+	cpu.Reg.R[D] = cpu.Reg.R[E]
 	cpu.Reg.PC++
 }
 
 // LD D,H
 func op0x54(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.Reg.H
+	cpu.Reg.R[D] = cpu.Reg.R[H]
 	cpu.Reg.PC++
 }
 
 // LD D,L
 func op0x55(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.Reg.L
+	cpu.Reg.R[D] = cpu.Reg.R[L]
 	cpu.Reg.PC++
 }
 
 // LD D,(HL)
 func op0x56(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[D] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.PC++
 }
 
 // LD D,A
 func op0x57(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.D = cpu.Reg.A
+	cpu.Reg.R[D] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
@@ -295,25 +295,25 @@ func op0x57(cpu *CPU, operand1, operand2 int) {
 
 // LD E,u8
 func op0x1e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.d8Fetch()
+	cpu.Reg.R[E] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
 }
 
 // LD E,B
 func op0x58(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.Reg.B
+	cpu.Reg.R[E] = cpu.Reg.R[B]
 	cpu.Reg.PC++
 }
 
 // LD E,C
 func op0x59(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.Reg.C
+	cpu.Reg.R[E] = cpu.Reg.R[C]
 	cpu.Reg.PC++
 }
 
 // LD E,D
 func op0x5a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.Reg.D
+	cpu.Reg.R[E] = cpu.Reg.R[D]
 	cpu.Reg.PC++
 }
 
@@ -324,25 +324,25 @@ func op0x5b(cpu *CPU, operand1, operand2 int) {
 
 // LD E,H
 func op0x5c(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.Reg.H
+	cpu.Reg.R[E] = cpu.Reg.R[H]
 	cpu.Reg.PC++
 }
 
 // LD E,L
 func op0x5d(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.Reg.L
+	cpu.Reg.R[E] = cpu.Reg.R[L]
 	cpu.Reg.PC++
 }
 
 // LD E,(HL)
 func op0x5e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[E] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.PC++
 }
 
 // LD E,A
 func op0x5f(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.E = cpu.Reg.A
+	cpu.Reg.R[E] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
@@ -350,31 +350,31 @@ func op0x5f(cpu *CPU, operand1, operand2 int) {
 
 // LD H,u8
 func op0x26(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.d8Fetch()
+	cpu.Reg.R[H] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
 }
 
 // LD H,B
 func op0x60(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.Reg.B
+	cpu.Reg.R[H] = cpu.Reg.R[B]
 	cpu.Reg.PC++
 }
 
 // LD H,C
 func op0x61(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.Reg.C
+	cpu.Reg.R[H] = cpu.Reg.R[C]
 	cpu.Reg.PC++
 }
 
 // LD H,D
 func op0x62(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.Reg.D
+	cpu.Reg.R[H] = cpu.Reg.R[D]
 	cpu.Reg.PC++
 }
 
 // LD H,E
 func op0x63(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.Reg.E
+	cpu.Reg.R[H] = cpu.Reg.R[E]
 	cpu.Reg.PC++
 }
 
@@ -385,19 +385,19 @@ func op0x64(cpu *CPU, operand1, operand2 int) {
 
 // LD H,L
 func op0x65(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.Reg.L
+	cpu.Reg.R[H] = cpu.Reg.R[L]
 	cpu.Reg.PC++
 }
 
 // LD H,(HL)
 func op0x66(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[H] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.PC++
 }
 
 // LD H,A
 func op0x67(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.H = cpu.Reg.A
+	cpu.Reg.R[H] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
@@ -405,37 +405,37 @@ func op0x67(cpu *CPU, operand1, operand2 int) {
 
 // LD L,u8
 func op0x2e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.d8Fetch()
+	cpu.Reg.R[L] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
 }
 
 // LD L,B
 func op0x68(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.Reg.B
+	cpu.Reg.R[L] = cpu.Reg.R[B]
 	cpu.Reg.PC++
 }
 
 // LD L,C
 func op0x69(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.Reg.C
+	cpu.Reg.R[L] = cpu.Reg.R[C]
 	cpu.Reg.PC++
 }
 
 // LD L,D
 func op0x6a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.Reg.D
+	cpu.Reg.R[L] = cpu.Reg.R[D]
 	cpu.Reg.PC++
 }
 
 // LD L,E
 func op0x6b(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.Reg.E
+	cpu.Reg.R[L] = cpu.Reg.R[E]
 	cpu.Reg.PC++
 }
 
 // LD L,H
 func op0x6c(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.Reg.H
+	cpu.Reg.R[L] = cpu.Reg.R[H]
 	cpu.Reg.PC++
 }
 
@@ -446,13 +446,13 @@ func op0x6d(cpu *CPU, operand1, operand2 int) {
 
 // LD L,(HL)
 func op0x6e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.Reg.R[L] = cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.Reg.PC++
 }
 
 // LD L,A
 func op0x6f(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.L = cpu.Reg.A
+	cpu.Reg.R[L] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
@@ -469,43 +469,43 @@ func op0x36(cpu *CPU, operand1, operand2 int) {
 
 // LD (HL),B
 func op0x70(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.B)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[B])
 	cpu.Reg.PC++
 }
 
 // LD (HL),C
 func op0x71(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.C)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[C])
 	cpu.Reg.PC++
 }
 
 // LD (HL),D
 func op0x72(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.D)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[D])
 	cpu.Reg.PC++
 }
 
 // LD (HL),E
 func op0x73(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.E)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[E])
 	cpu.Reg.PC++
 }
 
 // LD (HL),H
 func op0x74(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.H)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[H])
 	cpu.Reg.PC++
 }
 
 // LD (HL),L
 func op0x75(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.L)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[L])
 	cpu.Reg.PC++
 }
 
 // LD (HL),A
 func op0x77(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.A)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[A])
 	cpu.Reg.PC++
 }
 
@@ -524,7 +524,7 @@ func op0x08(cpu *CPU, operand1, operand2 int) {
 
 // LD (u16),A
 func op0xea(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.a16FetchJP(), cpu.Reg.A)
+	cpu.SetMemory8(cpu.a16FetchJP(), cpu.Reg.R[A])
 	cpu.Reg.PC += 3
 	cpu.timer(2)
 }
@@ -574,26 +574,26 @@ func op0xf9(cpu *CPU, operand1, operand2 int) {
 
 // LD (FF00+C),A
 func op0xe2(cpu *CPU, operand1, operand2 int) {
-	addr := 0xff00 + uint16(cpu.Reg.C)
-	cpu.SetMemory8(addr, cpu.Reg.A)
+	addr := 0xff00 + uint16(cpu.Reg.R[C])
+	cpu.SetMemory8(addr, cpu.Reg.R[A])
 	cpu.Reg.PC++ // mistake?(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 }
 
 // LD (BC),A
 func op0x02(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.BC(), cpu.Reg.A)
+	cpu.SetMemory8(cpu.Reg.BC(), cpu.Reg.R[A])
 	cpu.Reg.PC++
 }
 
 // LD (DE),A
 func op0x12(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.DE(), cpu.Reg.A)
+	cpu.SetMemory8(cpu.Reg.DE(), cpu.Reg.R[A])
 	cpu.Reg.PC++
 }
 
 // LD (HL+),A
 func op0x22(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.A)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[A])
 	cpu.Reg.setHL(cpu.Reg.HL() + 1)
 	cpu.Reg.PC++
 }
@@ -601,7 +601,7 @@ func op0x22(cpu *CPU, operand1, operand2 int) {
 // LD (HL-),A
 func op0x32(cpu *CPU, operand1, operand2 int) {
 	// (HL)=A, HL=HL-1
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.A)
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[A])
 	cpu.Reg.setHL(cpu.Reg.HL() - 1)
 	cpu.Reg.PC++
 }
@@ -619,13 +619,13 @@ func LDH(cpu *CPU, operand1, operand2 int) {
 		cpu.timer(1)
 		value := cpu.fetchIO(addr)
 
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 		cpu.Reg.PC += 2
 		cpu.timer(2)
 	} else if operand1 == OPERAND_a8_PAREN && operand2 == OPERAND_A { // LD ($FF00+a8),A
 		addr := 0xff00 + uint16(cpu.FetchMemory8(cpu.Reg.PC+1))
 		cpu.timer(1)
-		cpu.setIO(addr, cpu.Reg.A)
+		cpu.setIO(addr, cpu.Reg.R[A])
 		cpu.Reg.PC += 2
 		cpu.timer(2)
 	} else {
@@ -644,33 +644,33 @@ func (cpu *CPU) INC(operand1, operand2 int) {
 
 	switch operand1 {
 	case OPERAND_A:
-		value = cpu.Reg.A + 1
-		carryBits = cpu.Reg.A ^ 1 ^ value
-		cpu.Reg.A = value
+		value = cpu.Reg.R[A] + 1
+		carryBits = cpu.Reg.R[A] ^ 1 ^ value
+		cpu.Reg.R[A] = value
 	case OPERAND_B:
-		value = cpu.Reg.B + 1
-		carryBits = cpu.Reg.B ^ 1 ^ value
-		cpu.Reg.B = value
+		value = cpu.Reg.R[B] + 1
+		carryBits = cpu.Reg.R[B] ^ 1 ^ value
+		cpu.Reg.R[B] = value
 	case OPERAND_C:
-		value = cpu.Reg.C + 1
-		carryBits = cpu.Reg.C ^ 1 ^ value
-		cpu.Reg.C = value
+		value = cpu.Reg.R[C] + 1
+		carryBits = cpu.Reg.R[C] ^ 1 ^ value
+		cpu.Reg.R[C] = value
 	case OPERAND_D:
-		value = cpu.Reg.D + 1
-		carryBits = cpu.Reg.D ^ 1 ^ value
-		cpu.Reg.D = value
+		value = cpu.Reg.R[D] + 1
+		carryBits = cpu.Reg.R[D] ^ 1 ^ value
+		cpu.Reg.R[D] = value
 	case OPERAND_E:
-		value = cpu.Reg.E + 1
-		carryBits = cpu.Reg.E ^ 1 ^ value
-		cpu.Reg.E = value
+		value = cpu.Reg.R[E] + 1
+		carryBits = cpu.Reg.R[E] ^ 1 ^ value
+		cpu.Reg.R[E] = value
 	case OPERAND_H:
-		value = cpu.Reg.H + 1
-		carryBits = cpu.Reg.H ^ 1 ^ value
-		cpu.Reg.H = value
+		value = cpu.Reg.R[H] + 1
+		carryBits = cpu.Reg.R[H] ^ 1 ^ value
+		cpu.Reg.R[H] = value
 	case OPERAND_L:
-		value = cpu.Reg.L + 1
-		carryBits = cpu.Reg.L ^ 1 ^ value
-		cpu.Reg.L = value
+		value = cpu.Reg.R[L] + 1
+		carryBits = cpu.Reg.R[L] ^ 1 ^ value
+		cpu.Reg.R[L] = value
 	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL()) + 1
 		cpu.timer(1)
@@ -704,33 +704,33 @@ func (cpu *CPU) DEC(operand1, operand2 int) {
 
 	switch operand1 {
 	case OPERAND_A:
-		value = cpu.Reg.A - 1
-		carryBits = cpu.Reg.A ^ 1 ^ value
-		cpu.Reg.A = value
+		value = cpu.Reg.R[A] - 1
+		carryBits = cpu.Reg.R[A] ^ 1 ^ value
+		cpu.Reg.R[A] = value
 	case OPERAND_B:
-		value = cpu.Reg.B - 1
-		carryBits = cpu.Reg.B ^ 1 ^ value
-		cpu.Reg.B = value
+		value = cpu.Reg.R[B] - 1
+		carryBits = cpu.Reg.R[B] ^ 1 ^ value
+		cpu.Reg.R[B] = value
 	case OPERAND_C:
-		value = cpu.Reg.C - 1
-		carryBits = cpu.Reg.C ^ 1 ^ value
-		cpu.Reg.C = value
+		value = cpu.Reg.R[C] - 1
+		carryBits = cpu.Reg.R[C] ^ 1 ^ value
+		cpu.Reg.R[C] = value
 	case OPERAND_D:
-		value = cpu.Reg.D - 1
-		carryBits = cpu.Reg.D ^ 1 ^ value
-		cpu.Reg.D = value
+		value = cpu.Reg.R[D] - 1
+		carryBits = cpu.Reg.R[D] ^ 1 ^ value
+		cpu.Reg.R[D] = value
 	case OPERAND_E:
-		value = cpu.Reg.E - 1
-		carryBits = cpu.Reg.E ^ 1 ^ value
-		cpu.Reg.E = value
+		value = cpu.Reg.R[E] - 1
+		carryBits = cpu.Reg.R[E] ^ 1 ^ value
+		cpu.Reg.R[E] = value
 	case OPERAND_H:
-		value = cpu.Reg.H - 1
-		carryBits = cpu.Reg.H ^ 1 ^ value
-		cpu.Reg.H = value
+		value = cpu.Reg.R[H] - 1
+		carryBits = cpu.Reg.R[H] ^ 1 ^ value
+		cpu.Reg.R[H] = value
 	case OPERAND_L:
-		value = cpu.Reg.L - 1
-		carryBits = cpu.Reg.L ^ 1 ^ value
-		cpu.Reg.L = value
+		value = cpu.Reg.R[L] - 1
+		carryBits = cpu.Reg.R[L] ^ 1 ^ value
+		cpu.Reg.R[L] = value
 	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL()) - 1
 		cpu.timer(1)
@@ -921,29 +921,29 @@ func (cpu *CPU) XOR(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
 	case OPERAND_B:
-		value = cpu.Reg.A ^ cpu.Reg.B
+		value = cpu.Reg.R[A] ^ cpu.Reg.R[B]
 	case OPERAND_C:
-		value = cpu.Reg.A ^ cpu.Reg.C
+		value = cpu.Reg.R[A] ^ cpu.Reg.R[C]
 	case OPERAND_D:
-		value = cpu.Reg.A ^ cpu.Reg.D
+		value = cpu.Reg.R[A] ^ cpu.Reg.R[D]
 	case OPERAND_E:
-		value = cpu.Reg.A ^ cpu.Reg.E
+		value = cpu.Reg.R[A] ^ cpu.Reg.R[E]
 	case OPERAND_H:
-		value = cpu.Reg.A ^ cpu.Reg.H
+		value = cpu.Reg.R[A] ^ cpu.Reg.R[H]
 	case OPERAND_L:
-		value = cpu.Reg.A ^ cpu.Reg.L
+		value = cpu.Reg.R[A] ^ cpu.Reg.R[L]
 	case OPERAND_HL_PAREN:
-		value = cpu.Reg.A ^ cpu.FetchMemory8(cpu.Reg.HL())
+		value = cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.HL())
 	case OPERAND_A:
 		value = 0
 	case OPERAND_d8:
-		value = cpu.Reg.A ^ cpu.FetchMemory8(cpu.Reg.PC+1)
+		value = cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.PC+1)
 		cpu.Reg.PC++
 	default:
 		panic(fmt.Errorf("error: XOR %d %d", operand1, operand2))
 	}
 
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
@@ -1151,40 +1151,40 @@ func (cpu *CPU) CP(operand1, operand2 int) {
 	switch operand1 {
 	case OPERAND_A:
 		value, carryBits = 0, 0
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.A)
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[A])
 	case OPERAND_B:
-		value = cpu.Reg.A - cpu.Reg.B
-		carryBits = cpu.Reg.A ^ cpu.Reg.B ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.B)
+		value = cpu.Reg.R[A] - cpu.Reg.R[B]
+		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[B] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[B])
 	case OPERAND_C:
-		value = cpu.Reg.A - cpu.Reg.C
-		carryBits = cpu.Reg.A ^ cpu.Reg.C ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.C)
+		value = cpu.Reg.R[A] - cpu.Reg.R[C]
+		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[C] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[C])
 	case OPERAND_D:
-		value = cpu.Reg.A - cpu.Reg.D
-		carryBits = cpu.Reg.A ^ cpu.Reg.D ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.D)
+		value = cpu.Reg.R[A] - cpu.Reg.R[D]
+		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[D] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[D])
 	case OPERAND_E:
-		value = cpu.Reg.A - cpu.Reg.E
-		carryBits = cpu.Reg.A ^ cpu.Reg.E ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.E)
+		value = cpu.Reg.R[A] - cpu.Reg.R[E]
+		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[E] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[E])
 	case OPERAND_H:
-		value = cpu.Reg.A - cpu.Reg.H
-		carryBits = cpu.Reg.A ^ cpu.Reg.H ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.H)
+		value = cpu.Reg.R[A] - cpu.Reg.R[H]
+		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[H] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[H])
 	case OPERAND_L:
-		value = cpu.Reg.A - cpu.Reg.L
-		carryBits = cpu.Reg.A ^ cpu.Reg.L ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.L)
+		value = cpu.Reg.R[A] - cpu.Reg.R[L]
+		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[L] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[L])
 	case OPERAND_d8:
-		value = cpu.Reg.A - cpu.d8Fetch()
-		carryBits = cpu.Reg.A ^ cpu.d8Fetch() ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.d8Fetch())
+		value = cpu.Reg.R[A] - cpu.d8Fetch()
+		carryBits = cpu.Reg.R[A] ^ cpu.d8Fetch() ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.d8Fetch())
 		cpu.Reg.PC++
 	case OPERAND_HL_PAREN:
-		value = cpu.Reg.A - cpu.FetchMemory8(cpu.Reg.HL())
-		carryBits = cpu.Reg.A ^ cpu.FetchMemory8(cpu.Reg.HL()) ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.FetchMemory8(cpu.Reg.HL()))
+		value = cpu.Reg.R[A] - cpu.FetchMemory8(cpu.Reg.HL())
+		carryBits = cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.HL()) ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.FetchMemory8(cpu.Reg.HL()))
 	default:
 		panic(fmt.Errorf("error: CP %d %d", operand1, operand2))
 	}
@@ -1199,29 +1199,29 @@ func (cpu *CPU) AND(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
 	case OPERAND_A:
-		value = cpu.Reg.A
+		value = cpu.Reg.R[A]
 	case OPERAND_B:
-		value = cpu.Reg.A & cpu.Reg.B
+		value = cpu.Reg.R[A] & cpu.Reg.R[B]
 	case OPERAND_C:
-		value = cpu.Reg.A & cpu.Reg.C
+		value = cpu.Reg.R[A] & cpu.Reg.R[C]
 	case OPERAND_D:
-		value = cpu.Reg.A & cpu.Reg.D
+		value = cpu.Reg.R[A] & cpu.Reg.R[D]
 	case OPERAND_E:
-		value = cpu.Reg.A & cpu.Reg.E
+		value = cpu.Reg.R[A] & cpu.Reg.R[E]
 	case OPERAND_H:
-		value = cpu.Reg.A & cpu.Reg.H
+		value = cpu.Reg.R[A] & cpu.Reg.R[H]
 	case OPERAND_L:
-		value = cpu.Reg.A & cpu.Reg.L
+		value = cpu.Reg.R[A] & cpu.Reg.R[L]
 	case OPERAND_HL_PAREN:
-		value = cpu.Reg.A & cpu.FetchMemory8(cpu.Reg.HL())
+		value = cpu.Reg.R[A] & cpu.FetchMemory8(cpu.Reg.HL())
 	case OPERAND_d8:
-		value = cpu.Reg.A & cpu.d8Fetch()
+		value = cpu.Reg.R[A] & cpu.d8Fetch()
 		cpu.Reg.PC++
 	default:
 		panic(fmt.Errorf("error: AND %d %d", operand1, operand2))
 	}
 
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, true)
@@ -1233,39 +1233,39 @@ func (cpu *CPU) AND(operand1, operand2 int) {
 func (cpu *CPU) OR(operand1, operand2 int) {
 	switch operand1 {
 	case OPERAND_A:
-		cpu.setF(flagZ, cpu.Reg.A == 0)
+		cpu.setF(flagZ, cpu.Reg.R[A] == 0)
 	case OPERAND_B:
-		value := cpu.Reg.A | cpu.Reg.B
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.Reg.R[B]
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	case OPERAND_C:
-		value := cpu.Reg.A | cpu.Reg.C
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.Reg.R[C]
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	case OPERAND_D:
-		value := cpu.Reg.A | cpu.Reg.D
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.Reg.R[D]
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	case OPERAND_E:
-		value := cpu.Reg.A | cpu.Reg.E
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.Reg.R[E]
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	case OPERAND_H:
-		value := cpu.Reg.A | cpu.Reg.H
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.Reg.R[H]
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	case OPERAND_L:
-		value := cpu.Reg.A | cpu.Reg.L
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.Reg.R[L]
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	case OPERAND_d8:
-		value := cpu.Reg.A | cpu.FetchMemory8(cpu.Reg.PC+1)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.FetchMemory8(cpu.Reg.PC+1)
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.Reg.PC++
 	case OPERAND_HL_PAREN:
-		value := cpu.Reg.A | cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] | cpu.FetchMemory8(cpu.Reg.HL())
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 	default:
 		panic(fmt.Errorf("error: OR %d %d", operand1, operand2))
@@ -1283,81 +1283,81 @@ func (cpu *CPU) ADD(operand1, operand2 int) {
 	case OPERAND_A:
 		switch operand2 {
 		case OPERAND_A:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.A)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[A])
 			carryBits := value
-			cpu.Reg.A = byte(value)
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_B:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.B)
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.Reg.B) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[B])
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[B]) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_C:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.C)
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.Reg.C) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[C])
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[C]) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_D:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.D)
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.Reg.D) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[D])
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[D]) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_E:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.E)
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.Reg.E) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[E])
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[E]) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_H:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.H)
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.Reg.H) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[H])
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[H]) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_L:
-			value := uint16(cpu.Reg.A) + uint16(cpu.Reg.L)
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.Reg.L) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[L])
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[L]) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC++
 		case OPERAND_d8:
-			value := uint16(cpu.Reg.A) + uint16(cpu.d8Fetch())
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.d8Fetch()) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.d8Fetch())
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.d8Fetch()) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC += 2
 		case OPERAND_HL_PAREN:
-			value := uint16(cpu.Reg.A) + uint16(cpu.FetchMemory8(cpu.Reg.HL()))
-			carryBits := uint16(cpu.Reg.A) ^ uint16(cpu.FetchMemory8(cpu.Reg.HL())) ^ value
-			cpu.Reg.A = byte(value)
+			value := uint16(cpu.Reg.R[A]) + uint16(cpu.FetchMemory8(cpu.Reg.HL()))
+			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.FetchMemory8(cpu.Reg.HL())) ^ value
+			cpu.Reg.R[A] = byte(value)
 			cpu.setF(flagZ, byte(value) == 0)
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
@@ -1419,7 +1419,7 @@ func (cpu *CPU) ADD(operand1, operand2 int) {
 
 // CPL Complement A Register
 func (cpu *CPU) CPL(operand1, operand2 int) {
-	cpu.Reg.A = ^cpu.Reg.A
+	cpu.Reg.R[A] = ^cpu.Reg.R[A]
 	cpu.setF(flagN, true)
 	cpu.setF(flagH, true)
 	cpu.Reg.PC++
@@ -1472,41 +1472,41 @@ func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
 func (cpu *CPU) RLC(operand1, operand2 int) {
 	var value, bit7 byte
 	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
-		value = cpu.Reg.B
+		value = cpu.Reg.R[B]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
-		value = cpu.Reg.C
+		value = cpu.Reg.R[C]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
-		value = cpu.Reg.D
+		value = cpu.Reg.R[D]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
-		value = cpu.Reg.E
+		value = cpu.Reg.R[E]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
-		value = cpu.Reg.H
+		value = cpu.Reg.R[H]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
-		value = cpu.Reg.L
+		value = cpu.Reg.R[L]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1516,11 +1516,11 @@ func (cpu *CPU) RLC(operand1, operand2 int) {
 		cpu.SetMemory8(cpu.Reg.HL(), value)
 		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
-		value = cpu.Reg.A
+		value = cpu.Reg.R[A]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	} else {
 		panic(fmt.Errorf("error: RLC %d %d", operand1, operand2))
 	}
@@ -1536,11 +1536,11 @@ func (cpu *CPU) RLC(operand1, operand2 int) {
 func (cpu *CPU) RLCA(operand1, operand2 int) {
 	var value byte
 	var bit7 byte
-	value = cpu.Reg.A
+	value = cpu.Reg.R[A]
 	bit7 = value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, bit7 != 0)
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 
 	cpu.setF(flagZ, false)
 	cpu.setF(flagN, false)
@@ -1554,41 +1554,41 @@ func (cpu *CPU) RRC(operand1, operand2 int) {
 	var value byte
 	var bit0 byte
 	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
-		value = cpu.Reg.B
+		value = cpu.Reg.R[B]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
-		value = cpu.Reg.C
+		value = cpu.Reg.R[C]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
-		value = cpu.Reg.D
+		value = cpu.Reg.R[D]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
-		value = cpu.Reg.E
+		value = cpu.Reg.R[E]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
-		value = cpu.Reg.H
+		value = cpu.Reg.R[H]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
-		value = cpu.Reg.L
+		value = cpu.Reg.R[L]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1598,11 +1598,11 @@ func (cpu *CPU) RRC(operand1, operand2 int) {
 		cpu.SetMemory8(cpu.Reg.HL(), value)
 		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
-		value = cpu.Reg.A
+		value = cpu.Reg.R[A]
 		bit0 = value % 2
 		value = (value >> 1)
 		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	} else {
 		panic(fmt.Errorf("error: RRC %d %d", operand1, operand2))
 	}
@@ -1618,10 +1618,10 @@ func (cpu *CPU) RRCA(operand1, operand2 int) {
 	var value byte
 	var lsb bool
 
-	value, lsb = cpu.Reg.A, util.Bit(cpu.Reg.A, 0)
+	value, lsb = cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0)
 	value = (value >> 1)
 	value = util.SetMSB(value, lsb)
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 
 	cpu.setF(flagZ, false)
 	cpu.setF(flagN, false)
@@ -1636,47 +1636,47 @@ func (cpu *CPU) RL(operand1, operand2 int) {
 	carry := cpu.f(flagC)
 	switch operand1 {
 	case OPERAND_A:
-		value = cpu.Reg.A
+		value = cpu.Reg.R[A]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	case OPERAND_B:
-		value = cpu.Reg.B
+		value = cpu.Reg.R[B]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	case OPERAND_C:
-		value = cpu.Reg.C
+		value = cpu.Reg.R[C]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	case OPERAND_D:
-		value = cpu.Reg.D
+		value = cpu.Reg.R[D]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	case OPERAND_E:
-		value = cpu.Reg.E
+		value = cpu.Reg.R[E]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	case OPERAND_H:
-		value = cpu.Reg.H
+		value = cpu.Reg.R[H]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	case OPERAND_L:
-		value = cpu.Reg.L
+		value = cpu.Reg.R[L]
 		bit7 = value >> 7
 		value = (value << 1)
 		value = util.SetLSB(value, carry)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1701,11 +1701,11 @@ func (cpu *CPU) RLA(operand1, operand2 int) {
 	var value, bit7 byte
 	carry := cpu.f(flagC)
 
-	value = cpu.Reg.A
+	value = cpu.Reg.R[A]
 	bit7 = value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, carry)
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 
 	cpu.setF(flagZ, false)
 	cpu.setF(flagN, false)
@@ -1722,40 +1722,40 @@ func (cpu *CPU) RR(operand1, operand2 int) {
 
 	switch operand1 {
 	case OPERAND_A:
-		value, lsb = cpu.Reg.A, util.Bit(cpu.Reg.A, 0)
+		value, lsb = cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	case OPERAND_B:
-		value, lsb = cpu.Reg.B, util.Bit(cpu.Reg.B, 0)
+		value, lsb = cpu.Reg.R[B], util.Bit(cpu.Reg.R[B], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	case OPERAND_C:
-		value, lsb = cpu.Reg.C, util.Bit(cpu.Reg.C, 0)
+		value, lsb = cpu.Reg.R[C], util.Bit(cpu.Reg.R[C], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	case OPERAND_D:
-		value, lsb = cpu.Reg.D, util.Bit(cpu.Reg.D, 0)
+		value, lsb = cpu.Reg.R[D], util.Bit(cpu.Reg.R[D], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	case OPERAND_E:
-		value, lsb = cpu.Reg.E, util.Bit(cpu.Reg.E, 0)
+		value, lsb = cpu.Reg.R[E], util.Bit(cpu.Reg.R[E], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	case OPERAND_H:
-		value, lsb = cpu.Reg.H, util.Bit(cpu.Reg.H, 0)
+		value, lsb = cpu.Reg.R[H], util.Bit(cpu.Reg.R[H], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	case OPERAND_L:
-		value, lsb = cpu.Reg.L, util.Bit(cpu.Reg.L, 0)
+		value, lsb = cpu.Reg.R[L], util.Bit(cpu.Reg.R[L], 0)
 		value >>= 1
 		value = util.SetMSB(value, carry)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1779,35 +1779,35 @@ func (cpu *CPU) RR(operand1, operand2 int) {
 func (cpu *CPU) SLA(operand1, operand2 int) {
 	var value, bit7 byte
 	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
-		value = cpu.Reg.B
+		value = cpu.Reg.R[B]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
-		value = cpu.Reg.C
+		value = cpu.Reg.R[C]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
-		value = cpu.Reg.D
+		value = cpu.Reg.R[D]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
-		value = cpu.Reg.E
+		value = cpu.Reg.R[E]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
-		value = cpu.Reg.H
+		value = cpu.Reg.R[H]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
-		value = cpu.Reg.L
+		value = cpu.Reg.R[L]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1816,10 +1816,10 @@ func (cpu *CPU) SLA(operand1, operand2 int) {
 		cpu.SetMemory8(cpu.Reg.HL(), value)
 		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
-		value = cpu.Reg.A
+		value = cpu.Reg.R[A]
 		bit7 = value >> 7
 		value = (value << 1)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	} else {
 		panic(fmt.Errorf("error: SLA %d %d", operand1, operand2))
 	}
@@ -1836,35 +1836,35 @@ func (cpu *CPU) SRA(operand1, operand2 int) {
 	var value byte
 	var lsb, msb bool
 	if operand1 == OPERAND_B && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.B, util.Bit(cpu.Reg.B, 0), util.Bit(cpu.Reg.B, 7)
+		value, lsb, msb = cpu.Reg.R[B], util.Bit(cpu.Reg.R[B], 0), util.Bit(cpu.Reg.R[B], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	} else if operand1 == OPERAND_C && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.C, util.Bit(cpu.Reg.C, 0), util.Bit(cpu.Reg.C, 7)
+		value, lsb, msb = cpu.Reg.R[C], util.Bit(cpu.Reg.R[C], 0), util.Bit(cpu.Reg.R[C], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	} else if operand1 == OPERAND_D && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.D, util.Bit(cpu.Reg.D, 0), util.Bit(cpu.Reg.D, 7)
+		value, lsb, msb = cpu.Reg.R[D], util.Bit(cpu.Reg.R[D], 0), util.Bit(cpu.Reg.R[D], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	} else if operand1 == OPERAND_E && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.E, util.Bit(cpu.Reg.E, 0), util.Bit(cpu.Reg.E, 7)
+		value, lsb, msb = cpu.Reg.R[E], util.Bit(cpu.Reg.R[E], 0), util.Bit(cpu.Reg.R[E], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	} else if operand1 == OPERAND_H && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.H, util.Bit(cpu.Reg.H, 0), util.Bit(cpu.Reg.H, 7)
+		value, lsb, msb = cpu.Reg.R[H], util.Bit(cpu.Reg.R[H], 0), util.Bit(cpu.Reg.R[H], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	} else if operand1 == OPERAND_L && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.L, util.Bit(cpu.Reg.L, 0), util.Bit(cpu.Reg.L, 7)
+		value, lsb, msb = cpu.Reg.R[L], util.Bit(cpu.Reg.R[L], 0), util.Bit(cpu.Reg.R[L], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	} else if operand1 == OPERAND_HL_PAREN && operand2 == OPERAND_NONE {
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1874,10 +1874,10 @@ func (cpu *CPU) SRA(operand1, operand2 int) {
 		cpu.SetMemory8(cpu.Reg.HL(), value)
 		cpu.timer(2)
 	} else if operand1 == OPERAND_A && operand2 == OPERAND_NONE {
-		value, lsb, msb = cpu.Reg.A, util.Bit(cpu.Reg.A, 0), util.Bit(cpu.Reg.A, 7)
+		value, lsb, msb = cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0), util.Bit(cpu.Reg.R[A], 7)
 		value = (value >> 1)
 		value = util.SetMSB(value, msb)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	} else {
 		panic(fmt.Errorf("error: SRA %d %d", operand1, operand2))
 	}
@@ -1895,41 +1895,41 @@ func (cpu *CPU) SWAP(operand1, operand2 int) {
 
 	switch operand1 {
 	case OPERAND_B:
-		B := cpu.Reg.B
-		B03 := B & 0x0f
-		B47 := B >> 4
+		b := cpu.Reg.R[B]
+		B03 := b & 0x0f
+		B47 := b >> 4
 		value = (B03 << 4) | B47
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	case OPERAND_C:
-		C := cpu.Reg.C
-		C03 := C & 0x0f
-		C47 := C >> 4
+		c := cpu.Reg.R[C]
+		C03 := c & 0x0f
+		C47 := c >> 4
 		value = (C03 << 4) | C47
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	case OPERAND_D:
-		D := cpu.Reg.D
-		D03 := D & 0x0f
-		D47 := D >> 4
+		d := cpu.Reg.R[D]
+		D03 := d & 0x0f
+		D47 := d >> 4
 		value = (D03 << 4) | D47
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	case OPERAND_E:
-		E := cpu.Reg.E
-		E03 := E & 0x0f
-		E47 := E >> 4
+		e := cpu.Reg.R[E]
+		E03 := e & 0x0f
+		E47 := e >> 4
 		value = (E03 << 4) | E47
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	case OPERAND_H:
-		H := cpu.Reg.H
-		H03 := H & 0x0f
-		H47 := H >> 4
+		h := cpu.Reg.R[H]
+		H03 := h & 0x0f
+		H47 := h >> 4
 		value = (H03 << 4) | H47
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	case OPERAND_L:
-		L := cpu.Reg.L
-		L03 := L & 0x0f
-		L47 := L >> 4
+		l := cpu.Reg.R[L]
+		L03 := l & 0x0f
+		L47 := l >> 4
 		value = (L03 << 4) | L47
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	case OPERAND_HL_PAREN:
 		data := cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1939,11 +1939,11 @@ func (cpu *CPU) SWAP(operand1, operand2 int) {
 		cpu.SetMemory8(cpu.Reg.HL(), value)
 		cpu.timer(2)
 	case OPERAND_A:
-		A := cpu.Reg.A
-		A03 := A & 0x0f
-		A47 := A >> 4
+		a := cpu.Reg.R[A]
+		A03 := a & 0x0f
+		A47 := a >> 4
 		value = (A03 << 4) | A47
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	default:
 		panic(fmt.Errorf("error: SWAP %d %d", operand1, operand2))
 	}
@@ -1962,35 +1962,35 @@ func (cpu *CPU) SRL(operand1, operand2 int) {
 
 	switch operand1 {
 	case OPERAND_B:
-		value = cpu.Reg.B
+		value = cpu.Reg.R[B]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.B = value
+		cpu.Reg.R[B] = value
 	case OPERAND_C:
-		value = cpu.Reg.C
+		value = cpu.Reg.R[C]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.C = value
+		cpu.Reg.R[C] = value
 	case OPERAND_D:
-		value = cpu.Reg.D
+		value = cpu.Reg.R[D]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.D = value
+		cpu.Reg.R[D] = value
 	case OPERAND_E:
-		value = cpu.Reg.E
+		value = cpu.Reg.R[E]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.E = value
+		cpu.Reg.R[E] = value
 	case OPERAND_H:
-		value = cpu.Reg.H
+		value = cpu.Reg.R[H]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.H = value
+		cpu.Reg.R[H] = value
 	case OPERAND_L:
-		value = cpu.Reg.L
+		value = cpu.Reg.R[L]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.L = value
+		cpu.Reg.R[L] = value
 	case OPERAND_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.timer(1)
@@ -1999,10 +1999,10 @@ func (cpu *CPU) SRL(operand1, operand2 int) {
 		cpu.SetMemory8(cpu.Reg.HL(), value)
 		cpu.timer(2)
 	case OPERAND_A:
-		value = cpu.Reg.A
+		value = cpu.Reg.R[A]
 		bit0 = value % 2
 		value = (value >> 1)
-		cpu.Reg.A = value
+		cpu.Reg.R[A] = value
 	default:
 		panic(fmt.Errorf("error: SRL %d %d", operand1, operand2))
 	}
@@ -2020,21 +2020,21 @@ func (cpu *CPU) BIT(operand1, operand2 int) {
 	targetBit := operand1 - OPERAND_0
 	switch operand2 {
 	case OPERAND_B:
-		value = util.Bit(cpu.Reg.B, targetBit)
+		value = util.Bit(cpu.Reg.R[B], targetBit)
 	case OPERAND_C:
-		value = util.Bit(cpu.Reg.C, targetBit)
+		value = util.Bit(cpu.Reg.R[C], targetBit)
 	case OPERAND_D:
-		value = util.Bit(cpu.Reg.D, targetBit)
+		value = util.Bit(cpu.Reg.R[D], targetBit)
 	case OPERAND_E:
-		value = util.Bit(cpu.Reg.E, targetBit)
+		value = util.Bit(cpu.Reg.R[E], targetBit)
 	case OPERAND_H:
-		value = util.Bit(cpu.Reg.H, targetBit)
+		value = util.Bit(cpu.Reg.R[H], targetBit)
 	case OPERAND_L:
-		value = util.Bit(cpu.Reg.L, targetBit)
+		value = util.Bit(cpu.Reg.R[L], targetBit)
 	case OPERAND_HL_PAREN:
 		value = util.Bit(cpu.FetchMemory8(cpu.Reg.HL()), targetBit)
 	case OPERAND_A:
-		value = util.Bit(cpu.Reg.A, targetBit)
+		value = util.Bit(cpu.Reg.R[A], targetBit)
 	}
 
 	cpu.setF(flagZ, !value)
@@ -2049,22 +2049,22 @@ func (cpu *CPU) RES(operand1, operand2 int) {
 	switch operand2 {
 	case OPERAND_B:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.B &= mask
+		cpu.Reg.R[B] &= mask
 	case OPERAND_C:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.C &= mask
+		cpu.Reg.R[C] &= mask
 	case OPERAND_D:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.D &= mask
+		cpu.Reg.R[D] &= mask
 	case OPERAND_E:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.E &= mask
+		cpu.Reg.R[E] &= mask
 	case OPERAND_H:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.H &= mask
+		cpu.Reg.R[H] &= mask
 	case OPERAND_L:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.L &= mask
+		cpu.Reg.R[L] &= mask
 	case OPERAND_HL_PAREN:
 		mask := ^(byte(1) << targetBit)
 		value := cpu.FetchMemory8(cpu.Reg.HL()) & mask
@@ -2073,7 +2073,7 @@ func (cpu *CPU) RES(operand1, operand2 int) {
 		cpu.timer(2)
 	case OPERAND_A:
 		mask := ^(byte(1) << targetBit)
-		cpu.Reg.A &= mask
+		cpu.Reg.R[A] &= mask
 	}
 	cpu.Reg.PC++
 }
@@ -2084,22 +2084,22 @@ func (cpu *CPU) SET(operand1, operand2 int) {
 	switch operand2 {
 	case OPERAND_B:
 		mask := byte(1) << targetBit
-		cpu.Reg.B |= mask
+		cpu.Reg.R[B] |= mask
 	case OPERAND_C:
 		mask := byte(1) << targetBit
-		cpu.Reg.C |= mask
+		cpu.Reg.R[C] |= mask
 	case OPERAND_D:
 		mask := byte(1) << targetBit
-		cpu.Reg.D |= mask
+		cpu.Reg.R[D] |= mask
 	case OPERAND_E:
 		mask := byte(1) << targetBit
-		cpu.Reg.E |= mask
+		cpu.Reg.R[E] |= mask
 	case OPERAND_H:
 		mask := byte(1) << targetBit
-		cpu.Reg.H |= mask
+		cpu.Reg.R[H] |= mask
 	case OPERAND_L:
 		mask := byte(1) << targetBit
-		cpu.Reg.L |= mask
+		cpu.Reg.R[L] |= mask
 	case OPERAND_HL_PAREN:
 		mask := byte(1) << targetBit
 		value := cpu.FetchMemory8(cpu.Reg.HL()) | mask
@@ -2108,7 +2108,7 @@ func (cpu *CPU) SET(operand1, operand2 int) {
 		cpu.timer(2)
 	case OPERAND_A:
 		mask := byte(1) << targetBit
-		cpu.Reg.A |= mask
+		cpu.Reg.R[A] |= mask
 	}
 	cpu.Reg.PC++
 }
@@ -2154,80 +2154,80 @@ func (cpu *CPU) POP(operand1, operand2 int) {
 func (cpu *CPU) SUB(operand1, operand2 int) {
 	switch operand1 {
 	case OPERAND_A:
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.A)
-		cpu.Reg.A = 0
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[A])
+		cpu.Reg.R[A] = 0
 		cpu.setF(flagZ, true)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, false)
 		cpu.Reg.PC++
 	case OPERAND_B:
-		value := cpu.Reg.A - cpu.Reg.B
-		carryBits := cpu.Reg.A ^ cpu.Reg.B ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.B)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.Reg.R[B]
+		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[B] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[B])
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
 	case OPERAND_C:
-		value := cpu.Reg.A - cpu.Reg.C
-		carryBits := cpu.Reg.A ^ cpu.Reg.C ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.C)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.Reg.R[C]
+		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[C] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[C])
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
 	case OPERAND_D:
-		value := cpu.Reg.A - cpu.Reg.D
-		carryBits := cpu.Reg.A ^ cpu.Reg.D ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.D)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.Reg.R[D]
+		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[D] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[D])
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
 	case OPERAND_E:
-		value := cpu.Reg.A - cpu.Reg.E
-		carryBits := cpu.Reg.A ^ cpu.Reg.E ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.E)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.Reg.R[E]
+		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[E] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[E])
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
 	case OPERAND_H:
-		value := cpu.Reg.A - cpu.Reg.H
-		carryBits := cpu.Reg.A ^ cpu.Reg.H ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.H)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.Reg.R[H]
+		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[H] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[H])
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
 	case OPERAND_L:
-		value := cpu.Reg.A - cpu.Reg.L
-		carryBits := cpu.Reg.A ^ cpu.Reg.L ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.Reg.L)
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.Reg.R[L]
+		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[L] ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[L])
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
 	case OPERAND_d8:
-		value := cpu.Reg.A - cpu.d8Fetch()
-		carryBits := cpu.Reg.A ^ cpu.d8Fetch() ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.d8Fetch())
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.d8Fetch()
+		carryBits := cpu.Reg.R[A] ^ cpu.d8Fetch() ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.d8Fetch())
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC += 2
 	case OPERAND_HL_PAREN:
-		value := cpu.Reg.A - cpu.FetchMemory8(cpu.Reg.HL())
-		carryBits := cpu.Reg.A ^ cpu.FetchMemory8(cpu.Reg.HL()) ^ value
-		cpu.setCSub(cpu.Reg.A, cpu.FetchMemory8(cpu.Reg.HL()))
-		cpu.Reg.A = value
+		value := cpu.Reg.R[A] - cpu.FetchMemory8(cpu.Reg.HL())
+		carryBits := cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.HL()) ^ value
+		cpu.setCSub(cpu.Reg.R[A], cpu.FetchMemory8(cpu.Reg.HL()))
+		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
@@ -2240,14 +2240,14 @@ func (cpu *CPU) SUB(operand1, operand2 int) {
 // RRA Rotate register A right through carry.
 func (cpu *CPU) RRA(operand1, operand2 int) {
 	carry := cpu.f(flagC)
-	regA := cpu.Reg.A
+	regA := cpu.Reg.R[A]
 	cpu.setF(flagC, util.Bit(regA, 0))
 	if carry {
 		regA = (1 << 7) | (regA >> 1)
 	} else {
 		regA = (0 << 7) | (regA >> 1)
 	}
-	cpu.Reg.A = regA
+	cpu.Reg.R[A] = regA
 	cpu.setF(flagZ, false)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
@@ -2268,49 +2268,49 @@ func (cpu *CPU) ADC(operand1, operand2 int) {
 	case OPERAND_A:
 		switch operand2 {
 		case OPERAND_A:
-			value = cpu.Reg.A + carry + cpu.Reg.A
-			value4 = (cpu.Reg.A & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.A) + uint16(cpu.Reg.A) + uint16(carry)
+			value = cpu.Reg.R[A] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[A] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[A]) + uint16(carry)
 		case OPERAND_B:
-			value = cpu.Reg.B + carry + cpu.Reg.A
-			value4 = (cpu.Reg.B & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.B) + uint16(carry) + uint16(cpu.Reg.A)
+			value = cpu.Reg.R[B] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[B] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[B]) + uint16(carry) + uint16(cpu.Reg.R[A])
 		case OPERAND_C:
-			value = cpu.Reg.C + carry + cpu.Reg.A
-			value4 = (cpu.Reg.C & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.C) + uint16(carry) + uint16(cpu.Reg.A)
+			value = cpu.Reg.R[C] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[C] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[C]) + uint16(carry) + uint16(cpu.Reg.R[A])
 		case OPERAND_D:
-			value = cpu.Reg.D + carry + cpu.Reg.A
-			value4 = (cpu.Reg.D & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.D) + uint16(carry) + uint16(cpu.Reg.A)
+			value = cpu.Reg.R[D] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[D] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[D]) + uint16(carry) + uint16(cpu.Reg.R[A])
 		case OPERAND_E:
-			value = cpu.Reg.E + carry + cpu.Reg.A
-			value4 = (cpu.Reg.E & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.E) + uint16(carry) + uint16(cpu.Reg.A)
+			value = cpu.Reg.R[E] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[E] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[E]) + uint16(carry) + uint16(cpu.Reg.R[A])
 		case OPERAND_H:
-			value = cpu.Reg.H + carry + cpu.Reg.A
-			value4 = (cpu.Reg.H & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.H) + uint16(carry) + uint16(cpu.Reg.A)
+			value = cpu.Reg.R[H] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[H] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[H]) + uint16(carry) + uint16(cpu.Reg.R[A])
 		case OPERAND_L:
-			value = cpu.Reg.L + carry + cpu.Reg.A
-			value4 = (cpu.Reg.L & 0b1111) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(cpu.Reg.L) + uint16(carry) + uint16(cpu.Reg.A)
+			value = cpu.Reg.R[L] + carry + cpu.Reg.R[A]
+			value4 = (cpu.Reg.R[L] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(cpu.Reg.R[L]) + uint16(carry) + uint16(cpu.Reg.R[A])
 		case OPERAND_HL_PAREN:
 			data := cpu.FetchMemory8(cpu.Reg.HL())
-			value = data + carry + cpu.Reg.A
-			value4 = (data & 0x0f) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(data) + uint16(cpu.Reg.A) + uint16(carry)
+			value = data + carry + cpu.Reg.R[A]
+			value4 = (data & 0x0f) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(data) + uint16(cpu.Reg.R[A]) + uint16(carry)
 		case OPERAND_d8:
 			data := cpu.d8Fetch()
-			value = data + carry + cpu.Reg.A
-			value4 = (data & 0x0f) + carry + (cpu.Reg.A & 0b1111)
-			value16 = uint16(data) + uint16(cpu.Reg.A) + uint16(carry)
+			value = data + carry + cpu.Reg.R[A]
+			value4 = (data & 0x0f) + carry + (cpu.Reg.R[A] & 0b1111)
+			value16 = uint16(data) + uint16(cpu.Reg.R[A]) + uint16(carry)
 			cpu.Reg.PC++
 		}
 	default:
 		panic(fmt.Errorf("error: ADC %d %d", operand1, operand2))
 	}
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, util.Bit(value4, 4))
@@ -2332,49 +2332,49 @@ func (cpu *CPU) SBC(operand1, operand2 int) {
 	case OPERAND_A:
 		switch operand2 {
 		case OPERAND_A:
-			value = cpu.Reg.A - (cpu.Reg.A + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.A & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.A) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[A] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[A] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[A]) + uint16(carry))
 		case OPERAND_B:
-			value = cpu.Reg.A - (cpu.Reg.B + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.B & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.B) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[B] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[B] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[B]) + uint16(carry))
 		case OPERAND_C:
-			value = cpu.Reg.A - (cpu.Reg.C + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.C & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.C) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[C] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[C] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[C]) + uint16(carry))
 		case OPERAND_D:
-			value = cpu.Reg.A - (cpu.Reg.D + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.D & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.D) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[D] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[D] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[D]) + uint16(carry))
 		case OPERAND_E:
-			value = cpu.Reg.A - (cpu.Reg.E + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.E & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.E) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[E] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[E] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[E]) + uint16(carry))
 		case OPERAND_H:
-			value = cpu.Reg.A - (cpu.Reg.H + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.H & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.H) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[H] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[H] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[H]) + uint16(carry))
 		case OPERAND_L:
-			value = cpu.Reg.A - (cpu.Reg.L + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((cpu.Reg.L & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(cpu.Reg.L) + uint16(carry))
+			value = cpu.Reg.R[A] - (cpu.Reg.R[L] + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[L] & 0b1111) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[L]) + uint16(carry))
 		case OPERAND_HL_PAREN:
 			data := cpu.FetchMemory8(cpu.Reg.HL())
-			value = cpu.Reg.A - (data + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((data & 0x0f) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(data) + uint16(carry))
+			value = cpu.Reg.R[A] - (data + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(data) + uint16(carry))
 		case OPERAND_d8:
 			data := cpu.d8Fetch()
-			value = cpu.Reg.A - (data + carry)
-			value4 = (cpu.Reg.A & 0b1111) - ((data & 0x0f) + carry)
-			value16 = uint16(cpu.Reg.A) - (uint16(data) + uint16(carry))
+			value = cpu.Reg.R[A] - (data + carry)
+			value4 = (cpu.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+			value16 = uint16(cpu.Reg.R[A]) - (uint16(data) + uint16(carry))
 			cpu.Reg.PC++
 		}
 	default:
 		panic(fmt.Errorf("error: SBC %d %d", operand1, operand2))
 	}
-	cpu.Reg.A = value
+	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, true)
 	cpu.setF(flagH, util.Bit(value4, 4))
@@ -2384,27 +2384,27 @@ func (cpu *CPU) SBC(operand1, operand2 int) {
 
 // DAA Decimal adjust
 func (cpu *CPU) DAA(operand1, operand2 int) {
-	A := uint8(cpu.Reg.A)
+	a := uint8(cpu.Reg.R[A])
 	// ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !cpu.f(flagN) {
-		if cpu.f(flagC) || A > 0x99 {
-			A += 0x60
+		if cpu.f(flagC) || a > 0x99 {
+			a += 0x60
 			cpu.setF(flagC, true)
 		}
-		if cpu.f(flagH) || (A&0x0f) > 0x09 {
-			A += 0x06
+		if cpu.f(flagH) || (a&0x0f) > 0x09 {
+			a += 0x06
 		}
 	} else {
 		if cpu.f(flagC) {
-			A -= 0x60
+			a -= 0x60
 		}
 		if cpu.f(flagH) {
-			A -= 0x06
+			a -= 0x06
 		}
 	}
 
-	cpu.Reg.A = A
-	cpu.setF(flagZ, A == 0)
+	cpu.Reg.R[A] = a
+	cpu.setF(flagZ, a == 0)
 	cpu.setF(flagH, false)
 	cpu.Reg.PC++
 }
