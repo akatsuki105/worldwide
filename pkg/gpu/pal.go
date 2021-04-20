@@ -11,7 +11,7 @@ type Palette struct {
 	BGPalette, SPRPalette [64]byte
 }
 
-// InitPalette init gameboy pallete color
+// InitPalette init gameboy palette color
 func InitPalette(color0, color1, color2, color3 [3]int) {
 	colors[0] = [3]uint8{uint8(color0[0]), uint8(color0[1]), uint8(color0[2])}
 	colors[1] = [3]uint8{uint8(color1[0]), uint8(color1[1]), uint8(color1[2])}

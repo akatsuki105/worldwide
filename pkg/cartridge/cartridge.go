@@ -10,13 +10,11 @@ const (
 
 // Cartridge - Cartridge info from ROM Header
 type Cartridge struct {
-	Title   string
-	IsCGB   bool // gameboy color ROM is true
-	Type    uint8
-	ROMSize uint8
-	RAMSize uint8
-	MBC     int
-	Debug   *Debug
+	Title                  string
+	IsCGB                  bool // gameboy color ROM is true
+	Type, ROMSize, RAMSize uint8
+	MBC                    int
+	Debug                  *Debug
 }
 
 // ParseCartridge - read cartridge info from byte slice

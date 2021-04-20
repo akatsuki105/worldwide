@@ -112,8 +112,7 @@ func (cpu *CPU) handleJoypad() {
 	result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
 	if result != 0 {
 		switch result {
-		case joypad.Pressed:
-			// Joypad Interrupt
+		case joypad.Pressed: // Joypad Interrupt
 			if cpu.Reg.IME && cpu.getJoypadEnable() {
 				cpu.setJoypadFlag(true)
 			}

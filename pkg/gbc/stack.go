@@ -11,8 +11,6 @@ func (cpu *CPU) pop() byte {
 	return value
 }
 
-// ------------ AF --------------------
-
 func (cpu *CPU) pushAF() {
 	cpu.push(cpu.Reg.A)
 	cpu.timer(1)
@@ -24,8 +22,6 @@ func (cpu *CPU) popAF() {
 	cpu.timer(1)
 	cpu.Reg.A = cpu.pop()
 }
-
-// ------------ BC --------------------
 
 func (cpu *CPU) pushBC() {
 	cpu.push(cpu.Reg.B)
@@ -39,8 +35,6 @@ func (cpu *CPU) popBC() {
 	cpu.Reg.B = cpu.pop()
 }
 
-// ------------ DE --------------------
-
 func (cpu *CPU) pushDE() {
 	cpu.push(cpu.Reg.D)
 	cpu.timer(1)
@@ -53,8 +47,6 @@ func (cpu *CPU) popDE() {
 	cpu.Reg.D = cpu.pop()
 }
 
-// ------------ HL --------------------
-
 func (cpu *CPU) pushHL() {
 	cpu.push(cpu.Reg.H)
 	cpu.timer(1)
@@ -66,8 +58,6 @@ func (cpu *CPU) popHL() {
 	cpu.timer(1)
 	cpu.Reg.H = cpu.pop()
 }
-
-// ------------ PC --------------------
 
 func (cpu *CPU) pushPC() {
 	upper, lower := byte(cpu.Reg.PC>>8), byte(cpu.Reg.PC)

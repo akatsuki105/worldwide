@@ -235,7 +235,7 @@ func (cpu *CPU) initNetwork() {
 }
 
 func (cpu *CPU) initDMGPalette() {
-	c0, c1, c2, c3 := cpu.Config.Pallete.Color0, cpu.Config.Pallete.Color1, cpu.Config.Pallete.Color2, cpu.Config.Pallete.Color3
+	c0, c1, c2, c3 := cpu.Config.Palette.Color0, cpu.Config.Palette.Color1, cpu.Config.Palette.Color2, cpu.Config.Palette.Color3
 	gpu.InitPalette(c0, c1, c2, c3)
 }
 
