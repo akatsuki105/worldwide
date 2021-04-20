@@ -87,7 +87,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		cpu.Cartridge.MBC = cartridge.MBC1
 		switch r := int(cpu.Cartridge.ROMSize); r {
 		case 0, 1, 2, 3, 4, 5, 6:
-			cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -98,7 +98,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		case 0, 1, 2:
 			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0, 1, 2, 3, 4, 5, 6:
-				cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -108,7 +108,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0:
 			case 1, 2, 3, 4:
-				cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -123,7 +123,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		case 0, 1, 2:
 			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0, 1, 2, 3:
-				cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -133,7 +133,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0:
 			case 1, 2, 3:
-				cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -146,7 +146,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		cpu.Cartridge.MBC, cpu.RTC.Enable = cartridge.MBC3, true
 		switch r := int(cpu.Cartridge.ROMSize); r {
 		case 0, 1, 2, 3, 4, 5, 6:
-			cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -155,7 +155,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		cpu.Cartridge.MBC = cartridge.MBC5
 		switch r := int(cpu.Cartridge.ROMSize); r {
 		case 0, 1, 2, 3, 4, 5, 6, 7:
-			cpu.transferROM(int(math.Pow(2, float64(r))), rom)
+			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
