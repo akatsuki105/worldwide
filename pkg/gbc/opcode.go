@@ -1147,62 +1147,29 @@ func (cpu *CPU) RLCA(operand1, operand2 int) {
 }
 
 // RRC Rotate n right carry => bit7
+func rrcR8(cpu *CPU, op, _ int) {
+	value := cpu.Reg.R[op]
+	bit0 := value % 2
+	value = (value >> 1)
+	value = util.SetMSB(value, bit0 != 0)
+	cpu.Reg.R[op] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, bit0 != 0)
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) RRC(operand1, operand2 int) {
-	var value byte
-	var bit0 byte
-	if operand1 == OP_B && operand2 == OP_NONE {
-		value = cpu.Reg.R[B]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[B] = value
-	} else if operand1 == OP_C && operand2 == OP_NONE {
-		value = cpu.Reg.R[C]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[C] = value
-	} else if operand1 == OP_D && operand2 == OP_NONE {
-		value = cpu.Reg.R[D]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[D] = value
-	} else if operand1 == OP_E && operand2 == OP_NONE {
-		value = cpu.Reg.R[E]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[E] = value
-	} else if operand1 == OP_H && operand2 == OP_NONE {
-		value = cpu.Reg.R[H]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[H] = value
-	} else if operand1 == OP_L && operand2 == OP_NONE {
-		value = cpu.Reg.R[L]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[L] = value
-	} else if operand1 == OP_HL_PAREN && operand2 == OP_NONE {
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	} else if operand1 == OP_A && operand2 == OP_NONE {
-		value = cpu.Reg.R[A]
-		bit0 = value % 2
-		value = (value >> 1)
-		value = util.SetMSB(value, bit0 != 0)
-		cpu.Reg.R[A] = value
-	} else {
-		panic(fmt.Errorf("error: RRC %d %d", operand1, operand2))
-	}
+	value := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	bit0 := value % 2
+	value = (value >> 1)
+	value = util.SetMSB(value, bit0 != 0)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
+
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
