@@ -525,26 +525,28 @@ func JR(cpu *CPU, operand1, operand2 int) {
 	}
 }
 
-// HALT Halt
-func (cpu *CPU) HALT(operand1, operand2 int) {
+var pending bool
+
+func halt(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 	cpu.halt = true
 
 	// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 	if !cpu.Reg.IME {
 		IE, IF := cpu.RAM[IEIO], cpu.RAM[IFIO]
-		pending := IE&IF != 0
-		if pending {
-			// Some pending
-			cpu.halt = false
-			PC := cpu.Reg.PC
-			cpu.exec()
-			cpu.Reg.PC = PC
-
-			// IME turns on due to EI delay.
-			cpu.halt = cpu.Reg.IME
-		}
+		pending = IE&IF != 0
 	}
+}
+
+func (cpu *CPU) pend() {
+	// Some pending
+	cpu.halt = false
+	PC := cpu.Reg.PC
+	cpu.exec()
+	cpu.Reg.PC = PC
+
+	// IME turns on due to EI delay.
+	cpu.halt = cpu.Reg.IME
 }
 
 // STOP stop CPU
@@ -763,7 +765,7 @@ func CALL(cpu *CPU, operand1, operand2 int) {
 }
 
 // DI Disable Interrupt
-func (cpu *CPU) DI(operand1, operand2 int) {
+func di(cpu *CPU, _, _ int) {
 	cpu.Reg.IME = false
 	cpu.Reg.PC++
 	if cpu.IMESwitch.Working && cpu.IMESwitch.Value {
@@ -772,7 +774,7 @@ func (cpu *CPU) DI(operand1, operand2 int) {
 }
 
 // EI Enable Interrupt
-func (cpu *CPU) EI(operand1, operand2 int) {
+func ei(cpu *CPU, _, _ int) {
 	// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
 	next := cpu.FetchMemory8(cpu.Reg.PC + 1) // next opcode
 	HALT := byte(0x76)
@@ -1708,7 +1710,7 @@ func (cpu *CPU) RST(operand1, operand2 int) {
 	cpu.Reg.PC = destination
 }
 
-func (cpu *CPU) SCF(_, _ int) {
+func scf(cpu *CPU, _, _ int) {
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
 	cpu.setF(flagC, true)
@@ -1716,7 +1718,7 @@ func (cpu *CPU) SCF(_, _ int) {
 }
 
 // CCF Complement Carry Flag
-func (cpu *CPU) CCF(_, _ int) {
+func ccf(cpu *CPU, _, _ int) {
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
 	cpu.setF(flagC, !cpu.f(flagC))

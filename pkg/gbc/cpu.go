@@ -289,7 +289,7 @@ func (cpu *CPU) exec() bool {
 	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
 	cycle := cycle1
 
-	halt := cpu.halt
+	isHalt := cpu.halt
 	if !cpu.halt {
 		if cpu.debug.on && cpu.debug.history.Flag() {
 			cpu.debug.history.SetHistory(bank, PC, bytecode)
@@ -299,8 +299,6 @@ func (cpu *CPU) exec() bool {
 			handler(cpu, operand1, operand2)
 		} else {
 			switch instruction {
-			case INS_HALT:
-				cpu.HALT(operand1, operand2)
 			case INS_LD:
 				LD(cpu, operand1, operand2)
 			case INS_LDH:
@@ -356,20 +354,12 @@ func (cpu *CPU) exec() bool {
 				cpu.DAA(operand1, operand2)
 			case INS_RST:
 				cpu.RST(operand1, operand2)
-			case INS_SCF:
-				cpu.SCF(operand1, operand2)
-			case INS_CCF:
-				cpu.CCF(operand1, operand2)
 			case INS_RLCA:
 				cpu.RLCA(operand1, operand2)
 			case INS_RLA:
 				cpu.RLA(operand1, operand2)
 			case INS_RRCA:
 				cpu.RRCA(operand1, operand2)
-			case INS_DI:
-				cpu.DI(operand1, operand2)
-			case INS_EI:
-				cpu.EI(operand1, operand2)
 			case INS_STOP:
 				cpu.STOP(operand1, operand2)
 			default:
@@ -385,9 +375,12 @@ func (cpu *CPU) exec() bool {
 				cpu.halt = false
 			}
 		}
+		if pending {
+			cpu.pend()
+		}
 	}
 
-	cpu.debug.monitor.Add(halt, cycle)
+	cpu.debug.monitor.Add(isHalt, cycle)
 	cpu.timer(cycle)
 
 	cpu.handleInterrupt()
