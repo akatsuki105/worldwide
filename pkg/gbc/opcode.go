@@ -1715,69 +1715,19 @@ func (cpu *CPU) POP(operand1, operand2 int) {
 }
 
 // SUB subtract
-func (cpu *CPU) SUB(operand1, operand2 int) {
-	switch operand1 {
-	case OP_A:
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[A])
-		cpu.Reg.R[A] = 0
-		cpu.setF(flagZ, true)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, false)
-		cpu.Reg.PC++
-	case OP_B:
-		value := cpu.Reg.R[A] - cpu.Reg.R[B]
-		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[B] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[B])
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-		cpu.Reg.PC++
-	case OP_C:
-		value := cpu.Reg.R[A] - cpu.Reg.R[C]
-		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[C] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[C])
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-		cpu.Reg.PC++
-	case OP_D:
-		value := cpu.Reg.R[A] - cpu.Reg.R[D]
-		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[D] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[D])
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-		cpu.Reg.PC++
-	case OP_E:
-		value := cpu.Reg.R[A] - cpu.Reg.R[E]
-		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[E] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[E])
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-		cpu.Reg.PC++
-	case OP_H:
-		value := cpu.Reg.R[A] - cpu.Reg.R[H]
-		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[H] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[H])
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-		cpu.Reg.PC++
-	case OP_L:
-		value := cpu.Reg.R[A] - cpu.Reg.R[L]
-		carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[L] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[L])
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-		cpu.Reg.PC++
+func subR8(cpu *CPU, _, op int) {
+	value := cpu.Reg.R[A] - cpu.Reg.R[op]
+	carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[op] ^ value
+	cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[op])
+	cpu.Reg.R[A] = value
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, true)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
+	cpu.Reg.PC++
+}
+
+func (cpu *CPU) SUB(op1, _ int) {
+	switch op1 {
 	case OP_d8:
 		value := cpu.Reg.R[A] - cpu.d8Fetch()
 		carryBits := cpu.Reg.R[A] ^ cpu.d8Fetch() ^ value
@@ -1796,8 +1746,6 @@ func (cpu *CPU) SUB(operand1, operand2 int) {
 		cpu.setF(flagN, true)
 		cpu.setF(flagH, util.Bit(carryBits, 4))
 		cpu.Reg.PC++
-	default:
-		panic(fmt.Errorf("error: SUB %d %d", operand1, operand2))
 	}
 }
 
