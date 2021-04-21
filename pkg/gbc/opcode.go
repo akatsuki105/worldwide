@@ -1081,8 +1081,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 				cpu.SRL(op1, op2)
 			case INS_BIT:
 				cpu.BIT(op1, op2)
-			case INS_SET:
-				cpu.SET(op1, op2)
 			default:
 				panic(fmt.Errorf("eip: 0x%04x opcode: %v", cpu.Reg.PC, op))
 			}
@@ -1620,38 +1618,18 @@ func resHL(cpu *CPU, bit, _ int) {
 	cpu.Reg.PC++
 }
 
-// SET Clear bit n
-func (cpu *CPU) SET(operand1, operand2 int) {
-	targetBit := operand1 - OP_0
-	switch operand2 {
-	case OP_B:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[B] |= mask
-	case OP_C:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[C] |= mask
-	case OP_D:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[D] |= mask
-	case OP_E:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[E] |= mask
-	case OP_H:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[H] |= mask
-	case OP_L:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[L] |= mask
-	case OP_HL_PAREN:
-		mask := byte(1) << targetBit
-		value := cpu.FetchMemory8(cpu.Reg.HL()) | mask
-		cpu.timer(1)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	case OP_A:
-		mask := byte(1) << targetBit
-		cpu.Reg.R[A] |= mask
-	}
+func set(cpu *CPU, bit, r8 int) {
+	mask := byte(1) << bit
+	cpu.Reg.R[r8] |= mask
+	cpu.Reg.PC++
+}
+
+func setHL(cpu *CPU, bit, _ int) {
+	mask := byte(1) << bit
+	value := cpu.FetchMemory8(cpu.Reg.HL()) | mask
+	cpu.timer(1)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 	cpu.Reg.PC++
 }
 
