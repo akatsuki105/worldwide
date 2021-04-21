@@ -1819,60 +1819,44 @@ func (cpu *CPU) RRA(operand1, operand2 int) {
 }
 
 // ADC Add the value n8 plus the carry flag to A
-func (cpu *CPU) ADC(operand1, operand2 int) {
+func adcAR8(cpu *CPU, _, op int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.f(flagC) {
 		carry = 1
-	} else {
-		carry = 0
 	}
 
-	switch operand1 {
-	case OP_A:
-		switch operand2 {
-		case OP_A:
-			value = cpu.Reg.R[A] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[A] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[A]) + uint16(carry)
-		case OP_B:
-			value = cpu.Reg.R[B] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[B] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[B]) + uint16(carry) + uint16(cpu.Reg.R[A])
-		case OP_C:
-			value = cpu.Reg.R[C] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[C] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[C]) + uint16(carry) + uint16(cpu.Reg.R[A])
-		case OP_D:
-			value = cpu.Reg.R[D] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[D] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[D]) + uint16(carry) + uint16(cpu.Reg.R[A])
-		case OP_E:
-			value = cpu.Reg.R[E] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[E] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[E]) + uint16(carry) + uint16(cpu.Reg.R[A])
-		case OP_H:
-			value = cpu.Reg.R[H] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[H] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[H]) + uint16(carry) + uint16(cpu.Reg.R[A])
-		case OP_L:
-			value = cpu.Reg.R[L] + carry + cpu.Reg.R[A]
-			value4 = (cpu.Reg.R[L] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(cpu.Reg.R[L]) + uint16(carry) + uint16(cpu.Reg.R[A])
-		case OP_HL_PAREN:
-			data := cpu.FetchMemory8(cpu.Reg.HL())
-			value = data + carry + cpu.Reg.R[A]
-			value4 = (data & 0x0f) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(data) + uint16(cpu.Reg.R[A]) + uint16(carry)
-		case OP_d8:
-			data := cpu.d8Fetch()
-			value = data + carry + cpu.Reg.R[A]
-			value4 = (data & 0x0f) + carry + (cpu.Reg.R[A] & 0b1111)
-			value16 = uint16(data) + uint16(cpu.Reg.R[A]) + uint16(carry)
-			cpu.Reg.PC++
-		}
-	default:
-		panic(fmt.Errorf("error: ADC %d %d", operand1, operand2))
+	value = cpu.Reg.R[op] + carry + cpu.Reg.R[A]
+	value4 = (cpu.Reg.R[op] & 0b1111) + carry + (cpu.Reg.R[A] & 0b1111)
+	value16 = uint16(cpu.Reg.R[op]) + uint16(carry) + uint16(cpu.Reg.R[A])
+	cpu.Reg.R[A] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, util.Bit(value4, 4))
+	cpu.setF(flagC, util.Bit(value16, 8))
+	cpu.Reg.PC++
+}
+
+func (cpu *CPU) ADC(_, op2 int) {
+	var carry, value, value4 byte
+	var value16 uint16
+	if cpu.f(flagC) {
+		carry = 1
+	}
+
+	switch op2 {
+	case OP_HL_PAREN:
+		data := cpu.FetchMemory8(cpu.Reg.HL())
+		value = data + carry + cpu.Reg.R[A]
+		value4 = (data & 0x0f) + carry + (cpu.Reg.R[A] & 0b1111)
+		value16 = uint16(data) + uint16(cpu.Reg.R[A]) + uint16(carry)
+	case OP_d8:
+		data := cpu.d8Fetch()
+		value = data + carry + cpu.Reg.R[A]
+		value4 = (data & 0x0f) + carry + (cpu.Reg.R[A] & 0b1111)
+		value16 = uint16(data) + uint16(cpu.Reg.R[A]) + uint16(carry)
+		cpu.Reg.PC++
 	}
 	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
@@ -1903,14 +1887,14 @@ func sbcAR8(cpu *CPU, _, op int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) SBC(operand1, operand2 int) {
+func (cpu *CPU) SBC(_, op2 int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.f(flagC) {
 		carry = 1
 	}
 
-	switch operand2 {
+	switch op2 {
 	case OP_HL_PAREN:
 		data := cpu.FetchMemory8(cpu.Reg.HL())
 		value = cpu.Reg.R[A] - (data + carry)
@@ -1967,8 +1951,7 @@ func (cpu *CPU) RST(operand1, operand2 int) {
 	cpu.Reg.PC = destination
 }
 
-// SCF Set Carry Flag
-func (cpu *CPU) SCF(operand1, operand2 int) {
+func (cpu *CPU) SCF(_, _ int) {
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
 	cpu.setF(flagC, true)
@@ -1976,7 +1959,7 @@ func (cpu *CPU) SCF(operand1, operand2 int) {
 }
 
 // CCF Complement Carry Flag
-func (cpu *CPU) CCF(operand1, operand2 int) {
+func (cpu *CPU) CCF(_, _ int) {
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
 	cpu.setF(flagC, !cpu.f(flagC))
