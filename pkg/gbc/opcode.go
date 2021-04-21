@@ -1883,62 +1883,48 @@ func (cpu *CPU) ADC(operand1, operand2 int) {
 }
 
 // SBC Subtract the value n8 and the carry flag from A
+
+func sbcAR8(cpu *CPU, _, op int) {
+	var carry, value, value4 byte
+	var value16 uint16
+	if cpu.f(flagC) {
+		carry = 1
+	}
+
+	value = cpu.Reg.R[A] - (cpu.Reg.R[op] + carry)
+	value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[op] & 0b1111) + carry)
+	value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[op]) + uint16(carry))
+	cpu.Reg.R[A] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, true)
+	cpu.setF(flagH, util.Bit(value4, 4))
+	cpu.setF(flagC, util.Bit(value16, 8))
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) SBC(operand1, operand2 int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.f(flagC) {
 		carry = 1
-	} else {
-		carry = 0
 	}
 
-	switch operand1 {
-	case OP_A:
-		switch operand2 {
-		case OP_A:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[A] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[A] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[A]) + uint16(carry))
-		case OP_B:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[B] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[B] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[B]) + uint16(carry))
-		case OP_C:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[C] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[C] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[C]) + uint16(carry))
-		case OP_D:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[D] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[D] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[D]) + uint16(carry))
-		case OP_E:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[E] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[E] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[E]) + uint16(carry))
-		case OP_H:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[H] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[H] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[H]) + uint16(carry))
-		case OP_L:
-			value = cpu.Reg.R[A] - (cpu.Reg.R[L] + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((cpu.Reg.R[L] & 0b1111) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(cpu.Reg.R[L]) + uint16(carry))
-		case OP_HL_PAREN:
-			data := cpu.FetchMemory8(cpu.Reg.HL())
-			value = cpu.Reg.R[A] - (data + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(data) + uint16(carry))
-		case OP_d8:
-			data := cpu.d8Fetch()
-			value = cpu.Reg.R[A] - (data + carry)
-			value4 = (cpu.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
-			value16 = uint16(cpu.Reg.R[A]) - (uint16(data) + uint16(carry))
-			cpu.Reg.PC++
-		}
-	default:
-		panic(fmt.Errorf("error: SBC %d %d", operand1, operand2))
+	switch operand2 {
+	case OP_HL_PAREN:
+		data := cpu.FetchMemory8(cpu.Reg.HL())
+		value = cpu.Reg.R[A] - (data + carry)
+		value4 = (cpu.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+		value16 = uint16(cpu.Reg.R[A]) - (uint16(data) + uint16(carry))
+	case OP_d8:
+		data := cpu.d8Fetch()
+		value = cpu.Reg.R[A] - (data + carry)
+		value4 = (cpu.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+		value16 = uint16(cpu.Reg.R[A]) - (uint16(data) + uint16(carry))
+		cpu.Reg.PC++
 	}
 	cpu.Reg.R[A] = value
+
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, true)
 	cpu.setF(flagH, util.Bit(value4, 4))
