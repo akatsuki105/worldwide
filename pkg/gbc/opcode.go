@@ -132,50 +132,15 @@ func op0x06(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.PC += 2
 }
 
-// LD B,B
-func op0x40(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.PC++
-}
-
-// LD B,C
-func op0x41(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.Reg.R[C]
-	cpu.Reg.PC++
-}
-
-// LD B,D
-func op0x42(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.Reg.R[D]
-	cpu.Reg.PC++
-}
-
-// LD B,E
-func op0x43(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.Reg.R[E]
-	cpu.Reg.PC++
-}
-
-// LD B,H
-func op0x44(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.Reg.R[H]
-	cpu.Reg.PC++
-}
-
-// LD B,L
-func op0x45(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.Reg.R[L]
+// LD B,R8
+func ldBR8(cpu *CPU, operand, unused int) {
+	cpu.Reg.R[B] = cpu.Reg.R[operand]
 	cpu.Reg.PC++
 }
 
 // LD B,(HL)
 func op0x46(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.R[B] = cpu.FetchMemory8(cpu.Reg.HL())
-	cpu.Reg.PC++
-}
-
-// LD B,A
-func op0x47(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.Reg.R[A]
 	cpu.Reg.PC++
 }
 
