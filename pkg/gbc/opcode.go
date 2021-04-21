@@ -653,12 +653,11 @@ func JP(cpu *CPU, operand1, operand2 int) {
 }
 
 // RET Return
-func (cpu *CPU) RET(operand1, operand2 int) (result bool) {
+func (cpu *CPU) RET(op1, op2 int) (result bool) {
 	result = true
 
-	switch operand1 {
-	case OP_NONE:
-		// PC=(SP), SP=SP+2
+	switch op1 {
+	case OP_NONE: // PC=(SP), SP=SP+2
 		cpu.popPC()
 	case OP_Z:
 		if cpu.f(flagZ) {
@@ -688,8 +687,6 @@ func (cpu *CPU) RET(operand1, operand2 int) (result bool) {
 			cpu.Reg.PC++
 			result = false
 		}
-	default:
-		panic(fmt.Errorf("error: RET %d %d", operand1, operand2))
 	}
 
 	return result
@@ -846,30 +843,25 @@ func (cpu *CPU) CP(operand1, operand2 int) {
 }
 
 // AND And instruction
+
+func andR8(cpu *CPU, _, op int) {
+	value := cpu.Reg.R[A] & cpu.Reg.R[op]
+	cpu.Reg.R[A] = value
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, true)
+	cpu.setF(flagC, false)
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) AND(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
-	case OP_A:
-		value = cpu.Reg.R[A]
-	case OP_B:
-		value = cpu.Reg.R[A] & cpu.Reg.R[B]
-	case OP_C:
-		value = cpu.Reg.R[A] & cpu.Reg.R[C]
-	case OP_D:
-		value = cpu.Reg.R[A] & cpu.Reg.R[D]
-	case OP_E:
-		value = cpu.Reg.R[A] & cpu.Reg.R[E]
-	case OP_H:
-		value = cpu.Reg.R[A] & cpu.Reg.R[H]
-	case OP_L:
-		value = cpu.Reg.R[A] & cpu.Reg.R[L]
 	case OP_HL_PAREN:
 		value = cpu.Reg.R[A] & cpu.FetchMemory8(cpu.Reg.HL())
 	case OP_d8:
 		value = cpu.Reg.R[A] & cpu.d8Fetch()
 		cpu.Reg.PC++
-	default:
-		panic(fmt.Errorf("error: AND %d %d", operand1, operand2))
 	}
 
 	cpu.Reg.R[A] = value
@@ -881,34 +873,19 @@ func (cpu *CPU) AND(operand1, operand2 int) {
 }
 
 // OR or
+func orR8(cpu *CPU, _, op int) {
+	value := cpu.Reg.R[A] | cpu.Reg.R[op]
+	cpu.Reg.R[A] = value
+	cpu.setF(flagZ, value == 0)
+
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, false)
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) OR(operand1, operand2 int) {
 	switch operand1 {
-	case OP_A:
-		cpu.setF(flagZ, cpu.Reg.R[A] == 0)
-	case OP_B:
-		value := cpu.Reg.R[A] | cpu.Reg.R[B]
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-	case OP_C:
-		value := cpu.Reg.R[A] | cpu.Reg.R[C]
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-	case OP_D:
-		value := cpu.Reg.R[A] | cpu.Reg.R[D]
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-	case OP_E:
-		value := cpu.Reg.R[A] | cpu.Reg.R[E]
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-	case OP_H:
-		value := cpu.Reg.R[A] | cpu.Reg.R[H]
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
-	case OP_L:
-		value := cpu.Reg.R[A] | cpu.Reg.R[L]
-		cpu.Reg.R[A] = value
-		cpu.setF(flagZ, value == 0)
 	case OP_d8:
 		value := cpu.Reg.R[A] | cpu.FetchMemory8(cpu.Reg.PC+1)
 		cpu.Reg.R[A] = value
@@ -918,8 +895,6 @@ func (cpu *CPU) OR(operand1, operand2 int) {
 		value := cpu.Reg.R[A] | cpu.FetchMemory8(cpu.Reg.HL())
 		cpu.Reg.R[A] = value
 		cpu.setF(flagZ, value == 0)
-	default:
-		panic(fmt.Errorf("error: OR %d %d", operand1, operand2))
 	}
 
 	cpu.setF(flagN, false)
