@@ -904,73 +904,21 @@ func (cpu *CPU) OR(operand1, operand2 int) {
 }
 
 // ADD Addition
+func addR8(cpu *CPU, _, op int) {
+	value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[op])
+	carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[op]) ^ value
+	cpu.Reg.R[A] = byte(value)
+	cpu.setF(flagZ, byte(value) == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
+	cpu.setF(flagC, util.Bit(carryBits, 8))
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) ADD(operand1, operand2 int) {
 	switch operand1 {
 	case OP_A:
 		switch operand2 {
-		case OP_A:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[A])
-			carryBits := value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		case OP_B:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[B])
-			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[B]) ^ value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		case OP_C:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[C])
-			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[C]) ^ value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		case OP_D:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[D])
-			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[D]) ^ value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		case OP_E:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[E])
-			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[E]) ^ value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		case OP_H:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[H])
-			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[H]) ^ value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		case OP_L:
-			value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[L])
-			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[L]) ^ value
-			cpu.Reg.R[A] = byte(value)
-			cpu.setF(flagZ, byte(value) == 0)
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 4))
-			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
 		case OP_d8:
 			value := uint16(cpu.Reg.R[A]) + uint16(cpu.d8Fetch())
 			carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.d8Fetch()) ^ value
@@ -1038,8 +986,6 @@ func (cpu *CPU) ADD(operand1, operand2 int) {
 			cpu.setF(flagC, util.Bit(carryBits, 8))
 			cpu.Reg.PC += 2
 		}
-	default:
-		panic(fmt.Errorf("error: ADD %d %d", operand1, operand2))
 	}
 }
 
