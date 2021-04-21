@@ -1003,8 +1003,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 				cpu.SLA(op1, op2)
 			case INS_SRA:
 				cpu.SRA(op1, op2)
-			case INS_SWAP:
-				cpu.SWAP(op1, op2)
 			case INS_SRL:
 				cpu.SRL(op1, op2)
 			case INS_BIT:
@@ -1378,63 +1376,27 @@ func (cpu *CPU) SRA(operand1, operand2 int) {
 }
 
 // SWAP Swap n[5:8] and n[0:4]
-func (cpu *CPU) SWAP(operand1, operand2 int) {
-	var value byte
+func swap(cpu *CPU, _, op int) {
+	b := cpu.Reg.R[op]
+	lower := b & 0b1111
+	upper := b >> 4
+	cpu.Reg.R[op] = (lower << 4) | upper
 
-	switch operand1 {
-	case OP_B:
-		b := cpu.Reg.R[B]
-		B03 := b & 0x0f
-		B47 := b >> 4
-		value = (B03 << 4) | B47
-		cpu.Reg.R[B] = value
-	case OP_C:
-		c := cpu.Reg.R[C]
-		C03 := c & 0x0f
-		C47 := c >> 4
-		value = (C03 << 4) | C47
-		cpu.Reg.R[C] = value
-	case OP_D:
-		d := cpu.Reg.R[D]
-		D03 := d & 0x0f
-		D47 := d >> 4
-		value = (D03 << 4) | D47
-		cpu.Reg.R[D] = value
-	case OP_E:
-		e := cpu.Reg.R[E]
-		E03 := e & 0x0f
-		E47 := e >> 4
-		value = (E03 << 4) | E47
-		cpu.Reg.R[E] = value
-	case OP_H:
-		h := cpu.Reg.R[H]
-		H03 := h & 0x0f
-		H47 := h >> 4
-		value = (H03 << 4) | H47
-		cpu.Reg.R[H] = value
-	case OP_L:
-		l := cpu.Reg.R[L]
-		L03 := l & 0x0f
-		L47 := l >> 4
-		value = (L03 << 4) | L47
-		cpu.Reg.R[L] = value
-	case OP_HL_PAREN:
-		data := cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		data03 := data & 0x0f
-		data47 := data >> 4
-		value = (data03 << 4) | data47
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	case OP_A:
-		a := cpu.Reg.R[A]
-		A03 := a & 0x0f
-		A47 := a >> 4
-		value = (A03 << 4) | A47
-		cpu.Reg.R[A] = value
-	default:
-		panic(fmt.Errorf("error: SWAP %d %d", operand1, operand2))
-	}
+	cpu.setF(flagZ, cpu.Reg.R[op] == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, false)
+	cpu.Reg.PC++
+}
+
+func swapHL(cpu *CPU, _, _ int) {
+	data := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	data03 := data & 0x0f
+	data47 := data >> 4
+	value := (data03 << 4) | data47
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
