@@ -1052,104 +1052,75 @@ func (cpu *CPU) CPL(operand1, operand2 int) {
 }
 
 // PREFIXCB is extend instruction
-func (cpu *CPU) PREFIXCB(operand1, operand2 int) {
-	if operand1 == OP_NONE && operand2 == OP_NONE {
+func (cpu *CPU) PREFIXCB(op1, op2 int) {
+	if op1 == OP_NONE && op2 == OP_NONE {
 		cpu.Reg.PC++
 		cpu.timer(1)
-		opcode := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
-		instruction, operand1, operand2, cycle := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1
+		op := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
+		instruction, op1, op2, cycle, handler := op.Ins, op.Operand1, op.Operand2, op.Cycle1, op.Handler
 
-		switch instruction {
-		case INS_RLC:
-			cpu.RLC(operand1, operand2)
-		case INS_RRC:
-			cpu.RRC(operand1, operand2)
-		case INS_RL:
-			cpu.RL(operand1, operand2)
-		case INS_RR:
-			cpu.RR(operand1, operand2)
-		case INS_SLA:
-			cpu.SLA(operand1, operand2)
-		case INS_SRA:
-			cpu.SRA(operand1, operand2)
-		case INS_SWAP:
-			cpu.SWAP(operand1, operand2)
-		case INS_SRL:
-			cpu.SRL(operand1, operand2)
-		case INS_BIT:
-			cpu.BIT(operand1, operand2)
-		case INS_RES:
-			cpu.RES(operand1, operand2)
-		case INS_SET:
-			cpu.SET(operand1, operand2)
-		default:
-			panic(fmt.Errorf("eip: 0x%04x opcode: %v", cpu.Reg.PC, opcode))
+		if handler != nil {
+			handler(cpu, op1, op2)
+		} else {
+			switch instruction {
+			case INS_RLC:
+				cpu.RLC(op1, op2)
+			case INS_RRC:
+				cpu.RRC(op1, op2)
+			case INS_RL:
+				cpu.RL(op1, op2)
+			case INS_RR:
+				cpu.RR(op1, op2)
+			case INS_SLA:
+				cpu.SLA(op1, op2)
+			case INS_SRA:
+				cpu.SRA(op1, op2)
+			case INS_SWAP:
+				cpu.SWAP(op1, op2)
+			case INS_SRL:
+				cpu.SRL(op1, op2)
+			case INS_BIT:
+				cpu.BIT(op1, op2)
+			case INS_RES:
+				cpu.RES(op1, op2)
+			case INS_SET:
+				cpu.SET(op1, op2)
+			default:
+				panic(fmt.Errorf("eip: 0x%04x opcode: %v", cpu.Reg.PC, op))
+			}
 		}
 
 		if cycle > 1 {
 			cpu.timer(cycle - 1)
 		}
 	} else {
-		panic(fmt.Errorf("error: PREFIXCB %d %d", operand1, operand2))
+		panic(fmt.Errorf("error: PREFIXCB %d %d", op1, op2))
 	}
 }
 
 // RLC Rotate n left carry => bit0
+func rlcR8(cpu *CPU, op, _ int) {
+	value := cpu.Reg.R[op]
+	bit7 := value >> 7
+	value = (value << 1)
+	value = util.SetLSB(value, bit7 != 0)
+	cpu.Reg.R[op] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, bit7 != 0)
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) RLC(operand1, operand2 int) {
-	var value, bit7 byte
-	if operand1 == OP_B && operand2 == OP_NONE {
-		value = cpu.Reg.R[B]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[B] = value
-	} else if operand1 == OP_C && operand2 == OP_NONE {
-		value = cpu.Reg.R[C]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[C] = value
-	} else if operand1 == OP_D && operand2 == OP_NONE {
-		value = cpu.Reg.R[D]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[D] = value
-	} else if operand1 == OP_E && operand2 == OP_NONE {
-		value = cpu.Reg.R[E]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[E] = value
-	} else if operand1 == OP_H && operand2 == OP_NONE {
-		value = cpu.Reg.R[H]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[H] = value
-	} else if operand1 == OP_L && operand2 == OP_NONE {
-		value = cpu.Reg.R[L]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[L] = value
-	} else if operand1 == OP_HL_PAREN && operand2 == OP_NONE {
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	} else if operand1 == OP_A && operand2 == OP_NONE {
-		value = cpu.Reg.R[A]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, bit7 != 0)
-		cpu.Reg.R[A] = value
-	} else {
-		panic(fmt.Errorf("error: RLC %d %d", operand1, operand2))
-	}
+	value := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	bit7 := value >> 7
+	value = (value << 1)
+	value = util.SetLSB(value, bit7 != 0)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
