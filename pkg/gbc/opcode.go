@@ -186,45 +186,9 @@ func op0x36(cpu *CPU, operand1, operand2 int) {
 	cpu.timer(2)
 }
 
-// LD (HL),B
-func op0x70(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[B])
-	cpu.Reg.PC++
-}
-
-// LD (HL),C
-func op0x71(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[C])
-	cpu.Reg.PC++
-}
-
-// LD (HL),D
-func op0x72(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[D])
-	cpu.Reg.PC++
-}
-
-// LD (HL),E
-func op0x73(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[E])
-	cpu.Reg.PC++
-}
-
-// LD (HL),H
-func op0x74(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[H])
-	cpu.Reg.PC++
-}
-
-// LD (HL),L
-func op0x75(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[L])
-	cpu.Reg.PC++
-}
-
-// LD (HL),A
-func op0x77(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[A])
+// LD (HL),R8
+func ldHLR8(cpu *CPU, unused, op int) {
+	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[op])
 	cpu.Reg.PC++
 }
 
