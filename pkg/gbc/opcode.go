@@ -322,38 +322,22 @@ func (cpu *CPU) NOP(operand1, operand2 int) {
 }
 
 // INC Increment
+
+func incR8(cpu *CPU, op, _ int) {
+	value := cpu.Reg.R[op] + 1
+	carryBits := cpu.Reg.R[op] ^ 1 ^ value
+	cpu.Reg.R[op] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) INC(operand1, operand2 int) {
 	var value, carryBits byte
 
 	switch operand1 {
-	case OP_A:
-		value = cpu.Reg.R[A] + 1
-		carryBits = cpu.Reg.R[A] ^ 1 ^ value
-		cpu.Reg.R[A] = value
-	case OP_B:
-		value = cpu.Reg.R[B] + 1
-		carryBits = cpu.Reg.R[B] ^ 1 ^ value
-		cpu.Reg.R[B] = value
-	case OP_C:
-		value = cpu.Reg.R[C] + 1
-		carryBits = cpu.Reg.R[C] ^ 1 ^ value
-		cpu.Reg.R[C] = value
-	case OP_D:
-		value = cpu.Reg.R[D] + 1
-		carryBits = cpu.Reg.R[D] ^ 1 ^ value
-		cpu.Reg.R[D] = value
-	case OP_E:
-		value = cpu.Reg.R[E] + 1
-		carryBits = cpu.Reg.R[E] ^ 1 ^ value
-		cpu.Reg.R[E] = value
-	case OP_H:
-		value = cpu.Reg.R[H] + 1
-		carryBits = cpu.Reg.R[H] ^ 1 ^ value
-		cpu.Reg.R[H] = value
-	case OP_L:
-		value = cpu.Reg.R[L] + 1
-		carryBits = cpu.Reg.R[L] ^ 1 ^ value
-		cpu.Reg.R[L] = value
 	case OP_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL()) + 1
 		cpu.timer(1)
@@ -381,39 +365,23 @@ func (cpu *CPU) INC(operand1, operand2 int) {
 }
 
 // DEC Decrement
+
+func decR8(cpu *CPU, op, _ int) {
+	value := cpu.Reg.R[op] - 1
+	carryBits := cpu.Reg.R[op] ^ 1 ^ value
+	cpu.Reg.R[op] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, true)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) DEC(operand1, operand2 int) {
 	var value byte
 	var carryBits byte
 
 	switch operand1 {
-	case OP_A:
-		value = cpu.Reg.R[A] - 1
-		carryBits = cpu.Reg.R[A] ^ 1 ^ value
-		cpu.Reg.R[A] = value
-	case OP_B:
-		value = cpu.Reg.R[B] - 1
-		carryBits = cpu.Reg.R[B] ^ 1 ^ value
-		cpu.Reg.R[B] = value
-	case OP_C:
-		value = cpu.Reg.R[C] - 1
-		carryBits = cpu.Reg.R[C] ^ 1 ^ value
-		cpu.Reg.R[C] = value
-	case OP_D:
-		value = cpu.Reg.R[D] - 1
-		carryBits = cpu.Reg.R[D] ^ 1 ^ value
-		cpu.Reg.R[D] = value
-	case OP_E:
-		value = cpu.Reg.R[E] - 1
-		carryBits = cpu.Reg.R[E] ^ 1 ^ value
-		cpu.Reg.R[E] = value
-	case OP_H:
-		value = cpu.Reg.R[H] - 1
-		carryBits = cpu.Reg.R[H] ^ 1 ^ value
-		cpu.Reg.R[H] = value
-	case OP_L:
-		value = cpu.Reg.R[L] - 1
-		carryBits = cpu.Reg.R[L] ^ 1 ^ value
-		cpu.Reg.R[L] = value
 	case OP_HL_PAREN:
 		value = cpu.FetchMemory8(cpu.Reg.HL()) - 1
 		cpu.timer(1)
