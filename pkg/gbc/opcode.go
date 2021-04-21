@@ -993,8 +993,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 			switch instruction {
 			case INS_RRC:
 				cpu.RRC(op1, op2)
-			case INS_RL:
-				cpu.RL(op1, op2)
 			case INS_RR:
 				cpu.RR(op1, op2)
 			case INS_SLA:
@@ -1115,63 +1113,30 @@ func (cpu *CPU) RRCA(operand1, operand2 int) {
 }
 
 // RL Rotate n rigth through carry bit7 => bit0
-func (cpu *CPU) RL(operand1, operand2 int) {
+func rl(cpu *CPU, _, op int) {
+	carry, value := cpu.f(flagC), cpu.Reg.R[op]
+	bit7 := value >> 7
+	value = (value << 1)
+	value = util.SetLSB(value, carry)
+	cpu.Reg.R[op] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, bit7 != 0)
+	cpu.Reg.PC++
+}
+
+func rlHL(cpu *CPU, _, _ int) {
 	var value, bit7 byte
 	carry := cpu.f(flagC)
-	switch operand1 {
-	case OP_A:
-		value = cpu.Reg.R[A]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[A] = value
-	case OP_B:
-		value = cpu.Reg.R[B]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[B] = value
-	case OP_C:
-		value = cpu.Reg.R[C]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[C] = value
-	case OP_D:
-		value = cpu.Reg.R[D]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[D] = value
-	case OP_E:
-		value = cpu.Reg.R[E]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[E] = value
-	case OP_H:
-		value = cpu.Reg.R[H]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[H] = value
-	case OP_L:
-		value = cpu.Reg.R[L]
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.Reg.R[L] = value
-	case OP_HL_PAREN:
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		bit7 = value >> 7
-		value = (value << 1)
-		value = util.SetLSB(value, carry)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	default:
-		panic(fmt.Errorf("error: RL %d %d", operand1, operand2))
-	}
+	value = cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	bit7 = value >> 7
+	value = (value << 1)
+	value = util.SetLSB(value, carry)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
