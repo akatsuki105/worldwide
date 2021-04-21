@@ -793,37 +793,21 @@ func (cpu *CPU) EI(operand1, operand2 int) {
 }
 
 // CP Compare
+func cp(cpu *CPU, _, op int) {
+	var value, carryBits byte
+	value = cpu.Reg.R[A] - cpu.Reg.R[op]
+	carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[op] ^ value
+	cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[op])
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, true)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) CP(operand1, operand2 int) {
 	var value, carryBits byte
-
 	switch operand1 {
-	case OP_A:
-		value, carryBits = 0, 0
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[A])
-	case OP_B:
-		value = cpu.Reg.R[A] - cpu.Reg.R[B]
-		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[B] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[B])
-	case OP_C:
-		value = cpu.Reg.R[A] - cpu.Reg.R[C]
-		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[C] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[C])
-	case OP_D:
-		value = cpu.Reg.R[A] - cpu.Reg.R[D]
-		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[D] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[D])
-	case OP_E:
-		value = cpu.Reg.R[A] - cpu.Reg.R[E]
-		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[E] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[E])
-	case OP_H:
-		value = cpu.Reg.R[A] - cpu.Reg.R[H]
-		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[H] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[H])
-	case OP_L:
-		value = cpu.Reg.R[A] - cpu.Reg.R[L]
-		carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[L] ^ value
-		cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[L])
 	case OP_d8:
 		value = cpu.Reg.R[A] - cpu.d8Fetch()
 		carryBits = cpu.Reg.R[A] ^ cpu.d8Fetch() ^ value
@@ -833,8 +817,6 @@ func (cpu *CPU) CP(operand1, operand2 int) {
 		value = cpu.Reg.R[A] - cpu.FetchMemory8(cpu.Reg.HL())
 		carryBits = cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.HL()) ^ value
 		cpu.setCSub(cpu.Reg.R[A], cpu.FetchMemory8(cpu.Reg.HL()))
-	default:
-		panic(fmt.Errorf("error: CP %d %d", operand1, operand2))
 	}
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, true)
