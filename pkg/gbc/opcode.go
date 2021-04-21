@@ -991,8 +991,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 			handler(cpu, op1, op2)
 		} else {
 			switch instruction {
-			case INS_RLC:
-				cpu.RLC(op1, op2)
 			case INS_RRC:
 				cpu.RRC(op1, op2)
 			case INS_RL:
@@ -1035,7 +1033,7 @@ func rlcR8(cpu *CPU, op, _ int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) RLC(operand1, operand2 int) {
+func rlcHL(cpu *CPU, _, _ int) {
 	value := cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.timer(1)
 	bit7 := value >> 7
