@@ -379,25 +379,21 @@ func stop(cpu *CPU, _, _ int) {
 }
 
 // XOR xor
+func xor8(cpu *CPU, _, r8 int) {
+	value := cpu.Reg.R[A] ^ cpu.Reg.R[r8]
+	cpu.Reg.R[A] = value
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, false)
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) XOR(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
-	case OP_B:
-		value = cpu.Reg.R[A] ^ cpu.Reg.R[B]
-	case OP_C:
-		value = cpu.Reg.R[A] ^ cpu.Reg.R[C]
-	case OP_D:
-		value = cpu.Reg.R[A] ^ cpu.Reg.R[D]
-	case OP_E:
-		value = cpu.Reg.R[A] ^ cpu.Reg.R[E]
-	case OP_H:
-		value = cpu.Reg.R[A] ^ cpu.Reg.R[H]
-	case OP_L:
-		value = cpu.Reg.R[A] ^ cpu.Reg.R[L]
 	case OP_HL_PAREN:
 		value = cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.HL())
-	case OP_A:
-		value = 0
 	case OP_d8:
 		value = cpu.Reg.R[A] ^ cpu.FetchMemory8(cpu.Reg.PC+1)
 		cpu.Reg.PC++
@@ -509,8 +505,8 @@ func reti(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.IME = true
 }
 
-// CALL Call subroutine
-func CALL(cpu *CPU, operand1, operand2 int) {
+// call subroutine
+func call(cpu *CPU, operand1, _ int) {
 
 	switch operand1 {
 	case OP_a16:
@@ -568,8 +564,6 @@ func CALL(cpu *CPU, operand1, operand2 int) {
 			cpu.Reg.PC += 3
 			cpu.timer(3)
 		}
-	default:
-		panic(fmt.Errorf("error: CALL %d %d", operand1, operand2))
 	}
 }
 
@@ -604,11 +598,10 @@ func ei(cpu *CPU, _, _ int) {
 }
 
 // CP Compare
-func cp(cpu *CPU, _, op int) {
-	var value, carryBits byte
-	value = cpu.Reg.R[A] - cpu.Reg.R[op]
-	carryBits = cpu.Reg.R[A] ^ cpu.Reg.R[op] ^ value
-	cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[op])
+func cp(cpu *CPU, _, r8 int) {
+	value := cpu.Reg.R[A] - cpu.Reg.R[r8]
+	carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[r8] ^ value
+	cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[r8])
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, true)
@@ -637,8 +630,8 @@ func (cpu *CPU) CP(operand1, operand2 int) {
 
 // AND And instruction
 
-func andR8(cpu *CPU, _, op int) {
-	value := cpu.Reg.R[A] & cpu.Reg.R[op]
+func and8(cpu *CPU, _, r8 int) {
+	value := cpu.Reg.R[A] & cpu.Reg.R[r8]
 	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -666,8 +659,8 @@ func (cpu *CPU) AND(operand1, operand2 int) {
 }
 
 // OR or
-func orR8(cpu *CPU, _, op int) {
-	value := cpu.Reg.R[A] | cpu.Reg.R[op]
+func orR8(cpu *CPU, _, r8 int) {
+	value := cpu.Reg.R[A] | cpu.Reg.R[r8]
 	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 
@@ -697,14 +690,25 @@ func (cpu *CPU) OR(operand1, operand2 int) {
 }
 
 // ADD Addition
-func addR8(cpu *CPU, _, op int) {
-	value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[op])
-	carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[op]) ^ value
+func add8(cpu *CPU, _, r8 int) {
+	value := uint16(cpu.Reg.R[A]) + uint16(cpu.Reg.R[r8])
+	carryBits := uint16(cpu.Reg.R[A]) ^ uint16(cpu.Reg.R[r8]) ^ value
 	cpu.Reg.R[A] = byte(value)
 	cpu.setF(flagZ, byte(value) == 0)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, util.Bit(carryBits, 4))
 	cpu.setF(flagC, util.Bit(carryBits, 8))
+	cpu.Reg.PC++
+}
+
+// add hl,r16
+func addHL(cpu *CPU, _, r16 int) {
+	value := uint32(cpu.Reg.HL()) + uint32(cpu.Reg.R16(r16))
+	carryBits := uint32(cpu.Reg.HL()) ^ uint32(cpu.Reg.R16(r16)) ^ value
+	cpu.Reg.setHL(uint16(value))
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, util.Bit(carryBits, 12))
+	cpu.setF(flagC, util.Bit(carryBits, 16))
 	cpu.Reg.PC++
 }
 
@@ -729,41 +733,6 @@ func (cpu *CPU) ADD(operand1, operand2 int) {
 			cpu.setF(flagN, false)
 			cpu.setF(flagH, util.Bit(carryBits, 4))
 			cpu.setF(flagC, util.Bit(carryBits, 8))
-			cpu.Reg.PC++
-		}
-	case OP_HL:
-		switch operand2 {
-		case OP_BC:
-			value := uint32(cpu.Reg.HL()) + uint32(cpu.Reg.BC())
-			carryBits := uint32(cpu.Reg.HL()) ^ uint32(cpu.Reg.BC()) ^ value
-			cpu.Reg.setHL(uint16(value))
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 12))
-			cpu.setF(flagC, util.Bit(carryBits, 16))
-			cpu.Reg.PC++
-		case OP_DE:
-			value := uint32(cpu.Reg.HL()) + uint32(cpu.Reg.DE())
-			carryBits := uint32(cpu.Reg.HL()) ^ uint32(cpu.Reg.DE()) ^ value
-			cpu.Reg.setHL(uint16(value))
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 12))
-			cpu.setF(flagC, util.Bit(carryBits, 16))
-			cpu.Reg.PC++
-		case OP_HL:
-			value := uint32(cpu.Reg.HL()) + uint32(cpu.Reg.HL())
-			carryBits := value
-			cpu.Reg.setHL(uint16(value))
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 12))
-			cpu.setF(flagC, util.Bit(carryBits, 16))
-			cpu.Reg.PC++
-		case OP_SP:
-			value := uint32(cpu.Reg.HL()) + uint32(cpu.Reg.SP)
-			carryBits := uint32(cpu.Reg.HL()) ^ uint32(cpu.Reg.SP) ^ value
-			cpu.Reg.setHL(uint16(value))
-			cpu.setF(flagN, false)
-			cpu.setF(flagH, util.Bit(carryBits, 12))
-			cpu.setF(flagC, util.Bit(carryBits, 16))
 			cpu.Reg.PC++
 		}
 	case OP_SP:
@@ -834,12 +803,10 @@ func rlcHL(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 }
 
-// RLCA Rotate register A left.
-func (cpu *CPU) RLCA(_, _ int) {
-	var value byte
-	var bit7 byte
-	value = cpu.Reg.R[A]
-	bit7 = value >> 7
+// Rotate register A left.
+func rlca(cpu *CPU, _, _ int) {
+	value := cpu.Reg.R[A]
+	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, bit7 != 0)
 	cpu.Reg.R[A] = value
@@ -882,12 +849,9 @@ func rrcHL(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 }
 
-// RRCA Rotate register A right.
-func (cpu *CPU) RRCA(_, _ int) {
-	var value byte
-	var lsb bool
-
-	value, lsb = cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0)
+// rotate register A right.
+func rrca(cpu *CPU, _, _ int) {
+	value, lsb := cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0)
 	value = (value >> 1)
 	value = util.SetMSB(value, lsb)
 	cpu.Reg.R[A] = value
@@ -932,13 +896,12 @@ func rlHL(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 }
 
-// RLA Rotate register A left through carry.
-func (cpu *CPU) RLA(_, _ int) {
-	var value, bit7 byte
+// Rotate register A left through carry.
+func rla(cpu *CPU, _, _ int) {
 	carry := cpu.f(flagC)
 
-	value = cpu.Reg.R[A]
-	bit7 = value >> 7
+	value := cpu.Reg.R[A]
+	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, carry)
 	cpu.Reg.R[A] = value
@@ -1158,8 +1121,6 @@ func (cpu *CPU) PUSH(operand1, operand2 int) {
 		cpu.pushHL()
 	case OP_AF:
 		cpu.pushAF()
-	default:
-		panic(fmt.Errorf("error: PUSH %d %d", operand1, operand2))
 	}
 	cpu.Reg.PC++
 	cpu.timer(2)
@@ -1176,18 +1137,16 @@ func (cpu *CPU) POP(operand1, operand2 int) {
 		cpu.popHL()
 	case OP_AF:
 		cpu.popAF()
-	default:
-		panic(fmt.Errorf("error: POP %d %d", operand1, operand2))
 	}
 	cpu.Reg.PC++
 	cpu.timer(2)
 }
 
 // SUB subtract
-func subR8(cpu *CPU, _, op int) {
-	value := cpu.Reg.R[A] - cpu.Reg.R[op]
-	carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[op] ^ value
-	cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[op])
+func sub8(cpu *CPU, _, r8 int) {
+	value := cpu.Reg.R[A] - cpu.Reg.R[r8]
+	carryBits := cpu.Reg.R[A] ^ cpu.Reg.R[r8] ^ value
+	cpu.setCSub(cpu.Reg.R[A], cpu.Reg.R[r8])
 	cpu.Reg.R[A] = value
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, true)
@@ -1236,7 +1195,7 @@ func (cpu *CPU) RRA(operand1, operand2 int) {
 }
 
 // ADC Add the value n8 plus the carry flag to A
-func adcAR8(cpu *CPU, _, op int) {
+func adc8(cpu *CPU, _, op int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.f(flagC) {
@@ -1285,7 +1244,7 @@ func (cpu *CPU) ADC(_, op2 int) {
 
 // SBC Subtract the value n8 and the carry flag from A
 
-func sbcAR8(cpu *CPU, _, op int) {
+func sbc8(cpu *CPU, _, op int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if cpu.f(flagC) {

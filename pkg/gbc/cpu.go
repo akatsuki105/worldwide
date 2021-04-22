@@ -313,8 +313,6 @@ func (cpu *CPU) exec() bool {
 				cpu.XOR(operand1, operand2)
 			case INS_JP:
 				JP(cpu, operand1, operand2) // JP内部でサイクルのインクリメントを行う
-			case INS_CALL:
-				CALL(cpu, operand1, operand2) // CALL内部でサイクルのインクリメントを行う
 			case INS_RET:
 				if !cpu.RET(operand1, operand2) {
 					cycle = cycle2
@@ -337,12 +335,6 @@ func (cpu *CPU) exec() bool {
 				cpu.DAA(operand1, operand2)
 			case INS_RST:
 				cpu.RST(operand1, operand2)
-			case INS_RLCA:
-				cpu.RLCA(operand1, operand2)
-			case INS_RLA:
-				cpu.RLA(operand1, operand2)
-			case INS_RRCA:
-				cpu.RRCA(operand1, operand2)
 			default:
 				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)
