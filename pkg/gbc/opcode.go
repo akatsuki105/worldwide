@@ -997,8 +997,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 				cpu.RRC(op1, op2)
 			case INS_SRL:
 				cpu.SRL(op1, op2)
-			case INS_BIT:
-				cpu.BIT(op1, op2)
 			default:
 				panic(fmt.Errorf("eip: 0x%04x opcode: %v", cpu.Reg.PC, op))
 			}
@@ -1339,28 +1337,16 @@ func (cpu *CPU) SRL(operand1, operand2 int) {
 }
 
 // BIT Test bit n
-func (cpu *CPU) BIT(operand1, operand2 int) {
-	var value bool
-	targetBit := operand1 - OP_0
-	switch operand2 {
-	case OP_B:
-		value = util.Bit(cpu.Reg.R[B], targetBit)
-	case OP_C:
-		value = util.Bit(cpu.Reg.R[C], targetBit)
-	case OP_D:
-		value = util.Bit(cpu.Reg.R[D], targetBit)
-	case OP_E:
-		value = util.Bit(cpu.Reg.R[E], targetBit)
-	case OP_H:
-		value = util.Bit(cpu.Reg.R[H], targetBit)
-	case OP_L:
-		value = util.Bit(cpu.Reg.R[L], targetBit)
-	case OP_HL_PAREN:
-		value = util.Bit(cpu.FetchMemory8(cpu.Reg.HL()), targetBit)
-	case OP_A:
-		value = util.Bit(cpu.Reg.R[A], targetBit)
-	}
+func bit(cpu *CPU, bit, r8 int) {
+	value := util.Bit(cpu.Reg.R[r8], bit)
+	cpu.setF(flagZ, !value)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, true)
+	cpu.Reg.PC++
+}
 
+func bitHL(cpu *CPU, bit, _ int) {
+	value := util.Bit(cpu.FetchMemory8(cpu.Reg.HL()), bit)
 	cpu.setF(flagZ, !value)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, true)
