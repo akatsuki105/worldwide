@@ -995,8 +995,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 			switch instruction {
 			case INS_RRC:
 				cpu.RRC(op1, op2)
-			case INS_SLA:
-				cpu.SLA(op1, op2)
 			case INS_SRA:
 				cpu.SRA(op1, op2)
 			case INS_SRL:
@@ -1196,10 +1194,10 @@ func rrHL(cpu *CPU, _, _ int) {
 
 // Shift Left
 func sla(cpu *CPU, op, _ int) {
-	value := cpu.Reg.R[B]
+	value := cpu.Reg.R[op]
 	bit7 := value >> 7
 	value = (value << 1)
-	cpu.Reg.R[B] = value
+	cpu.Reg.R[op] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1208,53 +1206,13 @@ func sla(cpu *CPU, op, _ int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) SLA(operand1, operand2 int) {
-	var value, bit7 byte
-	if operand1 == OP_B && operand2 == OP_NONE {
-		value = cpu.Reg.R[B]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[B] = value
-	} else if operand1 == OP_C && operand2 == OP_NONE {
-		value = cpu.Reg.R[C]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[C] = value
-	} else if operand1 == OP_D && operand2 == OP_NONE {
-		value = cpu.Reg.R[D]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[D] = value
-	} else if operand1 == OP_E && operand2 == OP_NONE {
-		value = cpu.Reg.R[E]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[E] = value
-	} else if operand1 == OP_H && operand2 == OP_NONE {
-		value = cpu.Reg.R[H]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[H] = value
-	} else if operand1 == OP_L && operand2 == OP_NONE {
-		value = cpu.Reg.R[L]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[L] = value
-	} else if operand1 == OP_HL_PAREN && operand2 == OP_NONE {
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	} else if operand1 == OP_A && operand2 == OP_NONE {
-		value = cpu.Reg.R[A]
-		bit7 = value >> 7
-		value = (value << 1)
-		cpu.Reg.R[A] = value
-	} else {
-		panic(fmt.Errorf("error: SLA %d %d", operand1, operand2))
-	}
+func slaHL(cpu *CPU, _, _ int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	bit7 := value >> 7
+	value = (value << 1)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
