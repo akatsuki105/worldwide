@@ -223,117 +223,29 @@ func decHL(cpu *CPU, _, _ int) {
 
 // --------- JR ---------
 
-// JR i8
-func op0x18(cpu *CPU, operand1, operand2 int) {
+// jr i8
+func jr(cpu *CPU, _, _ int) {
 	delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-	destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-	cpu.Reg.PC = destination
+	cpu.Reg.PC = uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
 	cpu.timer(3)
 }
 
-// JR NZ,i8
-func op0x20(cpu *CPU, operand1, operand2 int) {
-	if !cpu.f(flagZ) {
-		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-		cpu.Reg.PC = destination
-		cpu.timer(3)
+// jr cc,i8
+func jrcc(cpu *CPU, cc, _ int) {
+	if cpu.f(cc) {
+		jr(cpu, 0, 0)
 	} else {
 		cpu.Reg.PC += 2
 		cpu.timer(2)
 	}
 }
 
-// JR Z,i8
-func op0x28(cpu *CPU, operand1, operand2 int) {
-	if cpu.f(flagZ) {
-		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-		cpu.Reg.PC = destination
-		cpu.timer(3)
+// jr ncc,i8 (ncc = not cc)
+func jrncc(cpu *CPU, cc, _ int) {
+	if !cpu.f(cc) {
+		jr(cpu, 0, 0)
 	} else {
 		cpu.Reg.PC += 2
-		cpu.timer(2)
-	}
-}
-
-// JR NC,i8
-func op0x30(cpu *CPU, operand1, operand2 int) {
-	if !cpu.f(flagC) {
-		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-		cpu.Reg.PC = destination
-		cpu.timer(3)
-	} else {
-		cpu.Reg.PC += 2
-		cpu.timer(2)
-	}
-}
-
-// JR C,i8
-func op0x38(cpu *CPU, operand1, operand2 int) {
-	if cpu.f(flagC) {
-		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-		cpu.Reg.PC = destination
-		cpu.timer(3)
-	} else {
-		cpu.Reg.PC += 2
-		cpu.timer(2)
-	}
-}
-
-// JR Jump relatively
-func JR(cpu *CPU, operand1, operand2 int) {
-	result := true
-	switch operand1 {
-	case OP_r8:
-		delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-		destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-		cpu.Reg.PC = destination
-	case OP_Z:
-		if cpu.f(flagZ) {
-			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 2
-			result = false
-		}
-	case OP_C:
-		if cpu.f(flagC) {
-			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 2
-			result = false
-		}
-	case OP_NZ:
-		if !cpu.f(flagZ) {
-			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 2
-			result = false
-		}
-	case OP_NC:
-		if !cpu.f(flagC) {
-			delta := int8(cpu.FetchMemory8(cpu.Reg.PC + 1))
-			destination := uint16(int32(cpu.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 2
-			result = false
-		}
-	default:
-		panic(fmt.Errorf("error: JR %d %d", operand1, operand2))
-	}
-
-	if result {
-		cpu.timer(3)
-	} else {
 		cpu.timer(2)
 	}
 }
