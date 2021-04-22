@@ -995,8 +995,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 			switch instruction {
 			case INS_RRC:
 				cpu.RRC(op1, op2)
-			case INS_RR:
-				cpu.RR(op1, op2)
 			case INS_SLA:
 				cpu.SLA(op1, op2)
 			case INS_SRA:
@@ -1165,59 +1163,12 @@ func (cpu *CPU) RLA(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
-// RR Rotate n right through carry bit0 => bit7
-func (cpu *CPU) RR(operand1, operand2 int) {
-	var value byte
-	var lsb bool
-	carry := cpu.f(flagC)
-
-	switch operand1 {
-	case OP_A:
-		value, lsb = cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[A] = value
-	case OP_B:
-		value, lsb = cpu.Reg.R[B], util.Bit(cpu.Reg.R[B], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[B] = value
-	case OP_C:
-		value, lsb = cpu.Reg.R[C], util.Bit(cpu.Reg.R[C], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[C] = value
-	case OP_D:
-		value, lsb = cpu.Reg.R[D], util.Bit(cpu.Reg.R[D], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[D] = value
-	case OP_E:
-		value, lsb = cpu.Reg.R[E], util.Bit(cpu.Reg.R[E], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[E] = value
-	case OP_H:
-		value, lsb = cpu.Reg.R[H], util.Bit(cpu.Reg.R[H], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[H] = value
-	case OP_L:
-		value, lsb = cpu.Reg.R[L], util.Bit(cpu.Reg.R[L], 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.Reg.R[L] = value
-	case OP_HL_PAREN:
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		lsb = util.Bit(value, 0)
-		value >>= 1
-		value = util.SetMSB(value, carry)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	default:
-		panic(fmt.Errorf("error: RR %d %d", operand1, operand2))
-	}
+// rr Rotate n right through carry bit0 => bit7
+func rr(cpu *CPU, op, _ int) {
+	value, lsb, carry := cpu.Reg.R[op], util.Bit(cpu.Reg.R[op], 0), cpu.f(flagC)
+	value >>= 1
+	value = util.SetMSB(value, carry)
+	cpu.Reg.R[op] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1226,7 +1177,37 @@ func (cpu *CPU) RR(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
-// SLA Shift Left
+func rrHL(cpu *CPU, _, _ int) {
+	carry := cpu.f(flagC)
+	value := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	lsb := util.Bit(value, 0)
+	value >>= 1
+	value = util.SetMSB(value, carry)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, lsb)
+	cpu.Reg.PC++
+}
+
+// Shift Left
+func sla(cpu *CPU, op, _ int) {
+	value := cpu.Reg.R[B]
+	bit7 := value >> 7
+	value = (value << 1)
+	cpu.Reg.R[B] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, bit7 != 0)
+	cpu.Reg.PC++
+}
+
 func (cpu *CPU) SLA(operand1, operand2 int) {
 	var value, bit7 byte
 	if operand1 == OP_B && operand2 == OP_NONE {
