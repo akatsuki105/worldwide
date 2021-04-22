@@ -303,8 +303,6 @@ func (cpu *CPU) exec() bool {
 				LDH(cpu, operand1, operand2)
 			case INS_AND:
 				cpu.AND(operand1, operand2)
-			case INS_INC:
-				cpu.INC(operand1, operand2)
 			case INS_DEC:
 				cpu.DEC(operand1, operand2)
 			case INS_PUSH:

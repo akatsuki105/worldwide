@@ -37,7 +37,6 @@ func ldR8R8(cpu *CPU, op1, op2 int) {
 
 // ------ LD A, *
 
-// LD A,(BC)
 func op0x0a(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.BC())
 	cpu.Reg.PC++
@@ -321,10 +320,10 @@ func nop(cpu *CPU, operand1, operand2 int) { cpu.Reg.PC++ }
 
 // INC Increment
 
-func incR8(cpu *CPU, op, _ int) {
-	value := cpu.Reg.R[op] + 1
-	carryBits := cpu.Reg.R[op] ^ 1 ^ value
-	cpu.Reg.R[op] = value
+func inc8(cpu *CPU, r8, _ int) {
+	value := cpu.Reg.R[r8] + 1
+	carryBits := cpu.Reg.R[r8] ^ 1 ^ value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -332,33 +331,21 @@ func incR8(cpu *CPU, op, _ int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) INC(operand1, operand2 int) {
-	var value, carryBits byte
+func inc16(cpu *CPU, r16, _ int) {
+	cpu.Reg.setR16(r16, cpu.Reg.R16(r16)+1)
+	cpu.Reg.PC++
+}
 
-	switch operand1 {
-	case OP_HL_PAREN:
-		value = cpu.FetchMemory8(cpu.Reg.HL()) + 1
-		cpu.timer(1)
-		carryBits = cpu.FetchMemory8(cpu.Reg.HL()) ^ 1 ^ value
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	case OP_BC:
-		cpu.Reg.setBC(cpu.Reg.BC() + 1)
-	case OP_DE:
-		cpu.Reg.setDE(cpu.Reg.DE() + 1)
-	case OP_HL:
-		cpu.Reg.setHL(cpu.Reg.HL() + 1)
-	case OP_SP:
-		cpu.Reg.SP++
-	default:
-		panic(fmt.Errorf("error: INC %d %d", operand1, operand2))
-	}
+func incHL(cpu *CPU, _, _ int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL()) + 1
+	cpu.timer(1)
+	carryBits := cpu.FetchMemory8(cpu.Reg.HL()) ^ 1 ^ value
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
-	if operand1 != OP_BC && operand1 != OP_DE && operand1 != OP_HL && operand1 != OP_SP {
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, false)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-	}
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
 	cpu.Reg.PC++
 }
 

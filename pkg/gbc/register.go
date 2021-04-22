@@ -11,12 +11,58 @@ const (
 	F
 )
 
+const (
+	AF = iota
+	BC
+	DE
+	HL
+	HLI
+	HLD
+	SP
+	PC
+)
+
 // Register Z80
 type Register struct {
 	R   [8]byte
 	SP  uint16
 	PC  uint16
 	IME bool
+}
+
+func (r *Register) R16(i int) uint16 {
+	switch i {
+	case AF:
+		return r.AF()
+	case BC:
+		return r.BC()
+	case DE:
+		return r.DE()
+	case HL:
+		return r.HL()
+	case SP:
+		return r.SP
+	case PC:
+		return r.PC
+	}
+	panic("invalid register16")
+}
+
+func (r *Register) setR16(i int, val uint16) {
+	switch i {
+	case AF:
+		r.setAF(val)
+	case BC:
+		r.setBC(val)
+	case DE:
+		r.setDE(val)
+	case HL:
+		r.setHL(val)
+	case SP:
+		r.SP = val
+	case PC:
+		r.PC = val
+	}
 }
 
 func (r *Register) AF() uint16 {
