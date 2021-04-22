@@ -974,7 +974,7 @@ func (cpu *CPU) ADD(operand1, operand2 int) {
 }
 
 // CPL Complement A Register
-func (cpu *CPU) CPL(operand1, operand2 int) {
+func cpl(cpu *CPU, _, _ int) {
 	cpu.Reg.R[A] = ^cpu.Reg.R[A]
 	cpu.setF(flagN, true)
 	cpu.setF(flagH, true)
@@ -1011,12 +1011,12 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 }
 
 // RLC Rotate n left carry => bit0
-func rlcR8(cpu *CPU, op, _ int) {
-	value := cpu.Reg.R[op]
+func rlcR8(cpu *CPU, r8, _ int) {
+	value := cpu.Reg.R[r8]
 	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, bit7 != 0)
-	cpu.Reg.R[op] = value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1042,7 +1042,7 @@ func rlcHL(cpu *CPU, _, _ int) {
 }
 
 // RLCA Rotate register A left.
-func (cpu *CPU) RLCA(operand1, operand2 int) {
+func (cpu *CPU) RLCA(_, _ int) {
 	var value byte
 	var bit7 byte
 	value = cpu.Reg.R[A]
@@ -1059,12 +1059,12 @@ func (cpu *CPU) RLCA(operand1, operand2 int) {
 }
 
 // RRC Rotate n right carry => bit7
-func rrcR8(cpu *CPU, op, _ int) {
-	value := cpu.Reg.R[op]
+func rrcR8(cpu *CPU, r8, _ int) {
+	value := cpu.Reg.R[r8]
 	bit0 := value % 2
 	value = (value >> 1)
 	value = util.SetMSB(value, bit0 != 0)
-	cpu.Reg.R[op] = value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1073,7 +1073,7 @@ func rrcR8(cpu *CPU, op, _ int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) RRC(operand1, operand2 int) {
+func (cpu *CPU) RRC(_, _ int) {
 	value := cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.timer(1)
 	bit0 := value % 2
@@ -1090,7 +1090,7 @@ func (cpu *CPU) RRC(operand1, operand2 int) {
 }
 
 // RRCA Rotate register A right.
-func (cpu *CPU) RRCA(operand1, operand2 int) {
+func (cpu *CPU) RRCA(_, _ int) {
 	var value byte
 	var lsb bool
 
@@ -1107,12 +1107,12 @@ func (cpu *CPU) RRCA(operand1, operand2 int) {
 }
 
 // RL Rotate n rigth through carry bit7 => bit0
-func rl(cpu *CPU, _, op int) {
-	carry, value := cpu.f(flagC), cpu.Reg.R[op]
+func rl(cpu *CPU, _, r8 int) {
+	carry, value := cpu.f(flagC), cpu.Reg.R[r8]
 	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, carry)
-	cpu.Reg.R[op] = value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1140,7 +1140,7 @@ func rlHL(cpu *CPU, _, _ int) {
 }
 
 // RLA Rotate register A left through carry.
-func (cpu *CPU) RLA(operand1, operand2 int) {
+func (cpu *CPU) RLA(_, _ int) {
 	var value, bit7 byte
 	carry := cpu.f(flagC)
 
@@ -1158,11 +1158,11 @@ func (cpu *CPU) RLA(operand1, operand2 int) {
 }
 
 // rr Rotate n right through carry bit0 => bit7
-func rr(cpu *CPU, op, _ int) {
-	value, lsb, carry := cpu.Reg.R[op], util.Bit(cpu.Reg.R[op], 0), cpu.f(flagC)
+func rr(cpu *CPU, r8, _ int) {
+	value, lsb, carry := cpu.Reg.R[r8], util.Bit(cpu.Reg.R[r8], 0), cpu.f(flagC)
 	value >>= 1
 	value = util.SetMSB(value, carry)
-	cpu.Reg.R[op] = value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1189,11 +1189,11 @@ func rrHL(cpu *CPU, _, _ int) {
 }
 
 // Shift Left
-func sla(cpu *CPU, op, _ int) {
-	value := cpu.Reg.R[op]
+func sla(cpu *CPU, r8, _ int) {
+	value := cpu.Reg.R[r8]
 	bit7 := value >> 7
 	value = (value << 1)
-	cpu.Reg.R[op] = value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1218,11 +1218,11 @@ func slaHL(cpu *CPU, _, _ int) {
 }
 
 // Shift Right MSBit dosen't change
-func sra(cpu *CPU, op, _ int) {
-	value, lsb, msb := cpu.Reg.R[op], util.Bit(cpu.Reg.R[op], 0), util.Bit(cpu.Reg.R[op], 7)
+func sra(cpu *CPU, r8, _ int) {
+	value, lsb, msb := cpu.Reg.R[r8], util.Bit(cpu.Reg.R[r8], 0), util.Bit(cpu.Reg.R[r8], 7)
 	value = (value >> 1)
 	value = util.SetMSB(value, msb)
-	cpu.Reg.R[op] = value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
@@ -1248,13 +1248,13 @@ func sraHL(cpu *CPU, operand1, operand2 int) {
 }
 
 // SWAP Swap n[5:8] and n[0:4]
-func swap(cpu *CPU, _, op int) {
-	b := cpu.Reg.R[op]
+func swap(cpu *CPU, _, r8 int) {
+	b := cpu.Reg.R[r8]
 	lower := b & 0b1111
 	upper := b >> 4
-	cpu.Reg.R[op] = (lower << 4) | upper
+	cpu.Reg.R[r8] = (lower << 4) | upper
 
-	cpu.setF(flagZ, cpu.Reg.R[op] == 0)
+	cpu.setF(flagZ, cpu.Reg.R[r8] == 0)
 	cpu.setF(flagN, false)
 	cpu.setF(flagH, false)
 	cpu.setF(flagC, false)

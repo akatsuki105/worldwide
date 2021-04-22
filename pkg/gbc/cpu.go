@@ -299,12 +299,8 @@ func (cpu *CPU) exec() bool {
 			handler(cpu, operand1, operand2)
 		} else {
 			switch instruction {
-			case INS_LD:
-				LD(cpu, operand1, operand2)
 			case INS_LDH:
 				LDH(cpu, operand1, operand2)
-			case INS_JR:
-				JR(cpu, operand1, operand2)
 			case INS_NOP:
 				cpu.NOP(operand1, operand2)
 			case INS_AND:
@@ -343,8 +339,6 @@ func (cpu *CPU) exec() bool {
 				cpu.ADC(operand1, operand2)
 			case INS_SBC:
 				cpu.SBC(operand1, operand2)
-			case INS_CPL:
-				cpu.CPL(operand1, operand2)
 			case INS_PREFIX:
 				cpu.PREFIXCB(operand1, operand2)
 				cycle = 0 // PREFIXCB内部でサイクルのインクリメントを行う
