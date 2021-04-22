@@ -43,9 +43,8 @@ func ld8r(cpu *CPU, r8, r16 int) {
 	cpu.Reg.PC++
 }
 
-// LD A,u8
-func op0x3e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.PC + 1)
+func ld8i(cpu *CPU, r8, _ int) {
+	cpu.Reg.R[r8] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
 }
 
@@ -61,55 +60,6 @@ func op0xf2(cpu *CPU, operand1, operand2 int) {
 	addr := 0xff00 + uint16(cpu.Reg.R[C])
 	cpu.Reg.R[A] = cpu.fetchIO(addr)
 	cpu.Reg.PC++ // mistake?(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
-}
-
-// ------ LD B, *
-
-// LD B,u8
-func op0x06(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[B] = cpu.d8Fetch()
-	cpu.Reg.PC += 2
-}
-
-// ------ LD C, *
-
-// LD C,u8
-func op0x0e(cpu *CPU, operand1, operand2 int) {
-	value := cpu.d8Fetch()
-	cpu.Reg.R[C] = value
-	cpu.Reg.PC += 2
-}
-
-// ------ LD D, *
-
-// LD D,u8
-func op0x16(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[D] = cpu.d8Fetch()
-	cpu.Reg.PC += 2
-}
-
-// ------ LD E, *
-
-// LD E,u8
-func op0x1e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[E] = cpu.d8Fetch()
-	cpu.Reg.PC += 2
-}
-
-// ------ LD H, *
-
-// LD H,u8
-func op0x26(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[H] = cpu.d8Fetch()
-	cpu.Reg.PC += 2
-}
-
-// ------ LD L, *
-
-// LD L,u8
-func op0x2e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[L] = cpu.d8Fetch()
-	cpu.Reg.PC += 2
 }
 
 // ------ LD (HL), *
