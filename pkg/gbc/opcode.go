@@ -30,7 +30,7 @@ func (cpu *CPU) d16Fetch() uint16 {
 }
 
 // LD R8,R8
-func ldR8R8(cpu *CPU, op1, op2 int) {
+func ld8r(cpu *CPU, op1, op2 int) {
 	cpu.Reg.R[op1] = cpu.Reg.R[op2]
 	cpu.Reg.PC++
 }
