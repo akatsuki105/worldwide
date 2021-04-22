@@ -303,8 +303,6 @@ func (cpu *CPU) exec() bool {
 				LDH(cpu, operand1, operand2)
 			case INS_AND:
 				cpu.AND(operand1, operand2)
-			case INS_DEC:
-				cpu.DEC(operand1, operand2)
 			case INS_PUSH:
 				cpu.PUSH(operand1, operand2)
 				cycle = 0 // PUSH内部でサイクルのインクリメントを行う

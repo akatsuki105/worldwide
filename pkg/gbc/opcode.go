@@ -6,8 +6,7 @@ import (
 )
 
 func (cpu *CPU) a16Fetch() uint16 {
-	value := cpu.d16Fetch()
-	return value
+	return cpu.d16Fetch()
 }
 
 func (cpu *CPU) a16FetchJP() uint16 {
@@ -20,8 +19,7 @@ func (cpu *CPU) a16FetchJP() uint16 {
 }
 
 func (cpu *CPU) d8Fetch() byte {
-	value := cpu.FetchMemory8(cpu.Reg.PC + 1)
-	return value
+	return cpu.FetchMemory8(cpu.Reg.PC + 1)
 }
 
 func (cpu *CPU) d16Fetch() uint16 {
@@ -194,10 +192,10 @@ func incHL(cpu *CPU, _, _ int) {
 
 // DEC Decrement
 
-func decR8(cpu *CPU, op, _ int) {
-	value := cpu.Reg.R[op] - 1
-	carryBits := cpu.Reg.R[op] ^ 1 ^ value
-	cpu.Reg.R[op] = value
+func dec8(cpu *CPU, r8, _ int) {
+	value := cpu.Reg.R[r8] - 1
+	carryBits := cpu.Reg.R[r8] ^ 1 ^ value
+	cpu.Reg.R[r8] = value
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, true)
@@ -205,34 +203,21 @@ func decR8(cpu *CPU, op, _ int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) DEC(operand1, operand2 int) {
-	var value byte
-	var carryBits byte
+func dec16(cpu *CPU, r16, _ int) {
+	cpu.Reg.setR16(r16, cpu.Reg.R16(r16)-1)
+	cpu.Reg.PC++
+}
 
-	switch operand1 {
-	case OP_HL_PAREN:
-		value = cpu.FetchMemory8(cpu.Reg.HL()) - 1
-		cpu.timer(1)
-		carryBits = cpu.FetchMemory8(cpu.Reg.HL()) ^ 1 ^ value
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	case OP_BC:
-		cpu.Reg.setBC(cpu.Reg.BC() - 1)
-	case OP_DE:
-		cpu.Reg.setDE(cpu.Reg.DE() - 1)
-	case OP_HL:
-		cpu.Reg.setHL(cpu.Reg.HL() - 1)
-	case OP_SP:
-		cpu.Reg.SP--
-	default:
-		panic(fmt.Errorf("error: DEC %d %d", operand1, operand2))
-	}
+func decHL(cpu *CPU, _, _ int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL()) - 1
+	cpu.timer(1)
+	carryBits := cpu.FetchMemory8(cpu.Reg.HL()) ^ 1 ^ value
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
-	if operand1 != OP_BC && operand1 != OP_DE && operand1 != OP_HL && operand1 != OP_SP {
-		cpu.setF(flagZ, value == 0)
-		cpu.setF(flagN, true)
-		cpu.setF(flagH, util.Bit(carryBits, 4))
-	}
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, true)
+	cpu.setF(flagH, util.Bit(carryBits, 4))
 	cpu.Reg.PC++
 }
 
