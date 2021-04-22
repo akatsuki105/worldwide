@@ -99,27 +99,9 @@ func op0xea(cpu *CPU, operand1, operand2 int) {
 	cpu.timer(2)
 }
 
-// LD BC,u16
-func op0x01(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.setBC(cpu.d16Fetch())
-	cpu.Reg.PC += 3
-}
-
-// LD DE,u16
-func op0x11(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.setDE(cpu.d16Fetch())
-	cpu.Reg.PC += 3
-}
-
-// LD HL,u16
-func op0x21(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.setHL(cpu.d16Fetch())
-	cpu.Reg.PC += 3
-}
-
-// LD SP,u16
-func op0x31(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.SP = cpu.d16Fetch()
+// ld r16, u16
+func ld16i(cpu *CPU, r16, _ int) {
+	cpu.Reg.setR16(r16, cpu.d16Fetch())
 	cpu.Reg.PC += 3
 }
 
@@ -149,37 +131,9 @@ func op0xe2(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.PC++ // mistake?(https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html)
 }
 
-// LD (BC),A
-func op0x02(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.BC(), cpu.Reg.R[A])
+func ldm16r(cpu *CPU, r16, r8 int) {
+	cpu.SetMemory8(cpu.Reg.R16(r16), cpu.Reg.R[r8])
 	cpu.Reg.PC++
-}
-
-// LD (DE),A
-func op0x12(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.DE(), cpu.Reg.R[A])
-	cpu.Reg.PC++
-}
-
-// LD (HL+),A
-func op0x22(cpu *CPU, operand1, operand2 int) {
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[A])
-	cpu.Reg.setHL(cpu.Reg.HL() + 1)
-	cpu.Reg.PC++
-}
-
-// LD (HL-),A
-func op0x32(cpu *CPU, operand1, operand2 int) {
-	// (HL)=A, HL=HL-1
-	cpu.SetMemory8(cpu.Reg.HL(), cpu.Reg.R[A])
-	cpu.Reg.setHL(cpu.Reg.HL() - 1)
-	cpu.Reg.PC++
-}
-
-// LD Load
-func LD(cpu *CPU, operand1, operand2 int) {
-	errMsg := fmt.Sprintf("Error: LD %d %d", operand1, operand2)
-	panic(errMsg)
 }
 
 // LDH Load High Byte
