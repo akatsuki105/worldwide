@@ -317,9 +317,7 @@ func LDH(cpu *CPU, operand1, operand2 int) {
 }
 
 // No operation
-func nop(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.PC++
-}
+func nop(cpu *CPU, operand1, operand2 int) { cpu.Reg.PC++ }
 
 // INC Increment
 
