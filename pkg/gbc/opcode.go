@@ -1139,7 +1139,7 @@ func (cpu *CPU) SBC(_, op2 int) {
 }
 
 // DAA Decimal adjust
-func (cpu *CPU) DAA(operand1, operand2 int) {
+func daa(cpu *CPU, _, _ int) {
 	a := uint8(cpu.Reg.R[A])
 	// ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !cpu.f(flagN) {
@@ -1165,12 +1165,11 @@ func (cpu *CPU) DAA(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
-// RST Push present address and jump to vector address
-func (cpu *CPU) RST(operand1, operand2 int) {
-	destination := uint16(operand1)
+// push present address and jump to vector address
+func rst(cpu *CPU, addr, _ int) {
 	cpu.Reg.PC++
 	cpu.pushPC()
-	cpu.Reg.PC = destination
+	cpu.Reg.PC = uint16(addr)
 }
 
 func scf(cpu *CPU, _, _ int) {

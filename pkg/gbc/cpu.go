@@ -323,10 +323,6 @@ func (cpu *CPU) exec() bool {
 				cpu.ADC(operand1, operand2)
 			case INS_SBC:
 				cpu.SBC(operand1, operand2)
-			case INS_DAA:
-				cpu.DAA(operand1, operand2)
-			case INS_RST:
-				cpu.RST(operand1, operand2)
 			default:
 				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)
