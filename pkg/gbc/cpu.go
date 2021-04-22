@@ -323,8 +323,6 @@ func (cpu *CPU) exec() bool {
 				cpu.ADC(operand1, operand2)
 			case INS_SBC:
 				cpu.SBC(operand1, operand2)
-			case INS_RRA:
-				cpu.RRA(operand1, operand2)
 			case INS_DAA:
 				cpu.DAA(operand1, operand2)
 			case INS_RST:

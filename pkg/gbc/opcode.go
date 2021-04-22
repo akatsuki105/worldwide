@@ -619,7 +619,7 @@ func prefixCB(cpu *CPU, _, _ int) {
 }
 
 // RLC Rotate n left carry => bit0
-func rlcR8(cpu *CPU, r8, _ int) {
+func rlc(cpu *CPU, r8, _ int) {
 	value := cpu.Reg.R[r8]
 	bit7 := value >> 7
 	value = (value << 1)
@@ -664,8 +664,8 @@ func rlca(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 }
 
-// RRC Rotate n right carry => bit7
-func rrc8(cpu *CPU, r8, _ int) {
+// Rotate n right carry => bit7
+func rrc(cpu *CPU, r8, _ int) {
 	value := cpu.Reg.R[r8]
 	bit0 := value % 2
 	value = (value >> 1)
@@ -1023,8 +1023,8 @@ func (cpu *CPU) SUB(op1, _ int) {
 	}
 }
 
-// RRA Rotate register A right through carry.
-func (cpu *CPU) RRA(operand1, operand2 int) {
+// Rotate register A right through carry.
+func rra(cpu *CPU, _, _ int) {
 	carry := cpu.f(flagC)
 	regA := cpu.Reg.R[A]
 	cpu.setF(flagC, util.Bit(regA, 0))
