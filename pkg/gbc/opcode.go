@@ -354,44 +354,30 @@ func jpHL(cpu *CPU, _, _ int) {
 	cpu.timer(1)
 }
 
-// RET Return
-func (cpu *CPU) RET(op1, op2 int) (result bool) {
-	result = true
+// Return
+func ret(cpu *CPU, _, _ int) {
+	cpu.popPC()
+}
 
-	switch op1 {
-	case OP_NONE: // PC=(SP), SP=SP+2
+func retcc(cpu *CPU, cc, _ int) {
+	if cpu.f(cc) {
 		cpu.popPC()
-	case OP_Z:
-		if cpu.f(flagZ) {
-			cpu.popPC()
-		} else {
-			cpu.Reg.PC++
-			result = false
-		}
-	case OP_C:
-		if cpu.f(flagC) {
-			cpu.popPC()
-		} else {
-			cpu.Reg.PC++
-			result = false
-		}
-	case OP_NZ:
-		if !cpu.f(flagZ) {
-			cpu.popPC()
-		} else {
-			cpu.Reg.PC++
-			result = false
-		}
-	case OP_NC:
-		if !cpu.f(flagC) {
-			cpu.popPC()
-		} else {
-			cpu.Reg.PC++
-			result = false
-		}
+		cpu.timer(5)
+	} else {
+		cpu.Reg.PC++
+		cpu.timer(2)
 	}
+}
 
-	return result
+// not retcc
+func retncc(cpu *CPU, cc, _ int) {
+	if !cpu.f(cc) {
+		cpu.popPC()
+		cpu.timer(5)
+	} else {
+		cpu.Reg.PC++
+		cpu.timer(2)
+	}
 }
 
 // Return Interrupt

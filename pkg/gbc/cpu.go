@@ -286,7 +286,7 @@ func (cpu *CPU) exec() bool {
 
 	bytecode := cpu.FetchMemory8(PC)
 	opcode := opcodes[bytecode]
-	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
+	instruction, operand1, operand2, cycle1, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 	cycle := cycle1
 
 	isHalt := cpu.halt
@@ -311,10 +311,6 @@ func (cpu *CPU) exec() bool {
 				cycle = 0 // POP内部でサイクルのインクリメントを行う
 			case INS_XOR:
 				cpu.XOR(operand1, operand2)
-			case INS_RET:
-				if !cpu.RET(operand1, operand2) {
-					cycle = cycle2
-				}
 			case INS_CP:
 				cpu.CP(operand1, operand2)
 			case INS_OR:
