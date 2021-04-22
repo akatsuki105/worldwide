@@ -797,7 +797,7 @@ func (cpu *CPU) ADD(operand1, operand2 int) {
 	}
 }
 
-// CPL Complement A Register
+// complement A Register
 func cpl(cpu *CPU, _, _ int) {
 	cpu.Reg.R[A] = ^cpu.Reg.R[A]
 	cpu.setF(flagN, true)
@@ -805,32 +805,16 @@ func cpl(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 }
 
-// PREFIXCB is extend instruction
-func (cpu *CPU) PREFIXCB(op1, op2 int) {
-	if op1 == OP_NONE && op2 == OP_NONE {
-		cpu.Reg.PC++
-		cpu.timer(1)
-		op := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
-		instruction, op1, op2, cycle, handler := op.Ins, op.Operand1, op.Operand2, op.Cycle1, op.Handler
+// extend instruction
+func prefixCB(cpu *CPU, _, _ int) {
+	cpu.Reg.PC++
+	cpu.timer(1)
+	op := prefixCBs[cpu.FetchMemory8(cpu.Reg.PC)]
+	_, op1, op2, cycle, handler := op.Ins, op.Operand1, op.Operand2, op.Cycle1, op.Handler
+	handler(cpu, op1, op2)
 
-		if handler != nil {
-			handler(cpu, op1, op2)
-		} else {
-			switch instruction {
-			case INS_RRC:
-				cpu.RRC(op1, op2)
-			case INS_SRL:
-				cpu.SRL(op1, op2)
-			default:
-				panic(fmt.Errorf("eip: 0x%04x opcode: %v", cpu.Reg.PC, op))
-			}
-		}
-
-		if cycle > 1 {
-			cpu.timer(cycle - 1)
-		}
-	} else {
-		panic(fmt.Errorf("error: PREFIXCB %d %d", op1, op2))
+	if cycle > 1 {
+		cpu.timer(cycle - 1)
 	}
 }
 
@@ -883,7 +867,7 @@ func (cpu *CPU) RLCA(_, _ int) {
 }
 
 // RRC Rotate n right carry => bit7
-func rrcR8(cpu *CPU, r8, _ int) {
+func rrc8(cpu *CPU, r8, _ int) {
 	value := cpu.Reg.R[r8]
 	bit0 := value % 2
 	value = (value >> 1)
@@ -897,7 +881,7 @@ func rrcR8(cpu *CPU, r8, _ int) {
 	cpu.Reg.PC++
 }
 
-func (cpu *CPU) RRC(_, _ int) {
+func rrcHL(cpu *CPU, _, _ int) {
 	value := cpu.FetchMemory8(cpu.Reg.HL())
 	cpu.timer(1)
 	bit0 := value % 2
@@ -1102,56 +1086,26 @@ func swapHL(cpu *CPU, _, _ int) {
 }
 
 // SRL Shift Right MSBit = 0
-func (cpu *CPU) SRL(operand1, operand2 int) {
-	var value byte
-	var bit0 byte
+func srl(cpu *CPU, r8, _ int) {
+	value := cpu.Reg.R[r8]
+	bit0 := value % 2
+	value = (value >> 1)
+	cpu.Reg.R[r8] = value
 
-	switch operand1 {
-	case OP_B:
-		value = cpu.Reg.R[B]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[B] = value
-	case OP_C:
-		value = cpu.Reg.R[C]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[C] = value
-	case OP_D:
-		value = cpu.Reg.R[D]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[D] = value
-	case OP_E:
-		value = cpu.Reg.R[E]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[E] = value
-	case OP_H:
-		value = cpu.Reg.R[H]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[H] = value
-	case OP_L:
-		value = cpu.Reg.R[L]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[L] = value
-	case OP_HL_PAREN:
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	case OP_A:
-		value = cpu.Reg.R[A]
-		bit0 = value % 2
-		value = (value >> 1)
-		cpu.Reg.R[A] = value
-	default:
-		panic(fmt.Errorf("error: SRL %d %d", operand1, operand2))
-	}
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, bit0 == 1)
+	cpu.Reg.PC++
+}
+
+func srlHL(cpu *CPU, _, _ int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	bit0 := value % 2
+	value = (value >> 1)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)

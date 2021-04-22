@@ -333,9 +333,6 @@ func (cpu *CPU) exec() bool {
 				cpu.ADC(operand1, operand2)
 			case INS_SBC:
 				cpu.SBC(operand1, operand2)
-			case INS_PREFIX:
-				cpu.PREFIXCB(operand1, operand2)
-				cycle = 0 // PREFIXCB内部でサイクルのインクリメントを行う
 			case INS_RRA:
 				cpu.RRA(operand1, operand2)
 			case INS_DAA:
