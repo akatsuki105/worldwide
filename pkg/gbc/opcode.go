@@ -995,8 +995,6 @@ func (cpu *CPU) PREFIXCB(op1, op2 int) {
 			switch instruction {
 			case INS_RRC:
 				cpu.RRC(op1, op2)
-			case INS_SRA:
-				cpu.SRA(op1, op2)
 			case INS_SRL:
 				cpu.SRL(op1, op2)
 			case INS_BIT:
@@ -1221,56 +1219,28 @@ func slaHL(cpu *CPU, _, _ int) {
 	cpu.Reg.PC++
 }
 
-// SRA Shift Right MSBit dosen't change
-func (cpu *CPU) SRA(operand1, operand2 int) {
-	var value byte
-	var lsb, msb bool
-	if operand1 == OP_B && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[B], util.Bit(cpu.Reg.R[B], 0), util.Bit(cpu.Reg.R[B], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[B] = value
-	} else if operand1 == OP_C && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[C], util.Bit(cpu.Reg.R[C], 0), util.Bit(cpu.Reg.R[C], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[C] = value
-	} else if operand1 == OP_D && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[D], util.Bit(cpu.Reg.R[D], 0), util.Bit(cpu.Reg.R[D], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[D] = value
-	} else if operand1 == OP_E && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[E], util.Bit(cpu.Reg.R[E], 0), util.Bit(cpu.Reg.R[E], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[E] = value
-	} else if operand1 == OP_H && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[H], util.Bit(cpu.Reg.R[H], 0), util.Bit(cpu.Reg.R[H], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[H] = value
-	} else if operand1 == OP_L && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[L], util.Bit(cpu.Reg.R[L], 0), util.Bit(cpu.Reg.R[L], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[L] = value
-	} else if operand1 == OP_HL_PAREN && operand2 == OP_NONE {
-		value = cpu.FetchMemory8(cpu.Reg.HL())
-		cpu.timer(1)
-		lsb, msb = util.Bit(value, 0), util.Bit(value, 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.SetMemory8(cpu.Reg.HL(), value)
-		cpu.timer(2)
-	} else if operand1 == OP_A && operand2 == OP_NONE {
-		value, lsb, msb = cpu.Reg.R[A], util.Bit(cpu.Reg.R[A], 0), util.Bit(cpu.Reg.R[A], 7)
-		value = (value >> 1)
-		value = util.SetMSB(value, msb)
-		cpu.Reg.R[A] = value
-	} else {
-		panic(fmt.Errorf("error: SRA %d %d", operand1, operand2))
-	}
+// Shift Right MSBit dosen't change
+func sra(cpu *CPU, op, _ int) {
+	value, lsb, msb := cpu.Reg.R[op], util.Bit(cpu.Reg.R[op], 0), util.Bit(cpu.Reg.R[op], 7)
+	value = (value >> 1)
+	value = util.SetMSB(value, msb)
+	cpu.Reg.R[op] = value
+
+	cpu.setF(flagZ, value == 0)
+	cpu.setF(flagN, false)
+	cpu.setF(flagH, false)
+	cpu.setF(flagC, lsb)
+	cpu.Reg.PC++
+}
+
+func sraHL(cpu *CPU, operand1, operand2 int) {
+	value := cpu.FetchMemory8(cpu.Reg.HL())
+	cpu.timer(1)
+	lsb, msb := util.Bit(value, 0), util.Bit(value, 7)
+	value = (value >> 1)
+	value = util.SetMSB(value, msb)
+	cpu.SetMemory8(cpu.Reg.HL(), value)
+	cpu.timer(2)
 
 	cpu.setF(flagZ, value == 0)
 	cpu.setF(flagN, false)
