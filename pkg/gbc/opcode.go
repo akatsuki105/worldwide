@@ -37,28 +37,9 @@ func ldR8R8(cpu *CPU, op1, op2 int) {
 
 // ------ LD A, *
 
-func op0x0a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.BC())
-	cpu.Reg.PC++
-}
-
-// LD A,(DE)
-func op0x1a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.DE())
-	cpu.Reg.PC++
-}
-
-// LD A,(HL+)
-func op0x2a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.HL())
-	cpu.Reg.setHL(cpu.Reg.HL() + 1)
-	cpu.Reg.PC++
-}
-
-// LD A,(HL-)
-func op0x3a(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.HL())
-	cpu.Reg.setHL(cpu.Reg.HL() - 1)
+// ld r8, byte[r16]
+func ld8r(cpu *CPU, r8, r16 int) {
+	cpu.Reg.R[r8] = cpu.FetchMemory8(cpu.Reg.R16(r16))
 	cpu.Reg.PC++
 }
 
@@ -66,12 +47,6 @@ func op0x3a(cpu *CPU, operand1, operand2 int) {
 func op0x3e(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.PC + 1)
 	cpu.Reg.PC += 2
-}
-
-// LD A, (HL)
-func op0x7e(cpu *CPU, operand1, operand2 int) {
-	cpu.Reg.R[A] = cpu.FetchMemory8(cpu.Reg.HL())
-	cpu.Reg.PC++
 }
 
 // LD A, (u16)

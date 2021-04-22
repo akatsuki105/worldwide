@@ -40,6 +40,14 @@ func (r *Register) R16(i int) uint16 {
 		return r.DE()
 	case HL:
 		return r.HL()
+	case HLD:
+		hl := r.HL()
+		r.setHL(hl - 1)
+		return hl
+	case HLI:
+		hl := r.HL()
+		r.setHL(hl + 1)
+		return hl
 	case SP:
 		return r.SP
 	case PC:
