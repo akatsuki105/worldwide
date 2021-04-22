@@ -301,8 +301,6 @@ func (cpu *CPU) exec() bool {
 			switch instruction {
 			case INS_LDH:
 				LDH(cpu, operand1, operand2)
-			case INS_NOP:
-				cpu.NOP(operand1, operand2)
 			case INS_AND:
 				cpu.AND(operand1, operand2)
 			case INS_INC:
@@ -325,8 +323,6 @@ func (cpu *CPU) exec() bool {
 				if !cpu.RET(operand1, operand2) {
 					cycle = cycle2
 				}
-			case INS_RETI:
-				cpu.RETI(operand1, operand2)
 			case INS_CP:
 				cpu.CP(operand1, operand2)
 			case INS_OR:
@@ -354,8 +350,6 @@ func (cpu *CPU) exec() bool {
 				cpu.RLA(operand1, operand2)
 			case INS_RRCA:
 				cpu.RRCA(operand1, operand2)
-			case INS_STOP:
-				cpu.STOP(operand1, operand2)
 			default:
 				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)

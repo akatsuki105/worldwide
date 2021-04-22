@@ -316,8 +316,8 @@ func LDH(cpu *CPU, operand1, operand2 int) {
 	}
 }
 
-// NOP No operation
-func (cpu *CPU) NOP(operand1, operand2 int) {
+// No operation
+func nop(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
@@ -549,23 +549,19 @@ func (cpu *CPU) pend() {
 	cpu.halt = cpu.Reg.IME
 }
 
-// STOP stop CPU
-func (cpu *CPU) STOP(operand1, operand2 int) {
-	if operand1 == OP_0 && operand2 == OP_NONE {
-		cpu.Reg.PC += 2
-		KEY1 := cpu.FetchMemory8(KEY1IO)
-		if util.Bit(KEY1, 0) {
-			if util.Bit(KEY1, 7) {
-				KEY1 = 0x00
-				cpu.boost = 1
-			} else {
-				KEY1 = 0x80
-				cpu.boost = 2
-			}
-			cpu.SetMemory8(KEY1IO, KEY1)
+// stop CPU
+func stop(cpu *CPU, _, _ int) {
+	cpu.Reg.PC += 2
+	KEY1 := cpu.FetchMemory8(KEY1IO)
+	if util.Bit(KEY1, 0) {
+		if util.Bit(KEY1, 7) {
+			KEY1 = 0x00
+			cpu.boost = 1
+		} else {
+			KEY1 = 0x80
+			cpu.boost = 2
 		}
-	} else {
-		panic(fmt.Errorf("error: STOP %d %d", operand1, operand2))
+		cpu.SetMemory8(KEY1IO, KEY1)
 	}
 }
 
@@ -694,8 +690,8 @@ func (cpu *CPU) RET(op1, op2 int) (result bool) {
 	return result
 }
 
-// RETI Return Interrupt
-func (cpu *CPU) RETI(operand1, operand2 int) {
+// Return Interrupt
+func reti(cpu *CPU, operand1, operand2 int) {
 	cpu.popPC()
 	cpu.Reg.IME = true
 }
