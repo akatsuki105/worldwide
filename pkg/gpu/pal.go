@@ -6,13 +6,12 @@ import (
 )
 
 type Palette struct {
-	DMGPalette [3]byte // DMG's pal data {BGP, OGP0, OGP1}
-	CGBPalette [2]byte // CGB's pal data {BCPSIO, OCPSIO}
-	BGPalette  [64]byte
-	SPRPalette [64]byte
+	DMGPalette            [3]byte // DMG's pal data {BGP, OGP0, OGP1}
+	CGBPalette            [2]byte // CGB's pal data {BCPSIO, OCPSIO}
+	BGPalette, SPRPalette [64]byte
 }
 
-// InitPalette init gameboy pallete color
+// InitPalette init gameboy palette color
 func InitPalette(color0, color1, color2, color3 [3]int) {
 	colors[0] = [3]uint8{uint8(color0[0]), uint8(color0[1]), uint8(color0[2])}
 	colors[1] = [3]uint8{uint8(color1[0]), uint8(color1[1]), uint8(color1[2])}

@@ -1,63 +1,33 @@
 package joypad
 
 import (
+	"gbc/pkg/util"
+
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
-// Joypad Joypadの入力を管理する
+// Joypad state
 type Joypad struct {
-	P1        byte
-	Button    [4]bool // 0bスタートセレクトBA
-	Direction [4]bool // 0b下上左右
-}
-
-type keyList struct {
-	A, B, Start, Select, Horizontal, Vertical uint
+	P1                byte
+	Button, Direction [4]bool // start, select, b, a, down, up, left, right
 }
 
 const (
 	Pressed = iota + 1
-	Save
-	Load
 	Pause
 )
 
-func gamepad(n uint) ebiten.GamepadButton {
-	switch n {
-	case 0:
-		return ebiten.GamepadButton0
-	case 1:
-		return ebiten.GamepadButton1
-	case 2:
-		return ebiten.GamepadButton2
-	case 3:
-		return ebiten.GamepadButton3
-	case 4:
-		return ebiten.GamepadButton4
-	case 5:
-		return ebiten.GamepadButton5
-	case 6:
-		return ebiten.GamepadButton6
-	case 7:
-		return ebiten.GamepadButton7
-	case 8:
-		return ebiten.GamepadButton8
-	}
-
-	return ebiten.GamepadButton0
-}
-
-// Output Joypadの状態をbyteにして返す
+// Output returns joypad state in bitfield format
 func (pad *Joypad) Output() byte {
 	joypad := byte(0x00)
-	if pad.getP15() {
+	if p15 := !util.Bit(pad.P1, 5); p15 {
 		for i := 0; i < 4; i++ {
 			if pad.Button[i] {
 				joypad |= (1 << uint(i))
 			}
 		}
 	}
-	if pad.getP14() {
+	if p14 := !util.Bit(pad.P1, 4); p14 {
 		for i := 0; i < 4; i++ {
 			if pad.Direction[i] {
 				joypad |= (1 << uint(i))
@@ -67,7 +37,7 @@ func (pad *Joypad) Output() byte {
 	return ^joypad
 }
 
-// Input ジョイパッド入力処理
+// Input joypad
 func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64) (result int) {
 
 	// A
@@ -102,7 +72,7 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 		pad.Button[3] = false
 	}
 
-	// 右
+	// right
 	if keyRight(threshold) {
 		pad.Direction[0] = true
 		result = Pressed
@@ -110,7 +80,7 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 		pad.Direction[0] = false
 	}
 
-	// 左
+	// left
 	if keyLeft(threshold) {
 		pad.Direction[1] = true
 		result = Pressed
@@ -118,7 +88,7 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 		pad.Direction[1] = false
 	}
 
-	// 上
+	// up
 	if keyUp(threshold) {
 		pad.Direction[2] = true
 		result = Pressed
@@ -126,19 +96,12 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 		pad.Direction[2] = false
 	}
 
-	// 下
+	// down
 	if keyDown(threshold) {
 		pad.Direction[3] = true
 		result = Pressed
 	} else {
 		pad.Direction[3] = false
-	}
-
-	if btnSaveData() {
-		result = Save
-	}
-	if btnLoadData() {
-		result = Load
 	}
 
 	if btnPause() {
@@ -148,28 +111,20 @@ func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64
 	return result
 }
 
-func (pad *Joypad) getP14() bool {
-	return pad.P1&0x10 == 0
-}
-
-func (pad *Joypad) getP15() bool {
-	return pad.P1&0x20 == 0
-}
-
 func btnA(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyX) || ebiten.IsKeyPressed(ebiten.KeyS)
+	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyX) || ebiten.IsKeyPressed(ebiten.KeyS)
 }
 
 func btnB(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyZ) || ebiten.IsKeyPressed(ebiten.KeyA)
+	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyZ) || ebiten.IsKeyPressed(ebiten.KeyA)
 }
 
 func btnStart(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyEnter)
+	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyEnter)
 }
 
 func btnSelect(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, gamepad(pad)) || ebiten.IsKeyPressed(ebiten.KeyShift)
+	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyShift)
 }
 
 func keyUp(threshold float64) bool {
@@ -214,14 +169,6 @@ func keyLeft(threshold float64) bool {
 	}
 
 	return ebiten.IsKeyPressed(ebiten.KeyLeft)
-}
-
-func btnSaveData() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyD) && ebiten.IsKeyPressed(ebiten.KeyS)
-}
-
-func btnLoadData() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyL)
 }
 
 func btnPause() bool {

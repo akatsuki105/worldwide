@@ -28,10 +28,8 @@ type Timer struct {
 }
 
 type OAMDMA struct {
-	start   uint16
-	ptr     uint16
-	restart uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
-	reptr   uint16 // OAMDMA中に再びOAMDMAをリクエストしたとき
+	start, ptr     uint16
+	restart, reptr uint16 // OAM DMA is requested in OAM DMA
 }
 
 func (cpu *CPU) setTimerFlag() {
@@ -50,8 +48,11 @@ func (cpu *CPU) timer(cycle int) {
 	}
 }
 
+// 0: 4096Hz (1024/4 cycle), 1: 262144Hz (16/4 cycle), 2: 65536Hz (64/4 cycle), 3: 16384Hz (256/4 cycle)
+var clocks = [4]int{1024 / 4, 16 / 4, 64 / 4, 256 / 4}
+
 func (cpu *CPU) tick() {
-	TAC := cpu.RAM[TACIO]
+	tac := cpu.RAM[TACIO]
 	tickFlag := false
 
 	if cpu.Timer.ResetAll {
@@ -60,9 +61,8 @@ func (cpu *CPU) tick() {
 	}
 	if cpu.Timer.TAC.Change && !tickFlag {
 		cpu.Timer.TAC.Change = false
-		clocks := [4]uint16{1024 / 4, 16 / 4, 64 / 4, 256 / 4}
 		oldTAC, newTAC := cpu.Timer.TAC.Old, cpu.RAM[TACIO]
-		oldClock, newClock := clocks[oldTAC&0b11], clocks[newTAC&0b11]
+		oldClock, newClock := uint16(clocks[oldTAC&0b11]), uint16(clocks[newTAC&0b11])
 		oldEnable, newEnable := oldTAC&0b100 > 0, newTAC&0b100 > 0
 		if oldEnable {
 			if newEnable {
@@ -82,7 +82,7 @@ func (cpu *CPU) tick() {
 		}
 	}
 
-	// シリアル通信のクロック管理
+	// clock management in serial communication
 	if cpu.Config.Network.Network && cpu.Serial.TransferFlag > 0 {
 		cpu.Cycle.serial++
 		if cpu.Cycle.serial > 128*8 {
@@ -95,52 +95,23 @@ func (cpu *CPU) tick() {
 		cpu.Cycle.serial = 0
 	}
 
-	// スキャンライン
 	cpu.Cycle.scanline++
-
-	// 16 bit system counter
-	cpu.Cycle.sys++
-
-	// DIVレジスタ
+	cpu.Cycle.sys++ // 16 bit system counter
 	cpu.Cycle.div++
 	if cpu.Cycle.div >= 64 {
 		cpu.RAM[DIVIO]++
 		cpu.Cycle.div -= 64
 	}
 
-	if util.Bit(TAC, 2) {
+	if util.Bit(tac, 2) {
 		cpu.Cycle.tac++
-		switch TAC % 4 {
-		case 0:
-			// 4096Hz (1024/4 cycle)
-			if cpu.Cycle.tac >= 256 {
-				cpu.Cycle.tac -= 256
-				tickFlag = true
-			}
-		case 1:
-			// 262144Hz (16/4 cycle)
-			if cpu.Cycle.tac >= 4 {
-				cpu.Cycle.tac -= 4
-				tickFlag = true
-			}
-		case 2:
-			// 65536Hz (64/4 cycle)
-			if cpu.Cycle.tac >= 16 {
-				cpu.Cycle.tac -= 16
-				tickFlag = true
-			}
-		case 3:
-			// 16384Hz (256/4 cycle)
-			if cpu.Cycle.tac >= 64 {
-				cpu.Cycle.tac -= 64
-				tickFlag = true
-			}
+		if cpu.Cycle.tac >= clocks[tac&0b11] {
+			cpu.Cycle.tac -= clocks[tac&0b11]
+			tickFlag = true
 		}
 	}
 
-	if cpu.TIMAReload.after {
-		cpu.TIMAReload.after = false
-	}
+	cpu.TIMAReload.after = false
 	if cpu.TIMAReload.flag {
 		cpu.TIMAReload.flag = false
 		cpu.RAM[TIMAIO] = cpu.TIMAReload.value
@@ -151,8 +122,7 @@ func (cpu *CPU) tick() {
 	if tickFlag {
 		TIMABefore := cpu.RAM[TIMAIO]
 		TIMAAfter := TIMABefore + 1
-		if TIMAAfter < TIMABefore {
-			// overflow occurs
+		if TIMAAfter < TIMABefore { // overflow occurs
 			cpu.TIMAReload = TIMAReload{
 				flag:  true,
 				value: uint8(cpu.RAM[TMAIO]),
@@ -173,15 +143,12 @@ func (cpu *CPU) tick() {
 			cpu.RAM[0xfe00+uint16(cpu.OAMDMA.ptr)-1] = cpu.FetchMemory8(cpu.OAMDMA.start + uint16(cpu.OAMDMA.ptr) - 1)
 		}
 
-		// OAMDMAを1カウント進める(重複しているときはそっちのカウントも進める)
-		cpu.OAMDMA.ptr--
-		if cpu.OAMDMA.reptr > 0 {
+		cpu.OAMDMA.ptr--          // increment OAMDMA count
+		if cpu.OAMDMA.reptr > 0 { // if next OAM is requested, increment that one too
 			cpu.OAMDMA.reptr--
-
 			if cpu.OAMDMA.reptr == 160 {
 				cpu.OAMDMA.start = cpu.OAMDMA.restart
-				cpu.OAMDMA.ptr = 160
-				cpu.OAMDMA.reptr = 0
+				cpu.OAMDMA.ptr, cpu.OAMDMA.reptr = 160, 0
 			}
 		}
 	}
@@ -194,26 +161,9 @@ func (cpu *CPU) resetTimer() bool {
 	cpu.Cycle.tac = 0
 
 	tickFlag := false
-	TAC := cpu.RAM[TACIO]
-	if util.Bit(TAC, 2) {
-		switch TAC % 4 {
-		case 0:
-			// 4096Hz (1024/4 cycle)
-			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim00_div_trigger.s
-			tickFlag = old >= 512/4
-		case 1:
-			// 262144Hz (16/4 cycle)
-			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim01_div_trigger.s
-			tickFlag = old >= 8/4
-		case 2:
-			// 65536Hz (64/4 cycle)
-			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim10_div_trigger.s
-			tickFlag = old >= 32/4
-		case 3:
-			// 16384Hz (256/4 cycle)
-			// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim11_div_trigger.s
-			tickFlag = old >= 128/4
-		}
+	tac := cpu.RAM[TACIO]
+	if util.Bit(tac, 2) {
+		tickFlag = old >= (clocks[tac&0b11] / 2) // ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim00_div_trigger.s
 	}
 	return tickFlag
 }

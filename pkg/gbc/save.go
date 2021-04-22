@@ -45,7 +45,7 @@ func (cpu *CPU) save() {
 		}
 	}
 
-	if cpu.RTC.Working {
+	if cpu.RTC.Enable {
 		rtcData := cpu.RTC.Dump()
 		for i := 0; i < 48; i++ {
 			savdata = append(savdata, rtcData[i])
@@ -64,8 +64,6 @@ func (cpu *CPU) load() {
 	if err != nil {
 		return
 	}
-
-	// GameBoyのセーブデータはExternal RAM(0xa000-0xbfff)の単純なコアダンプ
 	switch cpu.Cartridge.RAMSize {
 	case 1:
 		for index := 0; index < 0x800; index++ {

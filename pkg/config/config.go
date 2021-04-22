@@ -13,7 +13,7 @@ const (
 // Config for emulator
 type Config struct {
 	Display Display `toml:"display"`
-	Pallete Pallete `toml:"pallete"`
+	Palette Palette `toml:"palette"`
 	Network Network `toml:"network"`
 	Joypad  Joypad  `toml:"joypad"`
 	Debug   Debug   `toml:"debug"`
@@ -21,12 +21,12 @@ type Config struct {
 
 // Display config
 type Display struct {
-	HQ2x  bool `toml:"hq2x"`  // エミュレータのハイレゾ化が有効かどうか
-	FPS30 bool `toml:"fps30"` // fpsを30に下げるモードかどうか
+	HQ2x  bool `toml:"hq2x"`  // true: enable
+	FPS30 bool `toml:"fps30"` // reduce fps to 30
 }
 
-// Pallete for DMG
-type Pallete struct {
+// Palette for DMG
+type Palette struct {
 	Color0 [3]int `toml:"color0"`
 	Color1 [3]int `toml:"color1"`
 	Color2 [3]int `toml:"color2"`
@@ -68,8 +68,8 @@ func Init() *Config {
 hq2x = false # use HQ2x scaling mode
 fps30 = false # reduce fps 30
 
-[pallete]
-# DMG Color Pallete [R, G, B]
+[palette]
+# DMG Color Palette [R, G, B]
 color0 = [175, 197, 160]
 color1 = [93, 147, 66]
 color2 = [22, 63, 48]

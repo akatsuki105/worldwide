@@ -11,63 +11,53 @@ func (cpu *CPU) pop() byte {
 	return value
 }
 
-// ------------ AF --------------------
-
 func (cpu *CPU) pushAF() {
-	cpu.push(cpu.Reg.A)
+	cpu.push(cpu.Reg.R[A])
 	cpu.timer(1)
-	cpu.push(cpu.Reg.F & 0x00f0)
+	cpu.push(cpu.Reg.R[F] & 0xf0)
 }
 
 func (cpu *CPU) popAF() {
-	cpu.Reg.F = cpu.pop() & 0xf0
+	cpu.Reg.R[F] = cpu.pop() & 0xf0
 	cpu.timer(1)
-	cpu.Reg.A = cpu.pop()
+	cpu.Reg.R[A] = cpu.pop()
 }
 
-// ------------ BC --------------------
-
 func (cpu *CPU) pushBC() {
-	cpu.push(cpu.Reg.B)
+	cpu.push(cpu.Reg.R[B])
 	cpu.timer(1)
-	cpu.push(cpu.Reg.C)
+	cpu.push(cpu.Reg.R[C])
 }
 
 func (cpu *CPU) popBC() {
-	cpu.Reg.C = cpu.pop()
+	cpu.Reg.R[C] = cpu.pop()
 	cpu.timer(1)
-	cpu.Reg.B = cpu.pop()
+	cpu.Reg.R[B] = cpu.pop()
 }
 
-// ------------ DE --------------------
-
 func (cpu *CPU) pushDE() {
-	cpu.push(cpu.Reg.D) // まだOAMDMA中なのでここでのアクセスは弾かれる https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/push_timing.s
-	cpu.timer(1)        // OAMDMAが終わる
-	cpu.push(cpu.Reg.E)
+	cpu.push(cpu.Reg.R[D])
+	cpu.timer(1)
+	cpu.push(cpu.Reg.R[E])
 }
 
 func (cpu *CPU) popDE() {
-	cpu.Reg.E = cpu.pop()
+	cpu.Reg.R[E] = cpu.pop()
 	cpu.timer(1)
-	cpu.Reg.D = cpu.pop()
+	cpu.Reg.R[D] = cpu.pop()
 }
 
-// ------------ HL --------------------
-
 func (cpu *CPU) pushHL() {
-	cpu.push(cpu.Reg.H)
+	cpu.push(cpu.Reg.R[H])
 	cpu.timer(1)
-	cpu.push(cpu.Reg.L)
+	cpu.push(cpu.Reg.R[L])
 }
 
 func (cpu *CPU) popHL() {
-	cpu.Reg.L = cpu.pop()
+	cpu.Reg.R[L] = cpu.pop()
 	cpu.timer(1)
-	cpu.Reg.H = cpu.pop()
+	cpu.Reg.R[H] = cpu.pop()
 }
-
-// ------------ PC --------------------
 
 func (cpu *CPU) pushPC() {
 	upper, lower := byte(cpu.Reg.PC>>8), byte(cpu.Reg.PC)

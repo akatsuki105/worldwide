@@ -185,7 +185,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						<-cpu.serialTick
 						cpu.Serial.Receive()
 						cpu.Serial.ClearSC()
-						cpu.setSerialFlag()
+						cpu.setSerialFlag(true)
 					}
 				}()
 			case 0x83:
@@ -205,7 +205,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 						<-cpu.serialTick
 						cpu.Serial.Receive()
 						cpu.Serial.ClearSC()
-						cpu.setSerialFlag()
+						cpu.setSerialFlag(true)
 					}
 				}()
 			}
@@ -241,7 +241,7 @@ func (cpu *CPU) setIO(addr uint16, value byte) {
 		cpu.RAM[IFIO] = value | 0xe0 // IF[4-7] always set
 
 	case addr == DMAIO: // dma transfer
-		start := uint16(cpu.Reg.A) << 8
+		start := uint16(cpu.Reg.R[A]) << 8
 		if cpu.OAMDMA.ptr > 0 {
 			cpu.OAMDMA.restart = start
 			cpu.OAMDMA.reptr = 160 + 2 // lag

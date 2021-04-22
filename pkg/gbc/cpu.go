@@ -2,13 +2,13 @@ package gbc
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"sync"
 
 	"gbc/pkg/apu"
 	"gbc/pkg/cartridge"
 	"gbc/pkg/config"
-	"gbc/pkg/debug"
 	"gbc/pkg/gpu"
 	"gbc/pkg/joypad"
 	"gbc/pkg/rtc"
@@ -79,70 +79,36 @@ func (cpu *CPU) TransferROM(rom []byte) {
 		cpu.RAM[i] = rom[i]
 	}
 
-	// カードリッジタイプで場合分け
 	switch cpu.Cartridge.Type {
 	case 0x00:
-		// Type : 0
 		cpu.Cartridge.MBC = cartridge.ROM
 		cpu.transferROM(2, rom)
-	case 0x01:
-		// Type : 1 => MBC1
+	case 0x01: // Type : 1 => MBC1
 		cpu.Cartridge.MBC = cartridge.MBC1
-		switch cpu.Cartridge.ROMSize {
-		case 0:
-			cpu.transferROM(2, rom)
-		case 1:
-			cpu.transferROM(4, rom)
-		case 2:
-			cpu.transferROM(8, rom)
-		case 3:
-			cpu.transferROM(16, rom)
-		case 4:
-			cpu.transferROM(32, rom)
-		case 5:
-			cpu.transferROM(64, rom)
-		case 6:
-			cpu.transferROM(128, rom)
+		switch r := int(cpu.Cartridge.ROMSize); r {
+		case 0, 1, 2, 3, 4, 5, 6:
+			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x02, 0x03:
-		// Type : 2, 3 => MBC1+RAM
+	case 0x02, 0x03: // Type : 2, 3 => MBC1+RAM
 		cpu.Cartridge.MBC = cartridge.MBC1
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
-			switch cpu.Cartridge.ROMSize {
-			case 0:
-				cpu.transferROM(2, rom)
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
-			case 4:
-				cpu.transferROM(32, rom)
-			case 5:
-				cpu.transferROM(64, rom)
-			case 6:
-				cpu.transferROM(128, rom)
+			switch r := int(cpu.Cartridge.ROMSize); r {
+			case 0, 1, 2, 3, 4, 5, 6:
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
 			}
 		case 3:
 			cpu.bankMode = 1
-			switch cpu.Cartridge.ROMSize {
+			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0:
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
-			case 4:
-				cpu.transferROM(32, rom)
+			case 1, 2, 3, 4:
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -151,34 +117,23 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x05, 0x06:
-		// Type : 5, 6 => MBC2
+	case 0x05, 0x06: // Type : 5, 6 => MBC2
 		cpu.Cartridge.MBC = cartridge.MBC2
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
-			switch cpu.Cartridge.ROMSize {
-			case 0:
-				cpu.transferROM(2, rom)
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
+			switch r := int(cpu.Cartridge.ROMSize); r {
+			case 0, 1, 2, 3:
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
 			}
 		case 3:
 			cpu.bankMode = 1
-			switch cpu.Cartridge.ROMSize {
+			switch r := int(cpu.Cartridge.ROMSize); r {
 			case 0:
-			case 1:
-				cpu.transferROM(4, rom)
-			case 2:
-				cpu.transferROM(8, rom)
-			case 3:
-				cpu.transferROM(16, rom)
+			case 1, 2, 3:
+				cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 			default:
 				errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 				panic(errorMsg)
@@ -187,51 +142,20 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			errorMsg := fmt.Sprintf("RAMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x0f, 0x10, 0x11, 0x12, 0x13:
-		// Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
-		cpu.Cartridge.MBC = cartridge.MBC3
-
-		cpu.RTC.Working = true
-
-		switch cpu.Cartridge.ROMSize {
-		case 0:
-			cpu.transferROM(2, rom)
-		case 1:
-			cpu.transferROM(4, rom)
-		case 2:
-			cpu.transferROM(8, rom)
-		case 3:
-			cpu.transferROM(16, rom)
-		case 4:
-			cpu.transferROM(32, rom)
-		case 5:
-			cpu.transferROM(64, rom)
-		case 6:
-			cpu.transferROM(128, rom)
+	case 0x0f, 0x10, 0x11, 0x12, 0x13: // Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
+		cpu.Cartridge.MBC, cpu.RTC.Enable = cartridge.MBC3, true
+		switch r := int(cpu.Cartridge.ROMSize); r {
+		case 0, 1, 2, 3, 4, 5, 6:
+			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
 		}
-	case 0x19, 0x1a, 0x1b:
-		// Type : 0x19, 0x1a, 0x1b => MBC5
+	case 0x19, 0x1a, 0x1b: // Type : 0x19, 0x1a, 0x1b => MBC5
 		cpu.Cartridge.MBC = cartridge.MBC5
-		switch cpu.Cartridge.ROMSize {
-		case 0:
-			cpu.transferROM(2, rom)
-		case 1:
-			cpu.transferROM(4, rom)
-		case 2:
-			cpu.transferROM(8, rom)
-		case 3:
-			cpu.transferROM(16, rom)
-		case 4:
-			cpu.transferROM(32, rom)
-		case 5:
-			cpu.transferROM(64, rom)
-		case 6:
-			cpu.transferROM(128, rom)
-		case 7:
-			cpu.transferROM(256, rom)
+		switch r := int(cpu.Cartridge.ROMSize); r {
+		case 0, 1, 2, 3, 4, 5, 6, 7:
+			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
 		default:
 			errorMsg := fmt.Sprintf("ROMSize is invalid => type:%x rom:%x ram:%x\n", cpu.Cartridge.Type, cpu.Cartridge.ROMSize, cpu.Cartridge.RAMSize)
 			panic(errorMsg)
@@ -255,8 +179,7 @@ func (cpu *CPU) initRegister() {
 	cpu.Reg.setBC(0x0013)
 	cpu.Reg.setDE(0x00d8)
 	cpu.Reg.setHL(0x014d)
-	cpu.Reg.PC = 0x0100
-	cpu.Reg.SP = 0xfffe
+	cpu.Reg.PC, cpu.Reg.SP = 0x0100, 0xfffe
 }
 
 func (cpu *CPU) initIOMap() {
@@ -286,14 +209,12 @@ func (cpu *CPU) initIOMap() {
 	cpu.SetMemory8(LCDCIO, 0x91)
 	cpu.SetMemory8(LCDSTATIO, 0x85)
 	cpu.RAM[BGPIO] = 0xfc
-	cpu.RAM[OBP0IO] = 0xff
-	cpu.RAM[OBP1IO] = 0xff
+	cpu.RAM[OBP0IO], cpu.RAM[OBP1IO] = 0xff, 0xff
 }
 
 func (cpu *CPU) initNetwork() {
 	if cpu.Config.Network.Network {
-		your := cpu.Config.Network.Your
-		peer := cpu.Config.Network.Peer
+		your, peer := cpu.Config.Network.Your, cpu.Config.Network.Peer
 		myIP, myPort, _ := net.SplitHostPort(your)
 		peerIP, peerPort, _ := net.SplitHostPort(peer)
 		received := make(chan int)
@@ -307,14 +228,14 @@ func (cpu *CPU) initNetwork() {
 				<-cpu.serialTick
 				cpu.Serial.Receive()
 				cpu.Serial.ClearSC()
-				cpu.setSerialFlag()
+				cpu.setSerialFlag(true)
 			}
 		}()
 	}
 }
 
 func (cpu *CPU) initDMGPalette() {
-	c0, c1, c2, c3 := cpu.Config.Pallete.Color0, cpu.Config.Pallete.Color1, cpu.Config.Pallete.Color2, cpu.Config.Pallete.Color3
+	c0, c1, c2, c3 := cpu.Config.Palette.Color0, cpu.Config.Palette.Color1, cpu.Config.Palette.Color2, cpu.Config.Palette.Color3
 	gpu.InitPalette(c0, c1, c2, c3)
 }
 
@@ -365,35 +286,10 @@ func (cpu *CPU) exec() bool {
 
 	bytecode := cpu.FetchMemory8(PC)
 	opcode := opcodes[bytecode]
-	instruction, operand1, operand2, cycle1, cycle2, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Cycle2, opcode.Handler
+	instruction, operand1, operand2, cycle1, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 	cycle := cycle1
 
-	// in breakpoint
-	b := &cpu.debug.Break
-	if cpu.debug.on {
-		switch b.Flag() {
-		case debug.BreakOn:
-			return true
-		case debug.BreakOff:
-			for _, breakpoint := range b.BreakPoints() {
-				if PC != breakpoint.PC {
-					continue
-				}
-
-				if (PC > 0x4000 && bank == breakpoint.Bank) || breakpoint.Bank == 0 {
-					if cpu.checkBreakCond(&breakpoint) {
-						b.SetFlag(debug.BreakOn)
-						cpu.debug.history.SetHistory(bank, PC, bytecode)
-						return true
-					}
-				}
-			}
-		case debug.BreakDelay:
-			b.SetFlag(debug.BreakOff)
-		}
-	}
-
-	halt := cpu.halt
+	isHalt := cpu.halt
 	if !cpu.halt {
 		if cpu.debug.on && cpu.debug.history.Flag() {
 			cpu.debug.history.SetHistory(bank, PC, bytecode)
@@ -403,22 +299,10 @@ func (cpu *CPU) exec() bool {
 			handler(cpu, operand1, operand2)
 		} else {
 			switch instruction {
-			case INS_HALT:
-				cpu.HALT(operand1, operand2)
-			case INS_LD:
-				LD(cpu, operand1, operand2)
 			case INS_LDH:
 				LDH(cpu, operand1, operand2)
-			case INS_JR:
-				JR(cpu, operand1, operand2)
-			case INS_NOP:
-				cpu.NOP(operand1, operand2)
 			case INS_AND:
 				cpu.AND(operand1, operand2)
-			case INS_INC:
-				cpu.INC(operand1, operand2)
-			case INS_DEC:
-				cpu.DEC(operand1, operand2)
 			case INS_PUSH:
 				cpu.PUSH(operand1, operand2)
 				cycle = 0 // PUSH内部でサイクルのインクリメントを行う
@@ -427,16 +311,6 @@ func (cpu *CPU) exec() bool {
 				cycle = 0 // POP内部でサイクルのインクリメントを行う
 			case INS_XOR:
 				cpu.XOR(operand1, operand2)
-			case INS_JP:
-				JP(cpu, operand1, operand2) // JP内部でサイクルのインクリメントを行う
-			case INS_CALL:
-				CALL(cpu, operand1, operand2) // CALL内部でサイクルのインクリメントを行う
-			case INS_RET:
-				if !cpu.RET(operand1, operand2) {
-					cycle = cycle2
-				}
-			case INS_RETI:
-				cpu.RETI(operand1, operand2)
 			case INS_CP:
 				cpu.CP(operand1, operand2)
 			case INS_OR:
@@ -449,33 +323,6 @@ func (cpu *CPU) exec() bool {
 				cpu.ADC(operand1, operand2)
 			case INS_SBC:
 				cpu.SBC(operand1, operand2)
-			case INS_CPL:
-				cpu.CPL(operand1, operand2)
-			case INS_PREFIX:
-				cpu.PREFIXCB(operand1, operand2)
-				cycle = 0 // PREFIXCB内部でサイクルのインクリメントを行う
-			case INS_RRA:
-				cpu.RRA(operand1, operand2)
-			case INS_DAA:
-				cpu.DAA(operand1, operand2)
-			case INS_RST:
-				cpu.RST(operand1, operand2)
-			case INS_SCF:
-				cpu.SCF(operand1, operand2)
-			case INS_CCF:
-				cpu.CCF(operand1, operand2)
-			case INS_RLCA:
-				cpu.RLCA(operand1, operand2)
-			case INS_RLA:
-				cpu.RLA(operand1, operand2)
-			case INS_RRCA:
-				cpu.RRCA(operand1, operand2)
-			case INS_DI:
-				cpu.DI(operand1, operand2)
-			case INS_EI:
-				cpu.EI(operand1, operand2)
-			case INS_STOP:
-				cpu.STOP(operand1, operand2)
 			default:
 				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", cpu.Reg.PC, bytecode)
 				panic(errMsg)
@@ -489,9 +336,12 @@ func (cpu *CPU) exec() bool {
 				cpu.halt = false
 			}
 		}
+		if pending {
+			cpu.pend()
+		}
 	}
 
-	cpu.debug.monitor.Add(halt, cycle)
+	cpu.debug.monitor.Add(isHalt, cycle)
 	cpu.timer(cycle)
 
 	cpu.handleInterrupt()

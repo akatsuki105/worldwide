@@ -27,10 +27,10 @@ func (cpu *CPU) SetWindowSize(x, y int) {
 }
 
 func (cpu *CPU) debugRegister() string {
-	A, F := cpu.Reg.A, cpu.Reg.F
-	B, C := cpu.Reg.B, cpu.Reg.C
-	D, E := cpu.Reg.D, cpu.Reg.E
-	H, L := cpu.Reg.H, cpu.Reg.L
+	A, F := cpu.Reg.R[A], cpu.Reg.R[F]
+	B, C := cpu.Reg.R[B], cpu.Reg.R[C]
+	D, E := cpu.Reg.R[D], cpu.Reg.R[E]
+	H, L := cpu.Reg.R[H], cpu.Reg.R[L]
 
 	bank := cpu.ROMBank.ptr
 	PC := cpu.Reg.PC
@@ -51,8 +51,7 @@ func (cpu *CPU) debugIOMap() string {
 	DIV := cpu.FetchMemory8(DIVIO)
 	LY, LYC := cpu.FetchMemory8(LYIO), cpu.FetchMemory8(LYCIO)
 	IE, IF, IME := cpu.FetchMemory8(IEIO), cpu.FetchMemory8(IFIO), util.Bool2Int(cpu.Reg.IME)
-	spd := cpu.boost / 2
-	rom := cpu.ROMBank.ptr
+	spd, rom := cpu.boost/2, cpu.ROMBank.ptr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
 DIV: %02x
@@ -61,12 +60,12 @@ IE: %02x     IF: %02x    IME: %02x
 SPD: %02x    ROM: %02x`, LCDC, STAT, DIV, LY, LYC, IE, IF, IME, spd, rom)
 }
 
+const (
+	WX, WY, scrollX, scrollY, scrollPixelX = 0, 0, 0, 0, 0
+)
+
 // DebugExec - used in test
 func (cpu *CPU) DebugExec(frame int, output string) error {
-	const (
-		WX, WY, scrollX, scrollY, scrollPixelX = 0, 0, 0, 0, 0
-	)
-
 	for i := 0; i < frame; i++ {
 		for y := 0; y < 144; y++ {
 			cpu.execScanline()
@@ -93,8 +92,7 @@ func (cpu *CPU) DebugExec(frame int, output string) error {
 				isWin = true
 
 				entryX = blockX * 8
-				entryY.Block = blockY * 8
-				entryY.Offset = y % 8
+				entryY.Block, entryY.Offset = blockY*8, y%8
 			} else {
 				tileX, tileY = (scrollX+uint(x))/8%32, (scrollY+uint(y))/8%32
 				isWin = false

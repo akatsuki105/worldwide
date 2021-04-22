@@ -112,15 +112,12 @@ func (cpu *CPU) handleJoypad() {
 	result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
 	if result != 0 {
 		switch result {
-		case joypad.Pressed:
-			// Joypad Interrupt
+		case joypad.Pressed: // Joypad Interrupt
 			if cpu.Reg.IME && cpu.getJoypadEnable() {
-				cpu.setJoypadFlag()
+				cpu.setJoypadFlag(true)
 			}
 		case joypad.Pause:
-			p := &cpu.debug.pause
-			b := &cpu.debug.Break
-
+			p, b := &cpu.debug.pause, &cpu.debug.Break
 			if !cpu.debug.on {
 				return
 			}
@@ -152,14 +149,13 @@ func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
 		if Y != 0 && Y < 160 {
 			Y -= 16
 			X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
-			tileIndex := uint(cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 2))
-			attr := cpu.FetchMemory8(0xfe00 + 4*uint16(i) + 3)
+			tileIdx, attr := uint(cpu.FetchMemory8(0xfe00+4*uint16(i)+2)), cpu.FetchMemory8(0xfe00+4*uint16(i)+3)
 			if Y >= 0 && LCDC1[Y] {
-				cpu.GPU.SetSPRTile(i, int(X), Y, tileIndex, attr, cpu.Cartridge.IsCGB)
+				cpu.GPU.SetSPRTile(i, int(X), Y, tileIdx, attr, cpu.Cartridge.IsCGB)
 			}
 
 			if cpu.debug.on {
-				cpu.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIndex), attr)
+				cpu.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIdx), attr)
 			}
 		}
 	}
