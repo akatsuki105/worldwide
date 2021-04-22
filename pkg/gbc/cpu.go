@@ -311,8 +311,6 @@ func (cpu *CPU) exec() bool {
 				cycle = 0 // POP内部でサイクルのインクリメントを行う
 			case INS_XOR:
 				cpu.XOR(operand1, operand2)
-			case INS_JP:
-				JP(cpu, operand1, operand2) // JP内部でサイクルのインクリメントを行う
 			case INS_RET:
 				if !cpu.RET(operand1, operand2) {
 					cycle = cycle2

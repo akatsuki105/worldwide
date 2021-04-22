@@ -321,54 +321,37 @@ func (cpu *CPU) XOR(operand1, operand2 int) {
 	cpu.Reg.PC++
 }
 
-// JP Jump
-func JP(cpu *CPU, operand1, operand2 int) {
-	cycle := 1
+// jp u16
+func jp(cpu *CPU, _, _ int) {
+	cpu.Reg.PC = cpu.a16FetchJP()
+	cpu.timer(2)
+}
 
-	switch operand1 {
-	case OP_a16:
-		destination := cpu.a16FetchJP()
-		cycle++
-		cpu.Reg.PC = destination
-	case OP_HL_PAREN:
-		cpu.Reg.PC = cpu.Reg.HL()
-	case OP_Z:
-		destination := cpu.a16FetchJP()
-		if cpu.f(flagZ) {
-			cycle++
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-		}
-	case OP_C:
-		destination := cpu.a16FetchJP()
-		if cpu.f(flagC) {
-			cycle++
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-		}
-	case OP_NZ:
-		destination := cpu.a16FetchJP()
-		if !cpu.f(flagZ) {
-			cycle++
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-		}
-	case OP_NC:
-		destination := cpu.a16FetchJP()
-		if !cpu.f(flagC) {
-			cycle++
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-		}
-	default:
-		panic(fmt.Errorf("error: JP %d %d", operand1, operand2))
+func jpcc(cpu *CPU, cc, _ int) {
+	dst := cpu.a16FetchJP()
+	if cpu.f(cc) {
+		cpu.Reg.PC = dst
+		cpu.timer(2)
+	} else {
+		cpu.Reg.PC += 3
+		cpu.timer(1)
 	}
+}
 
-	cpu.timer(cycle)
+func jpncc(cpu *CPU, cc, _ int) {
+	dst := cpu.a16FetchJP()
+	if !cpu.f(cc) {
+		cpu.Reg.PC = dst
+		cpu.timer(2)
+	} else {
+		cpu.Reg.PC += 3
+		cpu.timer(1)
+	}
+}
+
+func jpHL(cpu *CPU, _, _ int) {
+	cpu.Reg.PC = cpu.Reg.HL()
+	cpu.timer(1)
 }
 
 // RET Return
