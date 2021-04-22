@@ -17,7 +17,7 @@ const (
 	perSample  = 1 / float64(sampleRate)
 
 	cpuTicksPerSample = float64(4194304) / sampleRate
-	streamLen         = 1472 // 2 * 2 * sampleRate * (1/120)
+	streamLen         = 2940 // 2 * 2 * sampleRate * (1/120)
 	volume            = 0.07
 )
 
@@ -62,7 +62,7 @@ func (a *APU) Init(sound bool) {
 	a.chn3 = NewChannel()
 	a.chn4 = NewChannel()
 
-	const bufferSeconds = 120
+	const bufferSeconds = 60
 
 	if sound {
 		context, err := oto.NewContext(sampleRate, 2, 1, sampleRate/bufferSeconds)

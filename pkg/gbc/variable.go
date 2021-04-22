@@ -114,14 +114,6 @@ const (
 	OP_HLPLUS_PAREN
 	OP_HLMINUS_PAREN
 	OP_HL_PAREN
-	OP_0
-	OP_1
-	OP_2
-	OP_3
-	OP_4
-	OP_5
-	OP_6
-	OP_7
 )
 
 type Opcode struct {
