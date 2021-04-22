@@ -17,7 +17,7 @@ const (
 	perSample  = 1 / float64(sampleRate)
 
 	cpuTicksPerSample = float64(4194304) / sampleRate
-	streamLen         = 2940 // 2 * 2 * sampleRate * (1/120)
+	streamLen         = 2940 // 2 * 2 * sampleRate * (1/60)
 	volume            = 0.07
 )
 
