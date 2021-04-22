@@ -43,6 +43,7 @@ func ld8m(cpu *CPU, r8, r16 int) {
 	cpu.Reg.PC++
 }
 
+// ld r8, mem[imm]
 func ld8i(cpu *CPU, r8, _ int) {
 	cpu.Reg.R[r8] = cpu.d8Fetch()
 	cpu.Reg.PC += 2
