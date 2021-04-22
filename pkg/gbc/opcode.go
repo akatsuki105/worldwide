@@ -386,66 +386,31 @@ func reti(cpu *CPU, operand1, operand2 int) {
 	cpu.Reg.IME = true
 }
 
-// call subroutine
-func call(cpu *CPU, operand1, _ int) {
+func call(cpu *CPU, _, _ int) {
+	dst := cpu.a16FetchJP()
+	cpu.Reg.PC += 3
+	cpu.timer(1)
+	cpu.pushPCCALL()
+	cpu.timer(1)
+	cpu.Reg.PC = dst
+}
 
-	switch operand1 {
-	case OP_a16:
-		destination := cpu.a16FetchJP()
-		cpu.Reg.PC += 3
-		cpu.timer(1)
-		cpu.pushPCCALL()
-		cpu.timer(1)
-		cpu.Reg.PC = destination
-	case OP_Z:
-		if cpu.f(flagZ) {
-			destination := cpu.a16FetchJP()
-			cpu.Reg.PC += 3
-			cpu.timer(1)
-			cpu.pushPCCALL()
-			cpu.timer(1)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-			cpu.timer(3)
-		}
-	case OP_C:
-		if cpu.f(flagC) {
-			destination := cpu.a16FetchJP()
-			cpu.Reg.PC += 3
-			cpu.timer(1)
-			cpu.pushPCCALL()
-			cpu.timer(1)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-			cpu.timer(3)
-		}
-	case OP_NZ:
-		if !cpu.f(flagZ) {
-			destination := cpu.a16FetchJP()
-			cpu.Reg.PC += 3
-			cpu.timer(1)
-			cpu.pushPCCALL()
-			cpu.timer(1)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-			cpu.timer(3)
-		}
-	case OP_NC:
-		if !cpu.f(flagC) {
-			destination := cpu.a16FetchJP()
-			cpu.Reg.PC += 3
-			cpu.timer(1)
-			cpu.pushPCCALL()
-			cpu.timer(1)
-			cpu.Reg.PC = destination
-		} else {
-			cpu.Reg.PC += 3
-			cpu.timer(3)
-		}
+func callcc(cpu *CPU, cc, _ int) {
+	if cpu.f(cc) {
+		call(cpu, 0, 0)
+		return
 	}
+	cpu.Reg.PC += 3
+	cpu.timer(3)
+}
+
+func callncc(cpu *CPU, cc, _ int) {
+	if !cpu.f(cc) {
+		call(cpu, 0, 0)
+		return
+	}
+	cpu.Reg.PC += 3
+	cpu.timer(3)
 }
 
 // DI Disable Interrupt
