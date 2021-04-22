@@ -37,8 +37,8 @@ func ldR8R8(cpu *CPU, op1, op2 int) {
 
 // ------ LD A, *
 
-// ld r8, byte[r16]
-func ld8r(cpu *CPU, r8, r16 int) {
+// ld r8, mem[r16]
+func ld8m(cpu *CPU, r8, r16 int) {
 	cpu.Reg.R[r8] = cpu.FetchMemory8(cpu.Reg.R16(r16))
 	cpu.Reg.PC++
 }
