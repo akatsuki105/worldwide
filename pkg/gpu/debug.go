@@ -18,7 +18,7 @@ type Debug struct {
 	tileData    tileData
 	OAM         *image.RGBA // OAMをまとめたもの
 	oamProperty [40][4]byte
-	bgMap       *ebiten.Image // 背景のみ
+	bgMap       *image.RGBA // 背景のみ
 }
 
 const (
@@ -92,13 +92,8 @@ func (g *GPU) UpdateTileData(isCGB bool) {
 	}
 }
 
-func (d *Debug) BGMap() *ebiten.Image {
-	return d.bgMap
-}
-
-func (d *Debug) SetBGMap(bg *ebiten.Image) {
-	d.bgMap = bg
-}
+func (d *Debug) BGMap() *image.RGBA      { return d.bgMap }
+func (d *Debug) SetBGMap(bg *image.RGBA) { d.bgMap = bg }
 
 func (d *Debug) FillOAM() {
 	c := color.RGBA{0x8f, 0x8f, 0x8f, 0xff}

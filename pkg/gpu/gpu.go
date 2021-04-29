@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 
-	ebiten "github.com/hajimehoshi/ebiten/v2"
 	hq2x "github.com/pokemium/hq2xgo"
 )
 
@@ -17,7 +16,7 @@ type VRAM struct {
 // GPU Graphic Processor Unit
 type GPU struct {
 	display       *image.RGBA    // 160*144のイメージデータ
-	hq2x          *ebiten.Image  // 320*288のイメージデータ(HQ2xかつ30fpsで使用)
+	hq2x          *image.RGBA    // 320*288のイメージデータ(HQ2xかつ30fpsで使用)
 	LCDC          byte           // LCD Control
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scrollの座標
@@ -44,7 +43,7 @@ const (
 
 // Init GPU
 func (g *GPU) Init(debug bool) {
-	g.display, g.hq2x = image.NewRGBA(image.Rect(0, 0, 160, 144)), ebiten.NewImage(320, 288)
+	g.display, g.hq2x = image.NewRGBA(image.Rect(0, 0, 160, 144)), image.NewRGBA(image.Rect(0, 0, 320, 288))
 	g.Debug.On = debug
 	if debug {
 		g.initTileData()
@@ -53,11 +52,11 @@ func (g *GPU) Init(debug bool) {
 }
 
 // Display returns gameboy display data
-func (g *GPU) Display(hq2x bool) *ebiten.Image {
+func (g *GPU) Display(hq2x bool) *image.RGBA {
 	if hq2x {
 		return g.hq2x
 	}
-	return ebiten.NewImageFromImage(g.display)
+	return g.display
 }
 
 // GetOriginal - getter for display data in image.RGBA format. Function for debug.
@@ -66,9 +65,8 @@ func (g *GPU) GetOriginal() *image.RGBA {
 }
 
 // HQ2x - scaling display data using HQ2x
-func (g *GPU) HQ2x() *ebiten.Image {
-	tmp, _ := hq2x.HQ2x(g.display)
-	g.hq2x = ebiten.NewImageFromImage(tmp)
+func (g *GPU) HQ2x() *image.RGBA {
+	g.hq2x, _ = hq2x.HQ2x(g.display)
 	return g.hq2x
 }
 

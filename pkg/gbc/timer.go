@@ -3,9 +3,9 @@ package gbc
 import "gbc/pkg/util"
 
 type Cycle struct {
-	tac      int // タイマー用
-	div      int // DIVタイマー用
-	scanline int // スキャンライン用
+	tac      int // use in normal timer
+	div      int // use in div timer
+	scanline int // use in scanline counter
 	serial   int
 	sys      uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
 }
@@ -44,8 +44,8 @@ func (cpu *CPU) clearTimerFlag() {
 func (cpu *CPU) timer(cycle int) {
 	for i := 0; i < cycle; i++ {
 		cpu.tick()
-		cpu.Sound.Buffer(4, cpu.boost)
 	}
+	cpu.Sound.Buffer(4*cycle, cpu.boost)
 }
 
 // 0: 4096Hz (1024/4 cycle), 1: 262144Hz (16/4 cycle), 2: 65536Hz (64/4 cycle), 3: 16384Hz (256/4 cycle)
@@ -73,7 +73,7 @@ func (cpu *CPU) tick() {
 		}
 	}
 
-	// DI,EIの遅延処理
+	// lag occurs in di, ei
 	if cpu.IMESwitch.Working {
 		cpu.IMESwitch.Count--
 		if cpu.IMESwitch.Count == 0 {

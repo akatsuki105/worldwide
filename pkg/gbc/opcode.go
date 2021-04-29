@@ -267,7 +267,7 @@ func (cpu *CPU) pend() {
 	// Some pending
 	cpu.halt = false
 	PC := cpu.Reg.PC
-	cpu.exec()
+	cpu.exec(1)
 	cpu.Reg.PC = PC
 
 	// IME turns on due to EI delay.
@@ -955,35 +955,38 @@ func setHL(cpu *CPU, bit, _ int) {
 	cpu.Reg.PC++
 }
 
-// PUSH value
-func (cpu *CPU) PUSH(operand1, operand2 int) {
+// push af
+func pushAF(cpu *CPU, _, _ int) {
 	cpu.timer(1)
-	switch operand1 {
-	case OP_BC:
-		cpu.pushBC()
-	case OP_DE:
-		cpu.pushDE()
-	case OP_HL:
-		cpu.pushHL()
-	case OP_AF:
-		cpu.pushAF()
-	}
+	cpu.push(cpu.Reg.R[A])
+	cpu.timer(1)
+	cpu.push(cpu.Reg.R[F] & 0xf0)
 	cpu.Reg.PC++
 	cpu.timer(2)
 }
 
-// POP value
-func (cpu *CPU) POP(operand1, operand2 int) {
-	switch operand1 {
-	case OP_BC:
-		cpu.popBC()
-	case OP_DE:
-		cpu.popDE()
-	case OP_HL:
-		cpu.popHL()
-	case OP_AF:
-		cpu.popAF()
-	}
+// push r16
+func push(cpu *CPU, r0, r1 int) {
+	cpu.timer(1)
+	cpu.push(cpu.Reg.R[r0])
+	cpu.timer(1)
+	cpu.push(cpu.Reg.R[r1])
+	cpu.Reg.PC++
+	cpu.timer(2)
+}
+
+func popAF(cpu *CPU, _, _ int) {
+	cpu.Reg.R[F] = cpu.pop() & 0xf0
+	cpu.timer(1)
+	cpu.Reg.R[A] = cpu.pop()
+	cpu.Reg.PC++
+	cpu.timer(2)
+}
+
+func pop(cpu *CPU, r0, r1 int) {
+	cpu.Reg.R[r0] = cpu.pop()
+	cpu.timer(1)
+	cpu.Reg.R[r1] = cpu.pop()
 	cpu.Reg.PC++
 	cpu.timer(2)
 }

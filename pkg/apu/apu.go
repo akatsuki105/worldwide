@@ -4,6 +4,7 @@ package apu
 
 import (
 	"fmt"
+	"gbc/pkg/util"
 	"log"
 	"math"
 	"time"
@@ -19,6 +20,7 @@ const (
 	cpuTicksPerSample = float64(4194304) / sampleRate
 	streamLen         = 2940 // 2 * 2 * sampleRate * (1/60)
 	volume            = 0.07
+	bufferSeconds     = 60
 )
 
 // APU is the GameBoy's audio processing unit. Audio comprises four
@@ -62,8 +64,6 @@ func (a *APU) Init(sound bool) {
 	a.chn3 = NewChannel()
 	a.chn4 = NewChannel()
 
-	const bufferSeconds = 60
-
 	if sound {
 		context, err := oto.NewContext(sampleRate, 2, 1, sampleRate/bufferSeconds)
 		if err != nil {
@@ -93,10 +93,7 @@ func (a *APU) playSound(bufferSeconds int) {
 				buffer = newBuffer
 			}
 
-			_, err := a.player.Write(buffer)
-			if err != nil {
-				log.Printf("error sampling: %v", err)
-			}
+			a.player.Write(buffer)
 		}
 	}()
 }
@@ -159,7 +156,7 @@ func (a *APU) Write(address uint16, value byte) {
 		// -PPP NSSS Sweep period, negate, shift
 		a.chn1.sweepStepLen = (a.memory[0x10] & 0b111_0000) >> 4
 		a.chn1.sweepSteps = a.memory[0x10] & 0b111
-		a.chn1.sweepIncrease = a.memory[0x10]&0b1000 == 0 // 1 = decrease
+		a.chn1.sweepIncrease = !util.Bit(a.memory[0x10], 3) // 1 = decrease
 	case 0xFF11:
 		// DDLL LLLL Duty, Length load
 		duty := (value & 0b1100_0000) >> 6
@@ -179,12 +176,12 @@ func (a *APU) Write(address uint16, value byte) {
 		// TL-- -FFF Trigger, Length Enable, Frequencu MSB
 		frequencyValue := uint16(value&0b111)<<8 | uint16(a.memory[0x13])
 		a.chn1.frequency = 131072 / (2048 - float64(frequencyValue))
-		if value&0b1000_0000 != 0 {
+		if util.Bit(value, 7) {
 			if a.chn1.length == 0 {
 				a.chn1.length = 64
 			}
 			duration := -1
-			if value&0b100_0000 != 0 { // 1 = use length
+			if util.Bit(value, 6) { // 1 = use length
 				duration = int(float64(a.chn1.length)*(1/64)) * sampleRate
 			}
 			a.chn1.Reset(duration)
@@ -213,12 +210,12 @@ func (a *APU) Write(address uint16, value byte) {
 		a.chn2.frequency = 131072 / (2048 - float64(frequencyValue))
 	case 0xFF19:
 		// TL-- -FFF Trigger, Length enable, Frequency MSB
-		if value&0b1000_0000 != 0 {
+		if util.Bit(value, 7) {
 			if a.chn2.length == 0 {
 				a.chn2.length = 64
 			}
 			duration := -1
-			if value&0b100_0000 != 0 {
+			if util.Bit(value, 6) {
 				duration = int(float64(a.chn2.length)*(1/64)) * sampleRate
 			}
 			a.chn2.Reset(duration)
@@ -245,7 +242,7 @@ func (a *APU) Write(address uint16, value byte) {
 		a.chn3.frequency = 65536 / (2048 - float64(frequencyValue))
 	case 0xFF1E:
 		// TL-- -FFF Trigger, Length enable, Frequency MSB
-		if value&0b1000_0000 != 0 {
+		if util.Bit(value, 7) {
 			if a.chn3.length == 0 {
 				a.chn3.length = 256
 			}
@@ -282,9 +279,9 @@ func (a *APU) Write(address uint16, value byte) {
 		a.chn4.frequency = 524288 / divRatio / math.Pow(2, shiftClock+1)
 	case 0xFF23:
 		// TL-- ---- Trigger, Length enable
-		if value&0x80 == 0x80 {
+		if util.Bit(value, 7) {
 			duration := -1
-			if value&0b100_0000 != 0 { // 1 = use length
+			if util.Bit(value, 6) { // 1 = use length
 				duration = int(float64(61-a.chn4.length)*(1/256)) * sampleRate
 			}
 			a.chn4.generator = Noise()

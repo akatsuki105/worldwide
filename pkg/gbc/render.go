@@ -48,7 +48,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(10), float64(25))
-			dScreen.DrawImage(display, op)
+			dScreen.DrawImage(ebiten.NewImageFromImage(display), op)
 		}
 
 		// debug FPS
@@ -78,7 +78,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 			ebitenutil.DebugPrintAt(dScreen, "BG map", 10, 320)
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(10), float64(340))
-			dScreen.DrawImage(bgMap, op)
+			dScreen.DrawImage(ebiten.NewImageFromImage(bgMap), op)
 		}
 
 		{
@@ -104,7 +104,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 	if !skipRender && cpu.Config.Display.HQ2x {
 		display = cpu.GPU.HQ2x()
 	}
-	screen.DrawImage(display, nil)
+	screen.ReplacePixels(display.Pix)
 }
 
 func (cpu *CPU) handleJoypad() {

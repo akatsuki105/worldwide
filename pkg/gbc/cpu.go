@@ -281,15 +281,13 @@ func (cpu *CPU) Exit() {
 }
 
 // Exec 1cycle
-func (cpu *CPU) exec() bool {
+func (cpu *CPU) exec(max int) {
 	bank, PC := cpu.ROMBank.ptr, cpu.Reg.PC
 
 	bytecode := cpu.FetchMemory8(PC)
 	opcode := opcodes[bytecode]
-	instruction, operand1, operand2, cycle1, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
-	cycle := cycle1
+	instruction, operand1, operand2, cycle, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 
-	isHalt := cpu.halt
 	if !cpu.halt {
 		if cpu.debug.on && cpu.debug.history.Flag() {
 			cpu.debug.history.SetHistory(bank, PC, bytecode)
@@ -303,12 +301,6 @@ func (cpu *CPU) exec() bool {
 				LDH(cpu, operand1, operand2)
 			case INS_AND:
 				cpu.AND(operand1, operand2)
-			case INS_PUSH:
-				cpu.PUSH(operand1, operand2)
-				cycle = 0 // PUSH内部でサイクルのインクリメントを行う
-			case INS_POP:
-				cpu.POP(operand1, operand2)
-				cycle = 0 // POP内部でサイクルのインクリメントを行う
 			case INS_XOR:
 				cpu.XOR(operand1, operand2)
 			case INS_CP:
@@ -329,7 +321,13 @@ func (cpu *CPU) exec() bool {
 			}
 		}
 	} else {
-		cycle = 1
+		cycle = (max - cpu.Cycle.scanline)
+		if cycle > 16 { // make sound seemless
+			cycle = 16
+		}
+		if cycle == 0 {
+			cycle++
+		}
 		if !cpu.Reg.IME { // ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 			IE, IF := cpu.RAM[IEIO], cpu.RAM[IFIO]
 			if pending := IE&IF > 0; pending {
@@ -341,30 +339,22 @@ func (cpu *CPU) exec() bool {
 		}
 	}
 
-	cpu.debug.monitor.Add(isHalt, cycle)
 	cpu.timer(cycle)
-
 	cpu.handleInterrupt()
-
-	return false
 }
 
 func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
 	cpu.setOAMRAMMode()
 	for cpu.Cycle.scanline <= 20*cpu.boost {
-		if inBreak := cpu.exec(); inBreak {
-			return 0, 0, false
-		}
+		cpu.exec(20 * cpu.boost)
 	}
 
 	// LCD Driver mode3
 	cpu.Cycle.scanline -= 20 * cpu.boost
 	cpu.setLCDMode()
 	for cpu.Cycle.scanline <= 42*cpu.boost {
-		if inBreak := cpu.exec(); inBreak {
-			return 0, 0, false
-		}
+		cpu.exec(42 * cpu.boost)
 	}
 
 	scrollX, scrollY := uint(cpu.GPU.Scroll[0]), uint(cpu.GPU.Scroll[1])
@@ -373,9 +363,7 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 	cpu.Cycle.scanline -= 42 * cpu.boost
 	cpu.setHBlankMode()
 	for cpu.Cycle.scanline <= (cyclePerLine-(20+42))*cpu.boost {
-		if inBreak := cpu.exec(); inBreak {
-			return 0, 0, false
-		}
+		cpu.exec((cyclePerLine - (20 + 42)) * cpu.boost)
 	}
 	cpu.Cycle.scanline -= (cyclePerLine - (20 + 42)) * cpu.boost
 
@@ -387,9 +375,7 @@ func (cpu *CPU) execScanline() (scx uint, scy uint, ok bool) {
 func (cpu *CPU) execVBlank() {
 	for {
 		for cpu.Cycle.scanline < cyclePerLine*cpu.boost {
-			if inBreak := cpu.exec(); inBreak {
-				return
-			}
+			cpu.exec(cyclePerLine * cpu.boost)
 		}
 		cpu.incrementLY()
 		LY := cpu.FetchMemory8(LYIO)
