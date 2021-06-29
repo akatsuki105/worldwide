@@ -47,28 +47,21 @@ type CPU struct {
 	Cartridge cartridge.Cartridge
 	mutex     sync.Mutex
 	joypad    joypad.Joypad
-	halt      bool // Halt状態か
+	halt      bool
 	Config    *config.Config
 	mode      int
-	// timer関連
 	Timer
 	serialTick chan int
 	ROMBank
 	RAMBank
 	WRAMBank
 	bankMode uint
-	// サウンド
-	Sound apu.APU
-	// 画面
-	GPU gpu.GPU
-	// RTC
-	RTC   rtc.RTC
-	boost int // 倍速か
-	// シリアル通信
-	Serial serial.Serial
-
-	romdir string // ロムがあるところのディレクトリパス
-
+	Sound    apu.APU
+	GPU      gpu.GPU
+	RTC      rtc.RTC
+	boost    int // 1 or 2
+	Serial   serial.Serial
+	romdir   string // dir path where rom exists
 	IMESwitch
 	debug Debug
 }
