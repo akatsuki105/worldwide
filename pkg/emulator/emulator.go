@@ -1,14 +1,21 @@
-package gbc
+package emulator
 
 import (
 	"fmt"
+	"gbc/pkg/gbc"
 	"io/ioutil"
 	"os"
 )
 
+type Emulator struct {
+	GBC *gbc.GBC
+	Rom string
+}
+
 // GameBoy save data is SRAM core dump
-func (g *GBC) save() {
-	savname := fmt.Sprintf("%s/%s.sav", g.romdir, g.Cartridge.Title)
+func (e *Emulator) WriteSav() {
+	g := e.GBC
+	savname := fmt.Sprintf("%s/%s.sav", e.Rom, g.Cartridge.Title)
 	savfile, err := os.Create(savname)
 	if err != nil {
 		return
@@ -20,19 +27,19 @@ func (g *GBC) save() {
 	case 1:
 		savdata = make([]byte, 0x800)
 		for index := 0; index < 0x800; index++ {
-			savdata[index] = g.RAMBank.bank[0][index]
+			savdata[index] = g.RAMBank.Bank[0][index]
 		}
 	case 2:
 		savdata = make([]byte, 0x2000*1)
 		for index := 0; index < 0x2000; index++ {
-			savdata[index] = g.RAMBank.bank[0][index]
+			savdata[index] = g.RAMBank.Bank[0][index]
 		}
 	case 3:
 		savdata = make([]byte, 0x2000*4)
 		for i := 0; i < 4; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				savdata[index] = g.RAMBank.bank[i][j]
+				savdata[index] = g.RAMBank.Bank[i][j]
 			}
 		}
 	case 5:
@@ -40,7 +47,7 @@ func (g *GBC) save() {
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				savdata[index] = g.RAMBank.bank[i][j]
+				savdata[index] = g.RAMBank.Bank[i][j]
 			}
 		}
 	}
@@ -58,8 +65,9 @@ func (g *GBC) save() {
 	}
 }
 
-func (g *GBC) load() {
-	savname := fmt.Sprintf("%s/%s.sav", g.romdir, g.Cartridge.Title)
+func (e *Emulator) LoadSav() {
+	g := e.GBC
+	savname := fmt.Sprintf("%s/%s.sav", e.Rom, g.Cartridge.Title)
 	savdata, err := ioutil.ReadFile(savname)
 	if err != nil {
 		return
@@ -67,24 +75,24 @@ func (g *GBC) load() {
 	switch g.Cartridge.RAMSize {
 	case 1:
 		for index := 0; index < 0x800; index++ {
-			g.RAMBank.bank[0][index] = savdata[index]
+			g.RAMBank.Bank[0][index] = savdata[index]
 		}
 	case 2:
 		for index := 0; index < 0x2000; index++ {
-			g.RAMBank.bank[0][index] = savdata[index]
+			g.RAMBank.Bank[0][index] = savdata[index]
 		}
 	case 3:
 		for i := 0; i < 4; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				g.RAMBank.bank[i][j] = savdata[index]
+				g.RAMBank.Bank[i][j] = savdata[index]
 			}
 		}
 	case 5:
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				g.RAMBank.bank[i][j] = savdata[index]
+				g.RAMBank.Bank[i][j] = savdata[index]
 			}
 		}
 	}

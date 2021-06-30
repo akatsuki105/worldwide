@@ -17,7 +17,7 @@ func (g *GBC) FetchMemory8(addr uint16) (value byte) {
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))
 		} else {
-			value = g.RAMBank.bank[g.RAMBank.ptr][addr-0xa000]
+			value = g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000]
 		}
 	case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
 		value = g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000]
@@ -133,7 +133,7 @@ func (g *GBC) SetMemory8(addr uint16, value byte) {
 			g.GPU.VRAM.Bank[g.GPU.VRAM.Ptr][addr-0x8000] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
-				g.RAMBank.bank[g.RAMBank.ptr][addr-0xa000] = value
+				g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000] = value
 			} else {
 				g.RTC.Write(byte(g.RTC.Mapped), value)
 			}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"gbc/pkg/emulator"
 	"gbc/pkg/gbc"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
@@ -42,9 +43,11 @@ func Run() int {
 	romPath := flag.Arg(0)
 	cur, _ := os.Getwd()
 
-	cpu := &gbc.GBC{}
-
 	romDir := filepath.Dir(romPath)
+	emu := &emulator.Emulator{
+		GBC: &gbc.GBC{},
+		Rom: romDir,
+	}
 
 	romData, err := readROM(romPath)
 	if err != nil {
@@ -52,20 +55,20 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	cpu.Cartridge.ParseCartridge(romData)
-	cpu.TransferROM(romData)
+	emu.GBC.Cartridge.ParseCartridge(romData)
+	emu.GBC.TransferROM(romData)
 
 	test := *outputScreen != ""
 	os.Chdir(cur)
-	cpu.Init(romDir, *debug, test)
+	emu.GBC.Init(*debug, test)
 	defer func() {
 		os.Chdir(cur)
-		cpu.Exit()
+		emu.GBC.Exit()
 	}()
 
 	if test {
 		sec := 60
-		cpu.DebugExec(30*sec, *outputScreen)
+		emu.GBC.DebugExec(30*sec, *outputScreen)
 		return ExitCodeOK
 	}
 
@@ -78,7 +81,8 @@ func Run() int {
 		ebiten.SetWindowSize(160*2, 144*2)
 	}
 
-	if err := ebiten.RunGame(cpu); err != nil {
+	emu.LoadSav()
+	if err := ebiten.RunGame(emu.GBC); err != nil {
 		return ExitCodeError
 	}
 	return ExitCodeOK

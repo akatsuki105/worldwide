@@ -31,7 +31,7 @@ type ROMBank struct {
 // RAMBank - 0xa000-0xbfff
 type RAMBank struct {
 	ptr  uint8
-	bank [16][0x2000]byte
+	Bank [16][0x2000]byte
 }
 
 // WRAMBank - 0xd000-0xdfff ゲームボーイカラーのみ
@@ -61,7 +61,6 @@ type GBC struct {
 	RTC      rtc.RTC
 	boost    int // 1 or 2
 	Serial   serial.Serial
-	romdir   string // dir path where rom exists
 	IMESwitch
 	debug Debug
 }
@@ -233,7 +232,7 @@ func (g *GBC) initDMGPalette() {
 }
 
 // Init g and ram
-func (g *GBC) Init(romdir string, debug bool, test bool) {
+func (g *GBC) Init(debug bool, test bool) {
 	g.initRegister()
 	g.initIOMap()
 
@@ -248,10 +247,6 @@ func (g *GBC) Init(romdir string, debug bool, test bool) {
 	if !g.Cartridge.IsCGB {
 		g.initDMGPalette()
 	}
-
-	// load save data
-	g.romdir = romdir
-	g.load()
 
 	// Init APU
 	g.Sound.Init(!test)
@@ -269,7 +264,6 @@ func (g *GBC) Init(romdir string, debug bool, test bool) {
 
 // Exit gbc
 func (g *GBC) Exit() {
-	g.save()
 	g.Serial.Exit()
 }
 
