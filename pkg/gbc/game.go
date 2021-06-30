@@ -1,7 +1,7 @@
 package gbc
 
 import (
-	"gbc/pkg/gpu"
+	"gbc/pkg/gbc/gpu"
 	"gbc/pkg/util"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"

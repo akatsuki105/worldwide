@@ -2,8 +2,8 @@ package gbc
 
 import (
 	"fmt"
-	"gbc/pkg/debug"
-	"gbc/pkg/gpu"
+	"gbc/pkg/emulator/debug"
+	"gbc/pkg/gbc/gpu"
 	"gbc/pkg/util"
 	"image/jpeg"
 	"os"

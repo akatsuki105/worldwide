@@ -1,4 +1,4 @@
-package cartridge
+package cart
 
 const (
 	ROM = iota

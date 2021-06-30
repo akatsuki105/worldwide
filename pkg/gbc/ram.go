@@ -1,7 +1,7 @@
 package gbc
 
 import (
-	"gbc/pkg/cartridge"
+	"gbc/pkg/gbc/cart"
 )
 
 var done = make(chan int)
@@ -59,7 +59,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 	if addr <= 0x7fff { // rom
 		if (addr >= 0x2000) && (addr <= 0x3fff) {
 			switch cpu.Cartridge.MBC {
-			case cartridge.MBC1: // lower 5bit in romptr
+			case cart.MBC1: // lower 5bit in romptr
 				if value == 0 {
 					value++
 				}
@@ -67,7 +67,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				lower5 := value
 				newROMBankPtr := (upper2 << 5) | lower5
 				cpu.switchROMBank(newROMBankPtr)
-			case cartridge.MBC3:
+			case cart.MBC3:
 				if cpu.GPU.HBlankDMALength == 0 {
 					newROMBankPtr := value & 0x7f
 					if newROMBankPtr == 0 {
@@ -75,14 +75,14 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 					}
 					cpu.switchROMBank(newROMBankPtr)
 				}
-			case cartridge.MBC5:
+			case cart.MBC5:
 				if addr < 0x3000 { // lower 8bit
 					cpu.switchROMBank(value)
 				}
 			}
 		} else if (addr >= 0x4000) && (addr <= 0x5fff) {
 			switch cpu.Cartridge.MBC {
-			case cartridge.MBC1:
+			case cart.MBC1:
 				if cpu.bankMode == 0 { // switch upper 2bit in romptr
 					upper2 := value
 					lower5 := cpu.ROMBank.ptr & 0x1f
@@ -92,7 +92,7 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 					newRAMBankPtr := value
 					cpu.RAMBank.ptr = newRAMBankPtr
 				}
-			case cartridge.MBC3:
+			case cart.MBC3:
 				switch {
 				case value <= 0x07 && cpu.GPU.HBlankDMALength == 0:
 					cpu.RTC.Mapped = 0
@@ -100,18 +100,18 @@ func (cpu *CPU) SetMemory8(addr uint16, value byte) {
 				case value >= 0x08 && value <= 0x0c:
 					cpu.RTC.Mapped = uint(value)
 				}
-			case cartridge.MBC5:
+			case cart.MBC5:
 				// fmt.Println(value)
 				cpu.RAMBank.ptr = value & 0x0f
 			}
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch cpu.Cartridge.MBC {
-			case cartridge.MBC1:
+			case cart.MBC1:
 				// ROM/RAM mode selection
 				if value == 1 || value == 0 {
 					cpu.bankMode = uint(value)
 				}
-			case cartridge.MBC3:
+			case cart.MBC3:
 				if value == 1 {
 					cpu.RTC.Latched = false
 				} else if value == 0 {

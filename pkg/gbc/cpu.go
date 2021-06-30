@@ -6,13 +6,13 @@ import (
 	"net"
 	"sync"
 
-	"gbc/pkg/apu"
-	"gbc/pkg/cartridge"
-	"gbc/pkg/config"
-	"gbc/pkg/gpu"
-	"gbc/pkg/joypad"
-	"gbc/pkg/rtc"
-	"gbc/pkg/serial"
+	"gbc/pkg/emulator/config"
+	"gbc/pkg/emulator/joypad"
+	"gbc/pkg/gbc/apu"
+	"gbc/pkg/gbc/cart"
+	"gbc/pkg/gbc/gpu"
+	"gbc/pkg/gbc/rtc"
+	"gbc/pkg/gbc/serial"
 )
 
 const (
@@ -44,7 +44,7 @@ type WRAMBank struct {
 type CPU struct {
 	Reg       Register
 	RAM       [0x10000]byte
-	Cartridge cartridge.Cartridge
+	Cartridge cart.Cartridge
 	mutex     sync.Mutex
 	joypad    joypad.Joypad
 	halt      bool
@@ -74,10 +74,10 @@ func (cpu *CPU) TransferROM(rom []byte) {
 
 	switch cpu.Cartridge.Type {
 	case 0x00:
-		cpu.Cartridge.MBC = cartridge.ROM
+		cpu.Cartridge.MBC = cart.ROM
 		cpu.transferROM(2, rom)
 	case 0x01: // Type : 1 => MBC1
-		cpu.Cartridge.MBC = cartridge.MBC1
+		cpu.Cartridge.MBC = cart.MBC1
 		switch r := int(cpu.Cartridge.ROMSize); r {
 		case 0, 1, 2, 3, 4, 5, 6:
 			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
@@ -86,7 +86,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			panic(errorMsg)
 		}
 	case 0x02, 0x03: // Type : 2, 3 => MBC1+RAM
-		cpu.Cartridge.MBC = cartridge.MBC1
+		cpu.Cartridge.MBC = cart.MBC1
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
 			switch r := int(cpu.Cartridge.ROMSize); r {
@@ -111,7 +111,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			panic(errorMsg)
 		}
 	case 0x05, 0x06: // Type : 5, 6 => MBC2
-		cpu.Cartridge.MBC = cartridge.MBC2
+		cpu.Cartridge.MBC = cart.MBC2
 		switch cpu.Cartridge.RAMSize {
 		case 0, 1, 2:
 			switch r := int(cpu.Cartridge.ROMSize); r {
@@ -136,7 +136,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			panic(errorMsg)
 		}
 	case 0x0f, 0x10, 0x11, 0x12, 0x13: // Type : 0x0f, 0x10, 0x11, 0x12, 0x13 => MBC3
-		cpu.Cartridge.MBC, cpu.RTC.Enable = cartridge.MBC3, true
+		cpu.Cartridge.MBC, cpu.RTC.Enable = cart.MBC3, true
 		switch r := int(cpu.Cartridge.ROMSize); r {
 		case 0, 1, 2, 3, 4, 5, 6:
 			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)
@@ -145,7 +145,7 @@ func (cpu *CPU) TransferROM(rom []byte) {
 			panic(errorMsg)
 		}
 	case 0x19, 0x1a, 0x1b: // Type : 0x19, 0x1a, 0x1b => MBC5
-		cpu.Cartridge.MBC = cartridge.MBC5
+		cpu.Cartridge.MBC = cart.MBC5
 		switch r := int(cpu.Cartridge.ROMSize); r {
 		case 0, 1, 2, 3, 4, 5, 6, 7:
 			cpu.transferROM(int(math.Pow(2, float64(r+1))), rom)

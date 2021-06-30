@@ -3,8 +3,8 @@ package gbc
 import (
 	"bytes"
 	"fmt"
-	"gbc/pkg/debug"
-	"gbc/pkg/joypad"
+	"gbc/pkg/emulator/debug"
+	"gbc/pkg/emulator/joypad"
 	"image"
 	"image/color"
 	"image/png"
