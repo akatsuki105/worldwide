@@ -17,8 +17,8 @@ type Cartridge struct {
 	Debug                  *Debug
 }
 
-// ParseCartridge - read cartridge info from byte slice
-func (cart *Cartridge) ParseCartridge(rom []byte) {
+// Parse - load cartridge info from byte slice
+func (cart *Cartridge) Parse(rom []byte) {
 	var titleBuf []byte
 	for i := 0x0134; i < 0x0143; i++ {
 		if rom[i] == 0 {

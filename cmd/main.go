@@ -55,7 +55,7 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	emu.GBC.Cartridge.ParseCartridge(romData)
+	emu.GBC.Cartridge.Parse(romData)
 	emu.GBC.TransferROM(romData)
 
 	test := *outputScreen != ""
