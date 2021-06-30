@@ -122,7 +122,7 @@ type Opcode struct {
 	Operand2 int
 	Cycle1   int
 	Cycle2   int // cond is false
-	Handler  func(*CPU, int, int)
+	Handler  func(*GBC, int, int)
 }
 
 var nilOpcode = Opcode{Ins: INS_NONE}

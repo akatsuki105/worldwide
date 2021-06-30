@@ -22,18 +22,18 @@ type Debug struct {
 	monitor debug.Monitor
 }
 
-func (cpu *CPU) SetWindowSize(x, y int) {
-	cpu.debug.Window.SetSize(x, y)
+func (g *GBC) SetWindowSize(x, y int) {
+	g.debug.Window.SetSize(x, y)
 }
 
-func (cpu *CPU) debugRegister() string {
-	A, F := cpu.Reg.R[A], cpu.Reg.R[F]
-	B, C := cpu.Reg.R[B], cpu.Reg.R[C]
-	D, E := cpu.Reg.R[D], cpu.Reg.R[E]
-	H, L := cpu.Reg.R[H], cpu.Reg.R[L]
+func (g *GBC) debugRegister() string {
+	A, F := g.Reg.R[A], g.Reg.R[F]
+	B, C := g.Reg.R[B], g.Reg.R[C]
+	D, E := g.Reg.R[D], g.Reg.R[E]
+	H, L := g.Reg.R[H], g.Reg.R[L]
 
-	bank := cpu.ROMBank.ptr
-	PC := cpu.Reg.PC
+	bank := g.ROMBank.ptr
+	PC := g.Reg.PC
 	if PC < 0x4000 {
 		bank = 0
 	}
@@ -43,15 +43,15 @@ A: %02x       F: %02x
 B: %02x       C: %02x
 D: %02x       E: %02x
 H: %02x       L: %02x
-PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, cpu.Reg.SP)
+PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, g.Reg.SP)
 }
 
-func (cpu *CPU) debugIOMap() string {
-	LCDC, STAT := cpu.FetchMemory8(LCDCIO), cpu.FetchMemory8(LCDSTATIO)
-	DIV := cpu.FetchMemory8(DIVIO)
-	LY, LYC := cpu.FetchMemory8(LYIO), cpu.FetchMemory8(LYCIO)
-	IE, IF, IME := cpu.FetchMemory8(IEIO), cpu.FetchMemory8(IFIO), util.Bool2Int(cpu.Reg.IME)
-	spd, rom := cpu.boost/2, cpu.ROMBank.ptr
+func (g *GBC) debugIOMap() string {
+	LCDC, STAT := g.FetchMemory8(LCDCIO), g.FetchMemory8(LCDSTATIO)
+	DIV := g.FetchMemory8(DIVIO)
+	LY, LYC := g.FetchMemory8(LYIO), g.FetchMemory8(LYCIO)
+	IE, IF, IME := g.FetchMemory8(IEIO), g.FetchMemory8(IFIO), util.Bool2Int(g.Reg.IME)
+	spd, rom := g.boost/2, g.ROMBank.ptr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
 DIV: %02x
@@ -65,19 +65,19 @@ const (
 )
 
 // DebugExec - used in test
-func (cpu *CPU) DebugExec(frame int, output string) error {
+func (g *GBC) DebugExec(frame int, output string) error {
 	for i := 0; i < frame; i++ {
 		for y := 0; y < 144; y++ {
-			cpu.execScanline()
+			g.execScanline()
 		}
-		cpu.execVBlank()
+		g.execVBlank()
 	}
 
 	// 最後の1frameは背景データを生成する
 	for y := 0; y < 144; y++ {
-		cpu.execScanline()
+		g.execScanline()
 
-		LCDC := cpu.FetchMemory8(LCDCIO)
+		LCDC := g.FetchMemory8(LCDCIO)
 		for x := 0; x < 160; x += 8 {
 			blockX, blockY := x/8, y/8
 
@@ -104,14 +104,14 @@ func (cpu *CPU) DebugExec(frame int, output string) error {
 			}
 
 			if util.Bit(LCDC, 7) {
-				if !cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, cpu.Cartridge.IsCGB, lineIdx) {
+				if !g.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, g.Cartridge.IsCGB, lineIdx) {
 					break
 				}
 			}
 		}
 	}
-	cpu.execVBlank()
-	screen := cpu.GPU.GetOriginal()
+	g.execVBlank()
+	screen := g.GPU.GetOriginal()
 
 	file, err := os.Create(output)
 	if err != nil {
@@ -128,7 +128,7 @@ func (cpu *CPU) DebugExec(frame int, output string) error {
 	return nil
 }
 
-func (cpu *CPU) checkBreakCond(breakpoint *debug.BreakPoint) bool {
+func (g *GBC) checkBreakCond(breakpoint *debug.BreakPoint) bool {
 	if !breakpoint.Cond.On {
 		return true
 	}
@@ -136,7 +136,7 @@ func (cpu *CPU) checkBreakCond(breakpoint *debug.BreakPoint) bool {
 	lhs := uint16(0)
 	switch breakpoint.Cond.LHS {
 	case "A", "F", "B", "C", "D", "E", "H", "L", "AF", "BC", "DE", "HL", "SP":
-		lhs = cpu.getRegister(breakpoint.Cond.LHS)
+		lhs = g.getRegister(breakpoint.Cond.LHS)
 	default:
 		return false
 	}
@@ -160,21 +160,21 @@ func (cpu *CPU) checkBreakCond(breakpoint *debug.BreakPoint) bool {
 	}
 }
 
-func (cpu *CPU) debugPrintOAM(screen *ebiten.Image) {
+func (g *GBC) debugPrintOAM(screen *ebiten.Image) {
 	// debug OAM
 	ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(4, 4)
 	op.GeoM.Translate(float64(750), float64(340))
-	OAMScreen := ebiten.NewImageFromImage(cpu.GPU.OAM)
+	OAMScreen := ebiten.NewImageFromImage(g.GPU.OAM)
 	screen.DrawImage(OAMScreen, op)
 
 	properties := [8]string{}
 	for col := 0; col < 8; col++ {
 		for row := 0; row < 5; row++ {
 			i := row*8 + col
-			Y, X, index, attr := cpu.GPU.OAMProperty(i)
+			Y, X, index, attr := g.GPU.OAMProperty(i)
 			properties[col] += fmt.Sprintf("%02x\n%02x\n%02x\n%02x\n\n", Y, X, index, attr)
 		}
 	}

@@ -42,7 +42,7 @@ func Run() int {
 	romPath := flag.Arg(0)
 	cur, _ := os.Getwd()
 
-	cpu := &gbc.CPU{}
+	cpu := &gbc.GBC{}
 
 	romDir := filepath.Dir(romPath)
 

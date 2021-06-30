@@ -38,9 +38,9 @@ func setIcon() {
 	ebiten.SetWindowIcon([]image.Image{img})
 }
 
-func (cpu *CPU) renderScreen(screen *ebiten.Image) {
-	display := cpu.GPU.Display(cpu.Config.Display.HQ2x)
-	if cpu.debug.on {
+func (g *GBC) renderScreen(screen *ebiten.Image) {
+	display := g.GPU.Display(g.Config.Display.HQ2x)
+	if g.debug.on {
 		dScreen := ebiten.NewImage(int(debugWidth), int(debugHeight))
 		dScreen.Fill(color.RGBA{35, 27, 167, 255})
 		{
@@ -56,23 +56,23 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(dScreen, title, 10, 5)
 
 		// debug register
-		ebitenutil.DebugPrintAt(dScreen, cpu.debugRegister(), 340, 5)
-		ebitenutil.DebugPrintAt(dScreen, cpu.debugIOMap(), 490, 5)
+		ebitenutil.DebugPrintAt(dScreen, g.debugRegister(), 340, 5)
+		ebitenutil.DebugPrintAt(dScreen, g.debugIOMap(), 490, 5)
 
 		// debug Cartridge
-		ebitenutil.DebugPrintAt(dScreen, cpu.Cartridge.Debug.String(), 680, 5)
+		ebitenutil.DebugPrintAt(dScreen, g.Cartridge.Debug.String(), 680, 5)
 
 		cpuUsageX := 340
 		// debug history (optional)
-		if cpu.debug.history.Flag() {
-			ebitenutil.DebugPrintAt(dScreen, cpu.debug.history.History(), 340, 120)
+		if g.debug.history.Flag() {
+			ebitenutil.DebugPrintAt(dScreen, g.debug.history.History(), 340, 120)
 			cpuUsageX = 540
 		}
-		// debug CPU Usage
-		ebitenutil.DebugPrintAt(dScreen, "CPU", cpuUsageX, 120)
-		cpu.debug.monitor.CPU.DrawUsage(dScreen, cpuUsageX+2, 140, cpu.isBoost())
+		// debug GBC Usage
+		ebitenutil.DebugPrintAt(dScreen, "GBC", cpuUsageX, 120)
+		g.debug.monitor.GBC.DrawUsage(dScreen, cpuUsageX+2, 140, g.isBoost())
 
-		bgMap := cpu.GPU.Debug.BGMap()
+		bgMap := g.GPU.Debug.BGMap()
 		if bgMap != nil {
 			// debug BG
 			ebitenutil.DebugPrintAt(dScreen, "BG map", 10, 320)
@@ -84,7 +84,7 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		{
 			// debug tiles
 			ebitenutil.DebugPrintAt(dScreen, "Tiles", 200, 320)
-			tile := cpu.GPU.GetTileData()
+			tile := g.GPU.GetTileData()
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(200), float64(340))
@@ -92,8 +92,8 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		}
 
 		// debug OAM
-		if cpu.GPU.OAM != nil {
-			cpu.debugPrintOAM(dScreen)
+		if g.GPU.OAM != nil {
+			g.debugPrintOAM(dScreen)
 		}
 
 		op := &ebiten.DrawImageOptions{}
@@ -101,24 +101,24 @@ func (cpu *CPU) renderScreen(screen *ebiten.Image) {
 		return
 	}
 
-	if !skipRender && cpu.Config.Display.HQ2x {
-		display = cpu.GPU.HQ2x()
+	if !skipRender && g.Config.Display.HQ2x {
+		display = g.GPU.HQ2x()
 	}
 	screen.ReplacePixels(display.Pix)
 }
 
-func (cpu *CPU) handleJoypad() {
-	pad := cpu.Config.Joypad
-	result := cpu.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
+func (g *GBC) handleJoypad() {
+	pad := g.Config.Joypad
+	result := g.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
 	if result != 0 {
 		switch result {
 		case joypad.Pressed: // Joypad Interrupt
-			if cpu.Reg.IME && cpu.getJoypadEnable() {
-				cpu.setJoypadFlag(true)
+			if g.Reg.IME && g.getJoypadEnable() {
+				g.setJoypadFlag(true)
 			}
 		case joypad.Pause:
-			p, b := &cpu.debug.pause, &cpu.debug.Break
-			if !cpu.debug.on {
+			p, b := &g.debug.pause, &g.debug.Break
+			if !g.debug.on {
 				return
 			}
 
@@ -139,23 +139,23 @@ func (cpu *CPU) handleJoypad() {
 	}
 }
 
-func (cpu *CPU) renderSprite(LCDC1 *[144]bool) {
-	if cpu.debug.on {
-		cpu.GPU.FillOAM()
+func (g *GBC) renderSprite(LCDC1 *[144]bool) {
+	if g.debug.on {
+		g.GPU.FillOAM()
 	}
 
 	for i := 0; i < 40; i++ {
-		Y := int(cpu.FetchMemory8(0xfe00 + 4*uint16(i)))
+		Y := int(g.FetchMemory8(0xfe00 + 4*uint16(i)))
 		if Y != 0 && Y < 160 {
 			Y -= 16
-			X := int(cpu.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
-			tileIdx, attr := uint(cpu.FetchMemory8(0xfe00+4*uint16(i)+2)), cpu.FetchMemory8(0xfe00+4*uint16(i)+3)
+			X := int(g.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
+			tileIdx, attr := uint(g.FetchMemory8(0xfe00+4*uint16(i)+2)), g.FetchMemory8(0xfe00+4*uint16(i)+3)
 			if Y >= 0 && LCDC1[Y] {
-				cpu.GPU.SetSPRTile(i, int(X), Y, tileIdx, attr, cpu.Cartridge.IsCGB)
+				g.GPU.SetSPRTile(i, int(X), Y, tileIdx, attr, g.Cartridge.IsCGB)
 			}
 
-			if cpu.debug.on {
-				cpu.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIdx), attr)
+			if g.debug.on {
+				g.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIdx), attr)
 			}
 		}
 	}

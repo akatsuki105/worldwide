@@ -7,19 +7,19 @@ import (
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
-func (cpu *CPU) Update() error {
+func (g *GBC) Update() error {
 	if frames == 0 {
 		setIcon()
-		cpu.debug.monitor.CPU.Reset()
+		g.debug.monitor.GBC.Reset()
 	}
 	if frames%3 == 0 {
-		cpu.handleJoypad()
+		g.handleJoypad()
 	}
 
 	frames++
-	cpu.debug.monitor.CPU.Reset()
+	g.debug.monitor.GBC.Reset()
 
-	p, b := &cpu.debug.pause, &cpu.debug.Break
+	p, b := &g.debug.pause, &g.debug.Break
 	if p.Delay() {
 		p.DecrementDelay()
 	}
@@ -27,10 +27,10 @@ func (cpu *CPU) Update() error {
 		return nil
 	}
 
-	skipRender = (cpu.Config.Display.FPS30) && (frames%2 == 1)
+	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
-	LCDC := cpu.FetchMemory8(LCDCIO)
-	scrollX, scrollY := uint(cpu.GPU.Scroll[0]), uint(cpu.GPU.Scroll[1])
+	LCDC := g.FetchMemory8(LCDCIO)
+	scrollX, scrollY := uint(g.GPU.Scroll[0]), uint(g.GPU.Scroll[1])
 	scrollPixelX := scrollX % 8
 
 	iterX, iterY := width, height
@@ -38,10 +38,10 @@ func (cpu *CPU) Update() error {
 		iterX += 8
 	}
 
-	// render bg and run cpu
+	// render bg and run g
 	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
-		scx, scy, ok := cpu.execScanline()
+		scx, scy, ok := g.execScanline()
 		if !ok {
 			break
 		}
@@ -49,11 +49,11 @@ func (cpu *CPU) Update() error {
 		scrollPixelX = scrollX % 8
 
 		if y < height {
-			LCDC1[y] = util.Bit(cpu.FetchMemory8(LCDCIO), 1)
+			LCDC1[y] = util.Bit(g.FetchMemory8(LCDCIO), 1)
 		}
 
 		// render background(or window)
-		WY, WX := uint(cpu.FetchMemory8(WYIO)), uint(cpu.FetchMemory8(WXIO))-7
+		WY, WX := uint(g.FetchMemory8(WYIO)), uint(g.FetchMemory8(WXIO))-7
 		if !skipRender {
 			for x := 0; x < iterX; x += 8 {
 				blockX, blockY := x/8, y/8
@@ -82,32 +82,32 @@ func (cpu *CPU) Update() error {
 				}
 
 				if util.Bit(LCDC, 7) {
-					cpu.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, cpu.Cartridge.IsCGB, lineIdx)
+					g.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, g.Cartridge.IsCGB, lineIdx)
 				}
 			}
 		}
 	}
 
 	// save bgmap and tiledata on debug mode
-	if cpu.debug.on {
+	if g.debug.on {
 		if !skipRender {
-			bg := cpu.GPU.Display(false)
-			cpu.GPU.Debug.SetBGMap(bg)
+			bg := g.GPU.Display(false)
+			g.GPU.Debug.SetBGMap(bg)
 		}
 		if frames%4 == 0 {
 			go func() {
-				cpu.GPU.UpdateTileData(cpu.Cartridge.IsCGB)
+				g.GPU.UpdateTileData(g.Cartridge.IsCGB)
 			}()
 		}
 	}
 
 	if !skipRender {
-		cpu.renderSprite(&LCDC1)   // render sprite
-		cpu.GPU.SetBGPriorPixels() // render bg has higher priority
+		g.renderSprite(&LCDC1)   // render sprite
+		g.GPU.SetBGPriorPixels() // render bg has higher priority
 	}
 
-	cpu.execVBlank()
-	if cpu.debug.on {
+	g.execVBlank()
+	if g.debug.on {
 		select {
 		case <-second:
 			fps = frames
@@ -118,15 +118,15 @@ func (cpu *CPU) Update() error {
 	return nil
 }
 
-func (cpu *CPU) Draw(screen *ebiten.Image) {
-	cpu.renderScreen(screen)
+func (g *GBC) Draw(screen *ebiten.Image) {
+	g.renderScreen(screen)
 }
 
-func (cpu *CPU) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	if cpu.debug.on {
+func (g *GBC) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	if g.debug.on {
 		return 1270, 740
 	}
-	if cpu.Config.Display.HQ2x {
+	if g.Config.Display.HQ2x {
 		return 160 * 2, 144 * 2
 	}
 	return 160, 144

@@ -4,18 +4,18 @@ const (
 	flagZ, flagN, flagH, flagC = 7, 6, 5, 4
 )
 
-func (cpu *CPU) setCSub(dst, src byte) {
-	cpu.setF(flagC, dst < uint8(dst-src))
+func (g *GBC) setCSub(dst, src byte) {
+	g.setF(flagC, dst < uint8(dst-src))
 }
 
-func (cpu *CPU) f(idx int) bool {
-	return cpu.Reg.R[F]&(1<<idx) != 0
+func (g *GBC) f(idx int) bool {
+	return g.Reg.R[F]&(1<<idx) != 0
 }
 
-func (cpu *CPU) setF(idx int, flag bool) {
+func (g *GBC) setF(idx int, flag bool) {
 	if flag {
-		cpu.Reg.R[F] |= (1 << idx)
+		g.Reg.R[F] |= (1 << idx)
 		return
 	}
-	cpu.Reg.R[F] &= ^(1 << idx)
+	g.Reg.R[F] &= ^(1 << idx)
 }

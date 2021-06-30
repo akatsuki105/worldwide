@@ -7,16 +7,16 @@ import (
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
-type CPU struct {
+type GBC struct {
 	all  int
 	halt int
 }
 
 type Monitor struct {
-	CPU
+	GBC
 }
 
-func (c *CPU) DrawUsage(screen *ebiten.Image, x, y int, boost bool) {
+func (c *GBC) DrawUsage(screen *ebiten.Image, x, y int, boost bool) {
 	all, halt := c.all, c.halt
 	usage := (all - halt) * 100 / all
 
@@ -50,13 +50,13 @@ func (c *CPU) DrawUsage(screen *ebiten.Image, x, y int, boost bool) {
 	screen.DrawImage(gaugeEbiten, op)
 }
 
-func (c *CPU) Add(halt bool, count int) {
+func (c *GBC) Add(halt bool, count int) {
 	c.all += count
 	if halt {
 		c.halt += count
 	}
 }
 
-func (c *CPU) Reset() {
+func (c *GBC) Reset() {
 	c.all, c.halt = 1, 1
 }

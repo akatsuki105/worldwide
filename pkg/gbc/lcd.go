@@ -2,72 +2,72 @@ package gbc
 
 import "gbc/pkg/util"
 
-func (cpu *CPU) setHBlankMode() {
-	cpu.mode = HBlankMode
-	stat := cpu.FetchMemory8(LCDSTATIO) & 0b1111_1100
-	cpu.SetMemory8(LCDSTATIO, stat)
+func (g *GBC) setHBlankMode() {
+	g.mode = HBlankMode
+	stat := g.FetchMemory8(LCDSTATIO) & 0b1111_1100
+	g.SetMemory8(LCDSTATIO, stat)
 
-	if cpu.GPU.HBlankDMALength > 0 {
-		cpu.doVRAMDMATransfer(0x10)
-		if cpu.GPU.HBlankDMALength == 1 {
-			cpu.GPU.HBlankDMALength--
-			cpu.RAM[HDMA5IO] = 0xff
+	if g.GPU.HBlankDMALength > 0 {
+		g.doVRAMDMATransfer(0x10)
+		if g.GPU.HBlankDMALength == 1 {
+			g.GPU.HBlankDMALength--
+			g.RAM[HDMA5IO] = 0xff
 		} else {
-			cpu.GPU.HBlankDMALength--
-			cpu.RAM[HDMA5IO] = byte(cpu.GPU.HBlankDMALength)
+			g.GPU.HBlankDMALength--
+			g.RAM[HDMA5IO] = byte(g.GPU.HBlankDMALength)
 		}
 	}
 
 	if util.Bit(stat, 3) {
-		cpu.setLCDSTATFlag(true)
+		g.setLCDSTATFlag(true)
 	}
 }
 
-func (cpu *CPU) setVBlankMode() {
-	cpu.mode = VBlankMode
-	stat := (cpu.FetchMemory8(LCDSTATIO) | 0x01) & 0xfd // bit0-1: 01
-	cpu.SetMemory8(LCDSTATIO, stat)
+func (g *GBC) setVBlankMode() {
+	g.mode = VBlankMode
+	stat := (g.FetchMemory8(LCDSTATIO) | 0x01) & 0xfd // bit0-1: 01
+	g.SetMemory8(LCDSTATIO, stat)
 }
 
-func (cpu *CPU) setOAMRAMMode() {
-	cpu.mode = OAMRAMMode
-	stat := (cpu.FetchMemory8(LCDSTATIO) | 0x02) & 0xfe // bit0-1: 10
-	cpu.SetMemory8(LCDSTATIO, stat)
+func (g *GBC) setOAMRAMMode() {
+	g.mode = OAMRAMMode
+	stat := (g.FetchMemory8(LCDSTATIO) | 0x02) & 0xfe // bit0-1: 10
+	g.SetMemory8(LCDSTATIO, stat)
 	if util.Bit(stat, 5) {
-		cpu.setLCDSTATFlag(true)
+		g.setLCDSTATFlag(true)
 	}
 }
 
-func (cpu *CPU) setLCDMode() {
-	cpu.mode = LCDMode
-	stat := cpu.FetchMemory8(LCDSTATIO) | 0b11
-	cpu.SetMemory8(LCDSTATIO, stat)
+func (g *GBC) setLCDMode() {
+	g.mode = LCDMode
+	stat := g.FetchMemory8(LCDSTATIO) | 0b11
+	g.SetMemory8(LCDSTATIO, stat)
 }
 
-func (cpu *CPU) incrementLY() {
-	LY := cpu.FetchMemory8(LYIO)
+func (g *GBC) incrementLY() {
+	LY := g.FetchMemory8(LYIO)
 	LY++
 	if LY == 144 { // set vblank flag
-		cpu.setVBlankMode()
-		cpu.setVBlankFlag(true)
+		g.setVBlankMode()
+		g.setVBlankFlag(true)
 	}
 	LY %= 154 // LY = LY >= 154 ? 0 : LY
-	cpu.RAM[LYIO] = LY
-	cpu.checkLYC(LY)
+	g.RAM[LYIO] = LY
+	g.checkLYC(LY)
 }
 
-func (cpu *CPU) checkLYC(LY uint8) {
-	LYC := cpu.FetchMemory8(LYCIO)
+func (g *GBC) checkLYC(LY uint8) {
+	LYC := g.FetchMemory8(LYCIO)
 	if LYC == LY {
-		stat := cpu.FetchMemory8(LCDSTATIO) | 0x04 // set lyc flag
-		cpu.SetMemory8(LCDSTATIO, stat)
+		stat := g.FetchMemory8(LCDSTATIO) | 0x04 // set lyc flag
+		g.SetMemory8(LCDSTATIO, stat)
 
 		if util.Bit(stat, 6) { // trigger LYC=LY interrupt
-			cpu.setLCDSTATFlag(true)
+			g.setLCDSTATFlag(true)
 		}
 		return
 	}
 
-	stat := cpu.FetchMemory8(LCDSTATIO) & 0b11111011 // clear lyc flag
-	cpu.SetMemory8(LCDSTATIO, stat)
+	stat := g.FetchMemory8(LCDSTATIO) & 0b11111011 // clear lyc flag
+	g.SetMemory8(LCDSTATIO, stat)
 }
