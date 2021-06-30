@@ -10,20 +10,20 @@ func (g *GBC) a16Fetch() uint16 {
 }
 
 func (g *GBC) a16FetchJP() uint16 {
-	lower := uint16(g.FetchMemory8(g.Reg.PC + 1)) // M = 1: nn read: memory access for low byte
+	lower := uint16(g.Load8(g.Reg.PC + 1)) // M = 1: nn read: memory access for low byte
 	g.timer(1)
-	upper := uint16(g.FetchMemory8(g.Reg.PC + 2)) // M = 2: nn read: memory access for high byte
+	upper := uint16(g.Load8(g.Reg.PC + 2)) // M = 2: nn read: memory access for high byte
 	g.timer(1)
 	value := (upper << 8) | lower
 	return value
 }
 
 func (g *GBC) d8Fetch() byte {
-	return g.FetchMemory8(g.Reg.PC + 1)
+	return g.Load8(g.Reg.PC + 1)
 }
 
 func (g *GBC) d16Fetch() uint16 {
-	lower, upper := uint16(g.FetchMemory8(g.Reg.PC+1)), uint16(g.FetchMemory8(g.Reg.PC+2))
+	lower, upper := uint16(g.Load8(g.Reg.PC+1)), uint16(g.Load8(g.Reg.PC+2))
 	return (upper << 8) | lower
 }
 
@@ -37,7 +37,7 @@ func ld8r(g *GBC, op1, op2 int) {
 
 // ld r8, mem[r16]
 func ld8m(g *GBC, r8, r16 int) {
-	g.Reg.R[r8] = g.FetchMemory8(g.Reg.R16(r16))
+	g.Reg.R[r8] = g.Load8(g.Reg.R16(r16))
 	g.Reg.PC++
 }
 
@@ -49,7 +49,7 @@ func ld8i(g *GBC, r8, _ int) {
 
 // LD A, (u16)
 func op0xfa(g *GBC, operand1, operand2 int) {
-	g.Reg.R[A] = g.FetchMemory8(g.a16FetchJP())
+	g.Reg.R[A] = g.Load8(g.a16FetchJP())
 	g.Reg.PC += 3
 	g.timer(2)
 }
@@ -57,7 +57,7 @@ func op0xfa(g *GBC, operand1, operand2 int) {
 // LD A,(FF00+C)
 func op0xf2(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.Reg.R[C])
-	g.Reg.R[A] = g.fetchIO(addr)
+	g.Reg.R[A] = g.loadIO(addr)
 	g.Reg.PC++ // mistake?(https://www.pastraiser.com/g/gameboy/gameboy_opcodes.html)
 }
 
@@ -67,14 +67,14 @@ func op0xf2(g *GBC, operand1, operand2 int) {
 func op0x36(g *GBC, operand1, operand2 int) {
 	value := g.d8Fetch()
 	g.timer(1)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.Reg.PC += 2
 	g.timer(2)
 }
 
 // LD (HL),R8
 func ldHLR8(g *GBC, unused, op int) {
-	g.SetMemory8(g.Reg.HL(), g.Reg.R[op])
+	g.Store8(g.Reg.HL(), g.Reg.R[op])
 	g.Reg.PC++
 }
 
@@ -85,15 +85,15 @@ func op0x08(g *GBC, operand1, operand2 int) {
 	// Store SP into addresses n16 (LSB) and n16 + 1 (MSB).
 	addr := g.a16Fetch()
 	upper, lower := byte(g.Reg.SP>>8), byte(g.Reg.SP) // MSB
-	g.SetMemory8(addr, lower)
-	g.SetMemory8(addr+1, upper)
+	g.Store8(addr, lower)
+	g.Store8(addr+1, upper)
 	g.Reg.PC += 3
 	g.timer(5)
 }
 
 // LD (u16),A
 func op0xea(g *GBC, operand1, operand2 int) {
-	g.SetMemory8(g.a16FetchJP(), g.Reg.R[A])
+	g.Store8(g.a16FetchJP(), g.Reg.R[A])
 	g.Reg.PC += 3
 	g.timer(2)
 }
@@ -106,7 +106,7 @@ func ld16i(g *GBC, r16, _ int) {
 
 // LD HL,SP+i8
 func op0xf8(g *GBC, operand1, operand2 int) {
-	delta := int8(g.FetchMemory8(g.Reg.PC + 1))
+	delta := int8(g.Load8(g.Reg.PC + 1))
 	value := int32(g.Reg.SP) + int32(delta)
 	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
 	g.Reg.setHL(uint16(value))
@@ -126,29 +126,29 @@ func op0xf9(g *GBC, operand1, operand2 int) {
 // LD (FF00+C),A
 func op0xe2(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.Reg.R[C])
-	g.SetMemory8(addr, g.Reg.R[A])
+	g.Store8(addr, g.Reg.R[A])
 	g.Reg.PC++ // mistake?(https://www.pastraiser.com/g/gameboy/gameboy_opcodes.html)
 }
 
 func ldm16r(g *GBC, r16, r8 int) {
-	g.SetMemory8(g.Reg.R16(r16), g.Reg.R[r8])
+	g.Store8(g.Reg.R16(r16), g.Reg.R[r8])
 	g.Reg.PC++
 }
 
 // LDH Load High Byte
 func LDH(g *GBC, operand1, operand2 int) {
 	if operand1 == OP_A && operand2 == OP_a8_PAREN { // LD A,($FF00+a8)
-		addr := 0xff00 + uint16(g.FetchMemory8(g.Reg.PC+1))
+		addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
 		g.timer(1)
-		value := g.fetchIO(addr)
+		value := g.loadIO(addr)
 
 		g.Reg.R[A] = value
 		g.Reg.PC += 2
 		g.timer(2)
 	} else if operand1 == OP_a8_PAREN && operand2 == OP_A { // LD ($FF00+a8),A
-		addr := 0xff00 + uint16(g.FetchMemory8(g.Reg.PC+1))
+		addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
 		g.timer(1)
-		g.setIO(addr, g.Reg.R[A])
+		g.storeIO(addr, g.Reg.R[A])
 		g.Reg.PC += 2
 		g.timer(2)
 	} else {
@@ -178,10 +178,10 @@ func inc16(g *GBC, r16, _ int) {
 }
 
 func incHL(g *GBC, _, _ int) {
-	value := g.FetchMemory8(g.Reg.HL()) + 1
+	value := g.Load8(g.Reg.HL()) + 1
 	g.timer(1)
-	carryBits := g.FetchMemory8(g.Reg.HL()) ^ 1 ^ value
-	g.SetMemory8(g.Reg.HL(), value)
+	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -209,10 +209,10 @@ func dec16(g *GBC, r16, _ int) {
 }
 
 func decHL(g *GBC, _, _ int) {
-	value := g.FetchMemory8(g.Reg.HL()) - 1
+	value := g.Load8(g.Reg.HL()) - 1
 	g.timer(1)
-	carryBits := g.FetchMemory8(g.Reg.HL()) ^ 1 ^ value
-	g.SetMemory8(g.Reg.HL(), value)
+	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -225,7 +225,7 @@ func decHL(g *GBC, _, _ int) {
 
 // jr i8
 func jr(g *GBC, _, _ int) {
-	delta := int8(g.FetchMemory8(g.Reg.PC + 1))
+	delta := int8(g.Load8(g.Reg.PC + 1))
 	g.Reg.PC = uint16(int32(g.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
 	g.timer(3)
 }
@@ -277,7 +277,7 @@ func (g *GBC) pend() {
 // stop GBC
 func stop(g *GBC, _, _ int) {
 	g.Reg.PC += 2
-	KEY1 := g.FetchMemory8(KEY1IO)
+	KEY1 := g.Load8(KEY1IO)
 	if util.Bit(KEY1, 0) {
 		if util.Bit(KEY1, 7) {
 			KEY1 = 0x00
@@ -286,7 +286,7 @@ func stop(g *GBC, _, _ int) {
 			KEY1 = 0x80
 			g.boost = 2
 		}
-		g.SetMemory8(KEY1IO, KEY1)
+		g.Store8(KEY1IO, KEY1)
 	}
 }
 
@@ -305,9 +305,9 @@ func (g *GBC) XOR(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
 	case OP_HL_PAREN:
-		value = g.Reg.R[A] ^ g.FetchMemory8(g.Reg.HL())
+		value = g.Reg.R[A] ^ g.Load8(g.Reg.HL())
 	case OP_d8:
-		value = g.Reg.R[A] ^ g.FetchMemory8(g.Reg.PC+1)
+		value = g.Reg.R[A] ^ g.Load8(g.Reg.PC+1)
 		g.Reg.PC++
 	default:
 		panic(fmt.Errorf("error: XOR %d %d", operand1, operand2))
@@ -425,7 +425,7 @@ func di(g *GBC, _, _ int) {
 // EI Enable Interrupt
 func ei(g *GBC, _, _ int) {
 	// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
-	next := g.FetchMemory8(g.Reg.PC + 1) // next opcode
+	next := g.Load8(g.Reg.PC + 1) // next opcode
 	HALT := byte(0x76)
 	if next == HALT {
 		g.Reg.IME = true
@@ -464,9 +464,9 @@ func (g *GBC) CP(operand1, operand2 int) {
 		g.setCSub(g.Reg.R[A], g.d8Fetch())
 		g.Reg.PC++
 	case OP_HL_PAREN:
-		value = g.Reg.R[A] - g.FetchMemory8(g.Reg.HL())
-		carryBits = g.Reg.R[A] ^ g.FetchMemory8(g.Reg.HL()) ^ value
-		g.setCSub(g.Reg.R[A], g.FetchMemory8(g.Reg.HL()))
+		value = g.Reg.R[A] - g.Load8(g.Reg.HL())
+		carryBits = g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
+		g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
 	}
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
@@ -490,7 +490,7 @@ func (g *GBC) AND(operand1, operand2 int) {
 	var value byte
 	switch operand1 {
 	case OP_HL_PAREN:
-		value = g.Reg.R[A] & g.FetchMemory8(g.Reg.HL())
+		value = g.Reg.R[A] & g.Load8(g.Reg.HL())
 	case OP_d8:
 		value = g.Reg.R[A] & g.d8Fetch()
 		g.Reg.PC++
@@ -519,12 +519,12 @@ func orR8(g *GBC, _, r8 int) {
 func (g *GBC) OR(operand1, operand2 int) {
 	switch operand1 {
 	case OP_d8:
-		value := g.Reg.R[A] | g.FetchMemory8(g.Reg.PC+1)
+		value := g.Reg.R[A] | g.Load8(g.Reg.PC+1)
 		g.Reg.R[A] = value
 		g.setF(flagZ, value == 0)
 		g.Reg.PC++
 	case OP_HL_PAREN:
-		value := g.Reg.R[A] | g.FetchMemory8(g.Reg.HL())
+		value := g.Reg.R[A] | g.Load8(g.Reg.HL())
 		g.Reg.R[A] = value
 		g.setF(flagZ, value == 0)
 	}
@@ -572,8 +572,8 @@ func (g *GBC) ADD(operand1, operand2 int) {
 			g.setF(flagC, util.Bit(carryBits, 8))
 			g.Reg.PC += 2
 		case OP_HL_PAREN:
-			value := uint16(g.Reg.R[A]) + uint16(g.FetchMemory8(g.Reg.HL()))
-			carryBits := uint16(g.Reg.R[A]) ^ uint16(g.FetchMemory8(g.Reg.HL())) ^ value
+			value := uint16(g.Reg.R[A]) + uint16(g.Load8(g.Reg.HL()))
+			carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Load8(g.Reg.HL())) ^ value
 			g.Reg.R[A] = byte(value)
 			g.setF(flagZ, byte(value) == 0)
 			g.setF(flagN, false)
@@ -584,7 +584,7 @@ func (g *GBC) ADD(operand1, operand2 int) {
 	case OP_SP:
 		switch operand2 {
 		case OP_r8:
-			delta := int8(g.FetchMemory8(g.Reg.PC + 1))
+			delta := int8(g.Load8(g.Reg.PC + 1))
 			value := int32(g.Reg.SP) + int32(delta)
 			carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
 			g.Reg.SP = uint16(value)
@@ -609,7 +609,7 @@ func cpl(g *GBC, _, _ int) {
 func prefixCB(g *GBC, _, _ int) {
 	g.Reg.PC++
 	g.timer(1)
-	op := prefixCBs[g.FetchMemory8(g.Reg.PC)]
+	op := prefixCBs[g.Load8(g.Reg.PC)]
 	_, op1, op2, cycle, handler := op.Ins, op.Operand1, op.Operand2, op.Cycle1, op.Handler
 	handler(g, op1, op2)
 
@@ -634,12 +634,12 @@ func rlc(g *GBC, r8, _ int) {
 }
 
 func rlcHL(g *GBC, _, _ int) {
-	value := g.FetchMemory8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer(1)
 	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, bit7 != 0)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -680,12 +680,12 @@ func rrc(g *GBC, r8, _ int) {
 }
 
 func rrcHL(g *GBC, _, _ int) {
-	value := g.FetchMemory8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer(1)
 	bit0 := value % 2
 	value = (value >> 1)
 	value = util.SetMSB(value, bit0 != 0)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -727,12 +727,12 @@ func rl(g *GBC, _, r8 int) {
 func rlHL(g *GBC, _, _ int) {
 	var value, bit7 byte
 	carry := g.f(flagC)
-	value = g.FetchMemory8(g.Reg.HL())
+	value = g.Load8(g.Reg.HL())
 	g.timer(1)
 	bit7 = value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, carry)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -775,12 +775,12 @@ func rr(g *GBC, r8, _ int) {
 
 func rrHL(g *GBC, _, _ int) {
 	carry := g.f(flagC)
-	value := g.FetchMemory8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer(1)
 	lsb := util.Bit(value, 0)
 	value >>= 1
 	value = util.SetMSB(value, carry)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -805,11 +805,11 @@ func sla(g *GBC, r8, _ int) {
 }
 
 func slaHL(g *GBC, _, _ int) {
-	value := g.FetchMemory8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer(1)
 	bit7 := value >> 7
 	value = (value << 1)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -834,12 +834,12 @@ func sra(g *GBC, r8, _ int) {
 }
 
 func sraHL(g *GBC, operand1, operand2 int) {
-	value := g.FetchMemory8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer(1)
 	lsb, msb := util.Bit(value, 0), util.Bit(value, 7)
 	value = (value >> 1)
 	value = util.SetMSB(value, msb)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -864,12 +864,12 @@ func swap(g *GBC, _, r8 int) {
 }
 
 func swapHL(g *GBC, _, _ int) {
-	data := g.FetchMemory8(g.Reg.HL())
+	data := g.Load8(g.Reg.HL())
 	g.timer(1)
 	data03 := data & 0x0f
 	data47 := data >> 4
 	value := (data03 << 4) | data47
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -894,11 +894,11 @@ func srl(g *GBC, r8, _ int) {
 }
 
 func srlHL(g *GBC, _, _ int) {
-	value := g.FetchMemory8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer(1)
 	bit0 := value % 2
 	value = (value >> 1)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 
 	g.setF(flagZ, value == 0)
@@ -918,7 +918,7 @@ func bit(g *GBC, bit, r8 int) {
 }
 
 func bitHL(g *GBC, bit, _ int) {
-	value := util.Bit(g.FetchMemory8(g.Reg.HL()), bit)
+	value := util.Bit(g.Load8(g.Reg.HL()), bit)
 	g.setF(flagZ, !value)
 	g.setF(flagN, false)
 	g.setF(flagH, true)
@@ -933,9 +933,9 @@ func res(g *GBC, bit, r8 int) {
 
 func resHL(g *GBC, bit, _ int) {
 	mask := ^(byte(1) << bit)
-	value := g.FetchMemory8(g.Reg.HL()) & mask
+	value := g.Load8(g.Reg.HL()) & mask
 	g.timer(1)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 	g.Reg.PC++
 }
@@ -948,9 +948,9 @@ func set(g *GBC, bit, r8 int) {
 
 func setHL(g *GBC, bit, _ int) {
 	mask := byte(1) << bit
-	value := g.FetchMemory8(g.Reg.HL()) | mask
+	value := g.Load8(g.Reg.HL()) | mask
 	g.timer(1)
-	g.SetMemory8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), value)
 	g.timer(2)
 	g.Reg.PC++
 }
@@ -1015,9 +1015,9 @@ func (g *GBC) SUB(op1, _ int) {
 		g.setF(flagH, util.Bit(carryBits, 4))
 		g.Reg.PC += 2
 	case OP_HL_PAREN:
-		value := g.Reg.R[A] - g.FetchMemory8(g.Reg.HL())
-		carryBits := g.Reg.R[A] ^ g.FetchMemory8(g.Reg.HL()) ^ value
-		g.setCSub(g.Reg.R[A], g.FetchMemory8(g.Reg.HL()))
+		value := g.Reg.R[A] - g.Load8(g.Reg.HL())
+		carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
+		g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
 		g.Reg.R[A] = value
 		g.setF(flagZ, value == 0)
 		g.setF(flagN, true)
@@ -1072,7 +1072,7 @@ func (g *GBC) ADC(_, op2 int) {
 
 	switch op2 {
 	case OP_HL_PAREN:
-		data := g.FetchMemory8(g.Reg.HL())
+		data := g.Load8(g.Reg.HL())
 		value = data + carry + g.Reg.R[A]
 		value4 = (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
 		value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
@@ -1121,7 +1121,7 @@ func (g *GBC) SBC(_, op2 int) {
 
 	switch op2 {
 	case OP_HL_PAREN:
-		data := g.FetchMemory8(g.Reg.HL())
+		data := g.Load8(g.Reg.HL())
 		value = g.Reg.R[A] - (data + carry)
 		value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
 		value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))

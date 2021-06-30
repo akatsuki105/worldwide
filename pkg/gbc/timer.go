@@ -33,12 +33,12 @@ type OAMDMA struct {
 }
 
 func (g *GBC) setTimerFlag() {
-	g.setIO(IFIO, g.fetchIO(IFIO)|0x04)
+	g.storeIO(IFIO, g.loadIO(IFIO)|0x04)
 	g.halt = false
 }
 
 func (g *GBC) clearTimerFlag() {
-	g.setIO(IFIO, g.fetchIO(IFIO)&0xfb)
+	g.storeIO(IFIO, g.loadIO(IFIO)&0xfb)
 }
 
 func (g *GBC) timer(cycle int) {
@@ -137,10 +137,10 @@ func (g *GBC) tick() {
 	// OAMDMA
 	if g.OAMDMA.ptr > 0 {
 		if g.OAMDMA.ptr == 160 {
-			g.RAM[0xfe00+uint16(g.OAMDMA.ptr)-1] = g.FetchMemory8(g.OAMDMA.start + uint16(g.OAMDMA.ptr) - 1)
+			g.RAM[0xfe00+uint16(g.OAMDMA.ptr)-1] = g.Load8(g.OAMDMA.start + uint16(g.OAMDMA.ptr) - 1)
 			g.RAM[OAM] = 0xff
 		} else if g.OAMDMA.ptr < 160 {
-			g.RAM[0xfe00+uint16(g.OAMDMA.ptr)-1] = g.FetchMemory8(g.OAMDMA.start + uint16(g.OAMDMA.ptr) - 1)
+			g.RAM[0xfe00+uint16(g.OAMDMA.ptr)-1] = g.Load8(g.OAMDMA.start + uint16(g.OAMDMA.ptr) - 1)
 		}
 
 		g.OAMDMA.ptr--          // increment OAMDMA count

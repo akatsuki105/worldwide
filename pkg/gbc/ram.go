@@ -6,8 +6,8 @@ import (
 
 var done = make(chan int)
 
-// FetchMemory8 fetch value from ram
-func (g *GBC) FetchMemory8(addr uint16) (value byte) {
+// Load8 fetch value from ram
+func (g *GBC) Load8(addr uint16) (value byte) {
 	switch {
 	case addr >= 0x4000 && addr < 0x8000: // rom bank
 		value = g.ROMBank.bank[g.ROMBank.ptr][addr-0x4000]
@@ -22,14 +22,14 @@ func (g *GBC) FetchMemory8(addr uint16) (value byte) {
 	case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
 		value = g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000]
 	case addr >= 0xff00:
-		value = g.fetchIO(addr)
+		value = g.loadIO(addr)
 	default:
 		value = g.RAM[addr]
 	}
 	return value
 }
 
-func (g *GBC) fetchIO(addr uint16) (value byte) {
+func (g *GBC) loadIO(addr uint16) (value byte) {
 	switch {
 	case addr == JOYPADIO:
 		value = g.joypad.Output()
@@ -53,8 +53,8 @@ func (g *GBC) fetchIO(addr uint16) (value byte) {
 	return value
 }
 
-// SetMemory8 set value into RAM
-func (g *GBC) SetMemory8(addr uint16, value byte) {
+// Store8 set value into RAM
+func (g *GBC) Store8(addr uint16, value byte) {
 
 	if addr <= 0x7fff { // rom
 		if (addr >= 0x2000) && (addr <= 0x3fff) {
@@ -140,14 +140,14 @@ func (g *GBC) SetMemory8(addr uint16, value byte) {
 		case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram
 			g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xff00:
-			g.setIO(addr, value)
+			g.storeIO(addr, value)
 		default:
 			g.RAM[addr] = value
 		}
 	}
 }
 
-func (g *GBC) setIO(addr uint16, value byte) {
+func (g *GBC) storeIO(addr uint16, value byte) {
 	g.RAM[addr] = value
 
 	switch {
@@ -332,8 +332,8 @@ func (g *GBC) doVRAMDMATransfer(length int) {
 	to := ((uint16(g.RAM[HDMA3IO])<<8 | uint16(g.RAM[HDMA4IO])) & 0x1ff0) + 0x8000
 
 	for i := 0; i < length; i++ {
-		value := g.FetchMemory8(from)
-		g.SetMemory8(to, value)
+		value := g.Load8(from)
+		g.Store8(to, value)
 		from++
 		to++
 	}

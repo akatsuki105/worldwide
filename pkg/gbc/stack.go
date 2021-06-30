@@ -1,12 +1,12 @@
 package gbc
 
 func (g *GBC) push(b byte) {
-	g.SetMemory8(g.Reg.SP-1, b)
+	g.Store8(g.Reg.SP-1, b)
 	g.Reg.SP--
 }
 
 func (g *GBC) pop() byte {
-	value := g.FetchMemory8(g.Reg.SP)
+	value := g.Load8(g.Reg.SP)
 	g.Reg.SP++
 	return value
 }

@@ -47,10 +47,10 @@ PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, g.Reg.SP)
 }
 
 func (g *GBC) debugIOMap() string {
-	LCDC, STAT := g.FetchMemory8(LCDCIO), g.FetchMemory8(LCDSTATIO)
-	DIV := g.FetchMemory8(DIVIO)
-	LY, LYC := g.FetchMemory8(LYIO), g.FetchMemory8(LYCIO)
-	IE, IF, IME := g.FetchMemory8(IEIO), g.FetchMemory8(IFIO), util.Bool2Int(g.Reg.IME)
+	LCDC, STAT := g.Load8(LCDCIO), g.Load8(LCDSTATIO)
+	DIV := g.Load8(DIVIO)
+	LY, LYC := g.Load8(LYIO), g.Load8(LYCIO)
+	IE, IF, IME := g.Load8(IEIO), g.Load8(IFIO), util.Bool2Int(g.Reg.IME)
 	spd, rom := g.boost/2, g.ROMBank.ptr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
@@ -77,7 +77,7 @@ func (g *GBC) DebugExec(frame int, output string) error {
 	for y := 0; y < 144; y++ {
 		g.execScanline()
 
-		LCDC := g.FetchMemory8(LCDCIO)
+		LCDC := g.Load8(LCDCIO)
 		for x := 0; x < 160; x += 8 {
 			blockX, blockY := x/8, y/8
 

@@ -136,11 +136,11 @@ func (g *GBC) renderSprite(LCDC1 *[144]bool) {
 	}
 
 	for i := 0; i < 40; i++ {
-		Y := int(g.FetchMemory8(0xfe00 + 4*uint16(i)))
+		Y := int(g.Load8(0xfe00 + 4*uint16(i)))
 		if Y != 0 && Y < 160 {
 			Y -= 16
-			X := int(g.FetchMemory8(0xfe00+4*uint16(i)+1)) - 8
-			tileIdx, attr := uint(g.FetchMemory8(0xfe00+4*uint16(i)+2)), g.FetchMemory8(0xfe00+4*uint16(i)+3)
+			X := int(g.Load8(0xfe00+4*uint16(i)+1)) - 8
+			tileIdx, attr := uint(g.Load8(0xfe00+4*uint16(i)+2)), g.Load8(0xfe00+4*uint16(i)+3)
 			if Y >= 0 && LCDC1[Y] {
 				g.GPU.SetSPRTile(i, int(X), Y, tileIdx, attr, g.Cartridge.IsCGB)
 			}

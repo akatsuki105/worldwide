@@ -199,8 +199,8 @@ func (g *GBC) initIOMap() {
 	g.RAM[0xff24] = 0x77
 	g.RAM[0xff25] = 0xf3
 	g.RAM[0xff26] = 0xf1
-	g.SetMemory8(LCDCIO, 0x91)
-	g.SetMemory8(LCDSTATIO, 0x85)
+	g.Store8(LCDCIO, 0x91)
+	g.Store8(LCDSTATIO, 0x85)
 	g.RAM[BGPIO] = 0xfc
 	g.RAM[OBP0IO], g.RAM[OBP1IO] = 0xff, 0xff
 }
@@ -272,7 +272,7 @@ func (g *GBC) Exit() {
 func (g *GBC) exec(max int) {
 	bank, PC := g.ROMBank.ptr, g.Reg.PC
 
-	bytecode := g.FetchMemory8(PC)
+	bytecode := g.Load8(PC)
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 
@@ -366,7 +366,7 @@ func (g *GBC) execVBlank() {
 			g.exec(cyclePerLine * g.boost)
 		}
 		g.incrementLY()
-		LY := g.FetchMemory8(LYIO)
+		LY := g.Load8(LYIO)
 		if LY == 0 {
 			break
 		}
@@ -400,7 +400,7 @@ func (g *GBC) Update() error {
 
 	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
-	LCDC := g.FetchMemory8(LCDCIO)
+	LCDC := g.Load8(LCDCIO)
 	scrollX, scrollY := uint(g.GPU.Scroll[0]), uint(g.GPU.Scroll[1])
 	scrollPixelX := scrollX % 8
 
@@ -420,11 +420,11 @@ func (g *GBC) Update() error {
 		scrollPixelX = scrollX % 8
 
 		if y < height {
-			LCDC1[y] = util.Bit(g.FetchMemory8(LCDCIO), 1)
+			LCDC1[y] = util.Bit(g.Load8(LCDCIO), 1)
 		}
 
 		// render background(or window)
-		WY, WX := uint(g.FetchMemory8(WYIO)), uint(g.FetchMemory8(WXIO))-7
+		WY, WX := uint(g.Load8(WYIO)), uint(g.Load8(WXIO))-7
 		if !skipRender {
 			for x := 0; x < iterX; x += 8 {
 				blockX, blockY := x/8, y/8

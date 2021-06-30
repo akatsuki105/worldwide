@@ -32,38 +32,38 @@ func (g *GBC) ieif() intrIEIF {
 
 func (g *GBC) setVBlankFlag(b bool) {
 	if b {
-		g.setIO(IFIO, g.fetchIO(IFIO)|0x01)
+		g.storeIO(IFIO, g.loadIO(IFIO)|0x01)
 		return
 	}
-	g.setIO(IFIO, g.fetchIO(IFIO)&0xfe)
+	g.storeIO(IFIO, g.loadIO(IFIO)&0xfe)
 }
 
 func (g *GBC) setLCDSTATFlag(b bool) {
 	if b {
-		g.setIO(IFIO, g.fetchIO(IFIO)|0x02)
+		g.storeIO(IFIO, g.loadIO(IFIO)|0x02)
 		return
 	}
-	g.setIO(IFIO, g.fetchIO(IFIO)&0xfd)
+	g.storeIO(IFIO, g.loadIO(IFIO)&0xfd)
 }
 
 func (g *GBC) setSerialFlag(b bool) {
 	if b {
-		g.setIO(IFIO, g.fetchIO(IFIO)|0x08)
+		g.storeIO(IFIO, g.loadIO(IFIO)|0x08)
 		return
 	}
-	g.setIO(IFIO, g.fetchIO(IFIO)&0xf7)
+	g.storeIO(IFIO, g.loadIO(IFIO)&0xf7)
 }
 
 func (g *GBC) getJoypadEnable() bool {
-	return util.Bit(g.fetchIO(IEIO), 4)
+	return util.Bit(g.loadIO(IEIO), 4)
 }
 
 func (g *GBC) setJoypadFlag(b bool) {
 	if b {
-		g.setIO(IFIO, g.fetchIO(IFIO)|0x10)
+		g.storeIO(IFIO, g.loadIO(IFIO)|0x10)
 		return
 	}
-	g.setIO(IFIO, g.fetchIO(IFIO)&0xef)
+	g.storeIO(IFIO, g.loadIO(IFIO)&0xef)
 }
 
 // ------------ trigger --------------------
@@ -75,7 +75,7 @@ func (g *GBC) triggerInterrupt() {
 }
 
 func (g *GBC) triggerVBlank() {
-	if util.Bit(g.fetchIO(LCDCIO), 7) {
+	if util.Bit(g.loadIO(LCDCIO), 7) {
 		g.setVBlankFlag(false)
 		g.triggerInterrupt()
 		g.Reg.PC = 0x0040
