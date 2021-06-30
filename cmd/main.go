@@ -82,7 +82,7 @@ func Run() int {
 	}
 
 	emu.LoadSav()
-	if err := ebiten.RunGame(emu.GBC); err != nil {
+	if err := ebiten.RunGame(emu); err != nil {
 		return ExitCodeError
 	}
 	return ExitCodeOK

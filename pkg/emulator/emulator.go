@@ -5,6 +5,8 @@ import (
 	"gbc/pkg/gbc"
 	"io/ioutil"
 	"os"
+
+	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
 type Emulator struct {
@@ -102,4 +104,22 @@ func (e *Emulator) LoadSav() {
 		rtcData := savdata[start : start+48]
 		g.RTC.Sync(rtcData)
 	}
+}
+
+func (e *Emulator) Update() error {
+	return e.GBC.Update()
+}
+
+func (e *Emulator) Draw(screen *ebiten.Image) {
+	e.GBC.Draw(screen)
+}
+
+func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+	if e.GBC.Debug.Enable {
+		return 1270, 740
+	}
+	if e.GBC.Config.Display.HQ2x {
+		return 160 * 2, 144 * 2
+	}
+	return 160, 144
 }

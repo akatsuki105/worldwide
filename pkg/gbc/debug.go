@@ -14,7 +14,7 @@ import (
 
 // Debug - Info used in debug mode
 type Debug struct {
-	on      bool
+	Enable  bool
 	Break   debug.Break
 	history debug.History
 	pause   debug.Pause
@@ -23,7 +23,7 @@ type Debug struct {
 }
 
 func (g *GBC) SetWindowSize(x, y int) {
-	g.debug.Window.SetSize(x, y)
+	g.Debug.Window.SetSize(x, y)
 }
 
 func (g *GBC) debugRegister() string {

@@ -1,13 +1,10 @@
 package gbc
 
 import (
-	"bytes"
 	"fmt"
 	"gbc/pkg/emulator/debug"
 	"gbc/pkg/emulator/joypad"
-	"image"
 	"image/color"
-	"image/png"
 	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
@@ -32,15 +29,9 @@ var (
 	fps        = 0
 )
 
-func setIcon() {
-	buf := bytes.NewBuffer(icon)
-	img, _ := png.Decode(buf)
-	ebiten.SetWindowIcon([]image.Image{img})
-}
-
-func (g *GBC) renderScreen(screen *ebiten.Image) {
+func (g *GBC) Draw(screen *ebiten.Image) {
 	display := g.GPU.Display(g.Config.Display.HQ2x)
-	if g.debug.on {
+	if g.Debug.Enable {
 		dScreen := ebiten.NewImage(int(debugWidth), int(debugHeight))
 		dScreen.Fill(color.RGBA{35, 27, 167, 255})
 		{
@@ -64,13 +55,13 @@ func (g *GBC) renderScreen(screen *ebiten.Image) {
 
 		cpuUsageX := 340
 		// debug history (optional)
-		if g.debug.history.Flag() {
-			ebitenutil.DebugPrintAt(dScreen, g.debug.history.History(), 340, 120)
+		if g.Debug.history.Flag() {
+			ebitenutil.DebugPrintAt(dScreen, g.Debug.history.History(), 340, 120)
 			cpuUsageX = 540
 		}
 		// debug GBC Usage
 		ebitenutil.DebugPrintAt(dScreen, "GBC", cpuUsageX, 120)
-		g.debug.monitor.GBC.DrawUsage(dScreen, cpuUsageX+2, 140, g.isBoost())
+		g.Debug.monitor.GBC.DrawUsage(dScreen, cpuUsageX+2, 140, g.isBoost())
 
 		bgMap := g.GPU.Debug.BGMap()
 		if bgMap != nil {
@@ -117,8 +108,8 @@ func (g *GBC) handleJoypad() {
 				g.setJoypadFlag(true)
 			}
 		case joypad.Pause:
-			p, b := &g.debug.pause, &g.debug.Break
-			if !g.debug.on {
+			p, b := &g.Debug.pause, &g.Debug.Break
+			if !g.Debug.Enable {
 				return
 			}
 
@@ -140,7 +131,7 @@ func (g *GBC) handleJoypad() {
 }
 
 func (g *GBC) renderSprite(LCDC1 *[144]bool) {
-	if g.debug.on {
+	if g.Debug.Enable {
 		g.GPU.FillOAM()
 	}
 
@@ -154,7 +145,7 @@ func (g *GBC) renderSprite(LCDC1 *[144]bool) {
 				g.GPU.SetSPRTile(i, int(X), Y, tileIdx, attr, g.Cartridge.IsCGB)
 			}
 
-			if g.debug.on {
+			if g.Debug.Enable {
 				g.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIdx), attr)
 			}
 		}

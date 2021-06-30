@@ -13,6 +13,7 @@ import (
 	"gbc/pkg/gbc/gpu"
 	"gbc/pkg/gbc/rtc"
 	"gbc/pkg/gbc/serial"
+	"gbc/pkg/util"
 )
 
 const (
@@ -62,7 +63,7 @@ type GBC struct {
 	boost    int // 1 or 2
 	Serial   serial.Serial
 	IMESwitch
-	debug Debug
+	Debug Debug
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -254,11 +255,11 @@ func (g *GBC) Init(debug bool, test bool) {
 	// Init RTC
 	go g.RTC.Init()
 
-	g.debug.on = debug
+	g.Debug.Enable = debug
 	if debug {
 		g.Config.Display.HQ2x, g.Config.Display.FPS30 = false, true
-		g.debug.history.SetFlag(g.Config.Debug.History)
-		g.debug.Break.ParseBreakpoints(g.Config.Debug.BreakPoints)
+		g.Debug.history.SetFlag(g.Config.Debug.History)
+		g.Debug.Break.ParseBreakpoints(g.Config.Debug.BreakPoints)
 	}
 }
 
@@ -276,8 +277,8 @@ func (g *GBC) exec(max int) {
 	instruction, operand1, operand2, cycle, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 
 	if !g.halt {
-		if g.debug.on && g.debug.history.Flag() {
-			g.debug.history.SetHistory(bank, PC, bytecode)
+		if g.Debug.Enable && g.Debug.history.Flag() {
+			g.Debug.history.SetHistory(bank, PC, bytecode)
 		}
 
 		if handler != nil {
@@ -376,4 +377,114 @@ func (g *GBC) execVBlank() {
 
 func (g *GBC) isBoost() bool {
 	return g.boost > 1
+}
+
+func (g *GBC) Update() error {
+	if frames == 0 {
+		g.Debug.monitor.GBC.Reset()
+	}
+	if frames%3 == 0 {
+		g.handleJoypad()
+	}
+
+	frames++
+	g.Debug.monitor.GBC.Reset()
+
+	p, b := &g.Debug.pause, &g.Debug.Break
+	if p.Delay() {
+		p.DecrementDelay()
+	}
+	if p.On() || b.On() {
+		return nil
+	}
+
+	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
+
+	LCDC := g.FetchMemory8(LCDCIO)
+	scrollX, scrollY := uint(g.GPU.Scroll[0]), uint(g.GPU.Scroll[1])
+	scrollPixelX := scrollX % 8
+
+	iterX, iterY := width, height
+	if scrollPixelX > 0 {
+		iterX += 8
+	}
+
+	// render bg and run g
+	LCDC1 := [144]bool{}
+	for y := 0; y < iterY; y++ {
+		scx, scy, ok := g.execScanline()
+		if !ok {
+			break
+		}
+		scrollX, scrollY = scx, scy
+		scrollPixelX = scrollX % 8
+
+		if y < height {
+			LCDC1[y] = util.Bit(g.FetchMemory8(LCDCIO), 1)
+		}
+
+		// render background(or window)
+		WY, WX := uint(g.FetchMemory8(WYIO)), uint(g.FetchMemory8(WXIO))-7
+		if !skipRender {
+			for x := 0; x < iterX; x += 8 {
+				blockX, blockY := x/8, y/8
+
+				var tileX, tileY uint
+				var isWin bool
+				var entryX int
+
+				lineIdx := y % 8 // タイルの何行目を描画するか
+				entryY := gpu.EntryY{}
+				if util.Bit(LCDC, 5) && (WY <= uint(y)) && (WX <= uint(x)) {
+					tileX, tileY = ((uint(x)-WX)/8)%32, ((uint(y)-WY)/8)%32
+					isWin = true
+
+					entryX = blockX * 8
+					entryY.Block = blockY * 8
+					entryY.Offset = y % 8
+				} else {
+					tileX, tileY = (scrollX+uint(x))/8%32, (scrollY+uint(y))/8%32
+					isWin = false
+
+					entryX = blockX*8 - int(scrollPixelX)
+					entryY.Block = blockY * 8
+					entryY.Offset = y % 8
+					lineIdx = (int(scrollY) + y) % 8
+				}
+
+				if util.Bit(LCDC, 7) {
+					g.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, g.Cartridge.IsCGB, lineIdx)
+				}
+			}
+		}
+	}
+
+	// save bgmap and tiledata on debug mode
+	if g.Debug.Enable {
+		if !skipRender {
+			bg := g.GPU.Display(false)
+			g.GPU.Debug.SetBGMap(bg)
+		}
+		if frames%4 == 0 {
+			go func() {
+				g.GPU.UpdateTileData(g.Cartridge.IsCGB)
+			}()
+		}
+	}
+
+	if !skipRender {
+		g.renderSprite(&LCDC1)   // render sprite
+		g.GPU.SetBGPriorPixels() // render bg has higher priority
+	}
+
+	g.execVBlank()
+	if g.Debug.Enable {
+		select {
+		case <-second:
+			fps = frames
+			frames = 0
+		default:
+		}
+	}
+	return nil
 }
