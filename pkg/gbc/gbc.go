@@ -3,8 +3,6 @@ package gbc
 import (
 	"fmt"
 	"math"
-	"net"
-	"sync"
 
 	"gbc/pkg/emulator/config"
 	"gbc/pkg/emulator/joypad"
@@ -12,15 +10,7 @@ import (
 	"gbc/pkg/gbc/cart"
 	"gbc/pkg/gbc/gpu"
 	"gbc/pkg/gbc/rtc"
-	"gbc/pkg/gbc/serial"
 	"gbc/pkg/util"
-)
-
-const (
-	HBlankMode = iota
-	VBlankMode
-	OAMRAMMode
-	LCDMode
 )
 
 // ROMBank - 0x4000-0x7fff
@@ -46,13 +36,10 @@ type GBC struct {
 	Reg       Register
 	RAM       [0x10000]byte
 	Cartridge cart.Cartridge
-	mutex     sync.Mutex
 	joypad    joypad.Joypad
 	halt      bool
 	Config    *config.Config
-	mode      int
 	Timer
-	serialTick chan int
 	ROMBank
 	RAMBank
 	WRAMBank
@@ -61,7 +48,6 @@ type GBC struct {
 	GPU      gpu.GPU
 	RTC      rtc.RTC
 	boost    int // 1 or 2
-	Serial   serial.Serial
 	IMESwitch
 	Debug Debug
 }
@@ -205,28 +191,6 @@ func (g *GBC) initIOMap() {
 	g.RAM[OBP0IO], g.RAM[OBP1IO] = 0xff, 0xff
 }
 
-func (g *GBC) initNetwork() {
-	if g.Config.Network.Network {
-		your, peer := g.Config.Network.Your, g.Config.Network.Peer
-		myIP, myPort, _ := net.SplitHostPort(your)
-		peerIP, peerPort, _ := net.SplitHostPort(peer)
-		received := make(chan int)
-		g.Serial.Init(myIP, myPort, peerIP, peerPort, received, &g.mutex)
-		g.serialTick = make(chan int)
-
-		go func() {
-			for {
-				<-received
-				g.Serial.TransferFlag = 1
-				<-g.serialTick
-				g.Serial.Receive()
-				g.Serial.ClearSC()
-				g.setSerialFlag(true)
-			}
-		}()
-	}
-}
-
 func (g *GBC) initDMGPalette() {
 	c0, c1, c2, c3 := g.Config.Palette.Color0, g.Config.Palette.Color1, g.Config.Palette.Color2, g.Config.Palette.Color3
 	gpu.InitPalette(c0, c1, c2, c3)
@@ -242,8 +206,6 @@ func (g *GBC) Init(debug bool, test bool) {
 	g.GPU.Init(debug)
 	g.Config = config.Init()
 	g.boost = 1
-
-	g.initNetwork()
 
 	if !g.Cartridge.IsCGB {
 		g.initDMGPalette()
@@ -265,7 +227,6 @@ func (g *GBC) Init(debug bool, test bool) {
 
 // Exit gbc
 func (g *GBC) Exit() {
-	g.Serial.Exit()
 }
 
 // Exec 1cycle

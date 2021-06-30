@@ -3,10 +3,9 @@ package gbc
 import "gbc/pkg/util"
 
 type Cycle struct {
-	tac      int // use in normal timer
-	div      int // use in div timer
-	scanline int // use in scanline counter
-	serial   int
+	tac      int    // use in normal timer
+	div      int    // use in div timer
+	scanline int    // use in scanline counter
 	sys      uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
 }
 
@@ -80,19 +79,6 @@ func (g *GBC) tick() {
 			g.Reg.IME = g.IMESwitch.Value
 			g.IMESwitch.Working = false
 		}
-	}
-
-	// clock management in serial communication
-	if g.Config.Network.Network && g.Serial.TransferFlag > 0 {
-		g.Cycle.serial++
-		if g.Cycle.serial > 128*8 {
-			g.Serial.TransferFlag = 0
-			close(g.serialTick)
-			g.Cycle.serial = 0
-			g.serialTick = make(chan int)
-		}
-	} else {
-		g.Cycle.serial = 0
 	}
 
 	g.Cycle.scanline++

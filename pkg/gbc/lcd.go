@@ -1,9 +1,10 @@
 package gbc
 
-import "gbc/pkg/util"
+import (
+	"gbc/pkg/util"
+)
 
 func (g *GBC) setHBlankMode() {
-	g.mode = HBlankMode
 	stat := g.Load8(LCDSTATIO) & 0b1111_1100
 	g.Store8(LCDSTATIO, stat)
 
@@ -24,13 +25,11 @@ func (g *GBC) setHBlankMode() {
 }
 
 func (g *GBC) setVBlankMode() {
-	g.mode = VBlankMode
 	stat := (g.Load8(LCDSTATIO) | 0x01) & 0xfd // bit0-1: 01
 	g.Store8(LCDSTATIO, stat)
 }
 
 func (g *GBC) setOAMRAMMode() {
-	g.mode = OAMRAMMode
 	stat := (g.Load8(LCDSTATIO) | 0x02) & 0xfe // bit0-1: 10
 	g.Store8(LCDSTATIO, stat)
 	if util.Bit(stat, 5) {
@@ -39,7 +38,6 @@ func (g *GBC) setOAMRAMMode() {
 }
 
 func (g *GBC) setLCDMode() {
-	g.mode = LCDMode
 	stat := g.Load8(LCDSTATIO) | 0b11
 	g.Store8(LCDSTATIO, stat)
 }

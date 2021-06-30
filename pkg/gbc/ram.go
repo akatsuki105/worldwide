@@ -34,9 +34,7 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 	case addr == JOYPADIO:
 		value = g.joypad.Output()
 	case addr == SBIO:
-		value = g.Serial.ReadSB()
 	case addr == SCIO:
-		value = g.Serial.ReadSC()
 	case (addr >= 0xff10 && addr <= 0xff26) || (addr >= 0xff30 && addr <= 0xff3f): // sound IO
 		value = g.Sound.Read(addr)
 	case addr == LCDCIO:
@@ -153,63 +151,6 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 	switch {
 	case addr == JOYPADIO:
 		g.joypad.P1 = value
-
-	case addr == SBIO:
-		g.Serial.WriteSB(value)
-	case addr == SCIO:
-
-		if g.Serial.TransferFlag == 0 {
-			g.Serial.WriteSC(value)
-
-			switch value {
-			case 0x80:
-				if g.Serial.WaitCtr > 0 {
-					g.Serial.Wait.Done()
-					g.Serial.WaitCtr--
-				}
-			case 0x81:
-				close(done)
-				done = make(chan int)
-				go func() {
-					success := false
-					for !success {
-						success = g.Serial.Transfer(0)
-						select {
-						case <-done:
-							// if next transfer is requested, stop forcibly
-						default:
-						}
-					}
-					if success {
-						g.Serial.TransferFlag = 1
-						<-g.serialTick
-						g.Serial.Receive()
-						g.Serial.ClearSC()
-						g.setSerialFlag(true)
-					}
-				}()
-			case 0x83:
-				close(done)
-				done = make(chan int)
-				go func() {
-					success := false
-					for !success {
-						success = g.Serial.Transfer(0)
-						select {
-						case <-done:
-						default:
-						}
-					}
-					if success {
-						g.Serial.TransferFlag = 1
-						<-g.serialTick
-						g.Serial.Receive()
-						g.Serial.ClearSC()
-						g.setSerialFlag(true)
-					}
-				}()
-			}
-		}
 
 	case addr == DIVIO:
 		g.Timer.ResetAll = true
