@@ -23,8 +23,10 @@ type GPU struct {
 	VRAM
 	HBlankDMALength int
 	Debug
-	renderer *Renderer
-	oam      *OAM
+	renderer      *Renderer
+	oam           *OAM
+	sgbRenderMode int
+	sgbAttributes []byte
 }
 
 var (
