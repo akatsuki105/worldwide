@@ -32,7 +32,9 @@ type Renderer struct {
 
 	objOffsetX, objOffsetY, offsetScx, offsetScy, offsetWx, offsetWy int16
 
-	sgbBorders bool
+	sgbBorders    bool
+	sgbRenderMode int
+	sgbAttributes []byte
 }
 
 func NewRenderer() *Renderer {
@@ -41,14 +43,100 @@ func NewRenderer() *Renderer {
 	}
 }
 
+// GBVideoSoftwareRendererUpdateWindow
+func (r *Renderer) updateWindow(before, after bool, oldWy byte) {
+	if r.lastY >= GB_VIDEO_VERTICAL_PIXELS || !(after || before) {
+		return
+	}
+	if !r.hasWindow && r.lastX == GB_VIDEO_HORIZONTAL_PIXELS {
+		return
+	}
+	if r.lastY >= int(oldWy) {
+		if !after {
+			r.currentWy = byte(int(r.currentWy) - r.lastY)
+			r.hasWindow = true
+		} else if !before {
+			if !r.hasWindow {
+				r.currentWy = byte(r.lastY - int(r.wy))
+				if r.lastY >= int(r.wy) && r.lastX > int(r.wx) {
+					r.currentWy++
+				}
+			} else {
+				r.currentWy += byte(r.lastY)
+			}
+		} else if r.wy != oldWy {
+			r.currentWy += oldWy - r.wy
+			r.hasWindow = true
+		}
+	}
+}
+
+// writeVideoRegister / GBVideoSoftwareRendererWriteVideoRegister
+// this is called from GBIOWrite/GBVideoWritePalette/etc...
+func (r *Renderer) WriteVideoRegister(address uint16, value byte) byte {
+	wasWindow := r.inWindow()
+	wy := r.wy
+
+	switch address {
+	case GB_REG_LCDC:
+		r.g.LCDC = value
+		r.updateWindow(wasWindow, r.inWindow(), wy)
+	case GB_REG_SCY:
+		r.scy = value
+	case GB_REG_SCX:
+		r.scx = value
+	case GB_REG_WY:
+		r.wy = value
+		r.updateWindow(wasWindow, r.inWindow(), wy)
+	case GB_REG_WX:
+		r.wx = value
+		r.updateWindow(wasWindow, r.inWindow(), wy)
+	case GB_REG_BGP:
+		r.lookup[0] = value & 3
+		r.lookup[1] = (value >> 2) & 3
+		r.lookup[2] = (value >> 4) & 3
+		r.lookup[3] = (value >> 6) & 3
+		r.lookup[PAL_HIGHLIGHT_BG+0] = PAL_HIGHLIGHT + (value & 3)
+		r.lookup[PAL_HIGHLIGHT_BG+1] = PAL_HIGHLIGHT + ((value >> 2) & 3)
+		r.lookup[PAL_HIGHLIGHT_BG+2] = PAL_HIGHLIGHT + ((value >> 4) & 3)
+		r.lookup[PAL_HIGHLIGHT_BG+3] = PAL_HIGHLIGHT + ((value >> 6) & 3)
+	case GB_REG_OBP0:
+		r.lookup[PAL_OBJ+0] = value & 3
+		r.lookup[PAL_OBJ+1] = (value >> 2) & 3
+		r.lookup[PAL_OBJ+2] = (value >> 4) & 3
+		r.lookup[PAL_OBJ+3] = (value >> 6) & 3
+		r.lookup[PAL_HIGHLIGHT_OBJ+0] = PAL_HIGHLIGHT + (value & 3)
+		r.lookup[PAL_HIGHLIGHT_OBJ+1] = PAL_HIGHLIGHT + ((value >> 2) & 3)
+		r.lookup[PAL_HIGHLIGHT_OBJ+2] = PAL_HIGHLIGHT + ((value >> 4) & 3)
+		r.lookup[PAL_HIGHLIGHT_OBJ+3] = PAL_HIGHLIGHT + ((value >> 6) & 3)
+	case GB_REG_OBP1:
+		r.lookup[PAL_OBJ+4] = value & 3
+		r.lookup[PAL_OBJ+5] = (value >> 2) & 3
+		r.lookup[PAL_OBJ+6] = (value >> 4) & 3
+		r.lookup[PAL_OBJ+7] = (value >> 6) & 3
+		r.lookup[PAL_HIGHLIGHT_OBJ+4] = PAL_HIGHLIGHT + (value & 3)
+		r.lookup[PAL_HIGHLIGHT_OBJ+5] = PAL_HIGHLIGHT + ((value >> 2) & 3)
+		r.lookup[PAL_HIGHLIGHT_OBJ+6] = PAL_HIGHLIGHT + ((value >> 4) & 3)
+		r.lookup[PAL_HIGHLIGHT_OBJ+7] = PAL_HIGHLIGHT + ((value >> 6) & 3)
+	}
+
+	return value
+}
+
+// writePalette / GBVideoSoftwareRendererWritePalette
+// GBVideoWritePalette calls this
 func (r *Renderer) writePalette(index int, value uint16) {
 	r.palette[index] = value
 }
 
+// writeVRAM / GBVideoSoftwareRendererWriteVRAM
+// GBStore8 calls this
 func (r *Renderer) writeVRAM(address uint16) {}
-func (r *Renderer) writeOAM(oam uint16)      {}
 
-// GBVideoSoftwareRendererDrawRange
+// writeOAM / GBVideoSoftwareRendererWriteOAM
+func (r *Renderer) writeOAM(oam uint16) {}
+
+// drawRange/ GBVideoSoftwareRendererDrawRange
 func (r *Renderer) drawRange(startX, endX, y int) {
 	r.lastY, r.lastX = y, endX
 	if startX >= endX {
@@ -114,10 +202,10 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 
 	row := r.outputBuffer[r.outputBufferStride*y+sgbOffset:]
 	x, p := startX, 0
-	switch r.g.sgbRenderMode {
+	switch r.sgbRenderMode {
 	case 0:
 		if r.model&util.GB_MODEL_SGB != 0 {
-			p = int(r.g.sgbAttributes[(startX>>5)+5*(y>>3)])
+			p = int(r.sgbAttributes[(startX>>5)+5*(y>>3)])
 			p >>= 6 - ((x / 4) & 0x6)
 			p &= 3
 			p <<= 2
@@ -127,7 +215,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 		for ; x+7 < (endX & ^7); x += 8 {
 			if (r.model & util.GB_MODEL_SGB) != 0 {
-				p = int(r.g.sgbAttributes[(x>>5)+5*(y>>3)])
+				p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
 				p >>= 6 - ((x / 4) & 0x6)
 				p &= 3
 				p <<= 2
@@ -142,7 +230,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			row[x+7] = r.palette[p|int(r.lookup[r.row[x+7]&OBJ_PRIO_MASK])]
 		}
 		if (r.model & util.GB_MODEL_SGB) != 0 {
-			p = int(r.g.sgbAttributes[(x>>5)+5*(y>>3)])
+			p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
 			p >>= 6 - ((x / 4) & 0x6)
 			p &= 3
 			p <<= 2
@@ -187,6 +275,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	}
 }
 
+// GBVideoSoftwareRendererDrawBackground
 func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bool) {
 	vramIdx := 0
 	attrIdx := mapIdx + GB_SIZE_VRAM_BANK0
@@ -302,6 +391,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 	}
 }
 
+// GBVideoSoftwareRendererDrawObj
 func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 	objX := int(obj.obj.x) + int(r.objOffsetX)
 	ix := objX - 8
@@ -447,6 +537,7 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 	}
 }
 
+// _cleanOAM
 func (r *Renderer) cleanOAM(y int) {
 	spriteHeight := 8
 	if util.Bit(r.g.LCDC, ObjSize) {
@@ -468,4 +559,9 @@ func (r *Renderer) cleanOAM(y int) {
 		}
 	}
 	r.objMax = o
+}
+
+// _inWindow
+func (r *Renderer) inWindow() bool {
+	return util.Bit(r.g.LCDC, Window) && GB_VIDEO_HORIZONTAL_PIXELS+7 > r.wx
 }

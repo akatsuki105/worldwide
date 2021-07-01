@@ -6,6 +6,8 @@ import (
 	"image/color"
 )
 
+var defaultDmgPalette = [12]uint16{0x7fff, 0x56b5, 0x294a, 0x0000, 0x7fff, 0x56b5, 0x294a, 0x0000, 0x7fff, 0x56b5, 0x294a, 0x0000}
+
 type VRAM struct {
 	Bank   uint16       // 0 or 1
 	Buffer [0x4000]byte // (0x8000-0x9fff)x2 (using bank on CGB)
@@ -23,10 +25,11 @@ type GPU struct {
 	VRAM
 	HBlankDMALength int
 	Debug
-	renderer      *Renderer
-	oam           *OAM
-	sgbRenderMode int
-	sgbAttributes []byte
+
+	renderer   *Renderer
+	oam        *OAM
+	dmgPalette [12]uint16
+	palette    [64]uint16
 }
 
 var (
@@ -71,4 +74,29 @@ func (g *GPU) fetchTileBaseAddr() uint16 {
 		return 0x8000
 	}
 	return 0x8800
+}
+
+// GBVideoWritePalette
+func (g *GPU) WritePalette(address uint16, value byte) {
+	if g.renderer.model < util.GB_MODEL_SGB {
+
+	} else if g.renderer.model&util.GB_MODEL_SGB != 0 {
+
+	} else {
+
+	}
+}
+
+// GBVideoSwitchBank
+func (g *GPU) SwitchBank(value int8) {
+	value &= 1
+	g.VRAM.Bank = uint16(value)
+}
+
+// GBVideoSetPalette
+func (g *GPU) SetPalette(index uint, color uint32) {
+	if index >= 12 {
+		return
+	}
+	g.dmgPalette[index] = uint16((((color) & 0xF8) << 7) | (((color) & 0xF800) >> 6) | (((color) & 0xF80000) >> 19))
 }
