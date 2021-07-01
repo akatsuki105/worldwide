@@ -5,6 +5,7 @@ import "gbc/pkg/util"
 const (
 	GB_VIDEO_VERTICAL_PIXELS = 144
 	GB_VIDEO_MAX_OBJ         = 40
+	GB_VIDEO_MAX_LINE_OBJ    = 10
 )
 
 const (
@@ -14,7 +15,8 @@ const (
 )
 
 const (
-	OBJ_PRIORITY = 0x100
+	OBJ_PRIORITY   = 0x100
+	PAL_SGB_BORDER = 0x40
 )
 
 const (
@@ -56,6 +58,7 @@ type Renderer struct {
 
 	lastHighlightAmount byte
 	model               util.GBModel
+	obj                 [GB_VIDEO_MAX_LINE_OBJ]Sprite
 	objMax              int
 
 	objOffsetX, objOffsetY, offsetScx, offsetScy, offsetWx, offsetWy int16
@@ -97,17 +100,23 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 		if util.Bit(r.g.LCDC, Window) && r.hasWindow && wx <= endX && !r.disableWIN {
 			if wx > 0 && !r.disableBG {
-
+				r.drawBackground(mapIdx, startX, wx, int(r.scx)-int(r.offsetScx), int(r.scy)+y-int(r.offsetScy), r.highlightBG)
 			}
-		} else if !r.disableBG {
 
+			mapIdx = GB_BASE_MAP
+			if util.Bit(r.g.LCDC, TileMap) {
+				mapIdx += GB_SIZE_MAP // 0x9c00
+			}
+			r.drawBackground(mapIdx, wx, endX, -wx-int(r.offsetWx), y-wy-int(r.offsetWy), r.highlightWIN)
+		} else if !r.disableBG {
+			r.drawBackground(mapIdx, startX, endX, int(r.scx)-int(r.offsetScx), int(r.scy)+y-int(r.offsetScy), r.highlightBG)
 		}
 	} else if !r.disableBG {
-
+		// TODO: memset(&softwareRenderer->row[startX], 0, (endX - startX) * sizeof(softwareRenderer->row[0]));
 	}
 
 	if startX == 0 {
-
+		r.cleanOAM(y)
 	}
 	if util.Bit(r.g.LCDC, ObjEnable) && !r.disableOBJ {
 		for i := 0; i < r.objMax; i++ {
@@ -117,6 +126,15 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			}, startX, endX, y)
 		}
 	}
+
+	highlightAmount := (r.highlightAmount + 6) >> 4
+	if r.lastHighlightAmount != highlightAmount {
+		r.lastHighlightAmount = highlightAmount
+	}
+}
+
+func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bool) {
+
 }
 
 func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
@@ -262,4 +280,27 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			r.row[x] = p | uint16((tileDataUpper&128)>>6) | uint16((tileDataLower&128)>>7)
 		}
 	}
+}
+
+func (r *Renderer) cleanOAM(y int) {
+	spriteHeight := 8
+	if util.Bit(r.g.LCDC, ObjSize) {
+		spriteHeight = 16
+	}
+
+	o := 0
+	for i := 0; i < GB_VIDEO_MAX_OBJ && o < GB_VIDEO_MAX_LINE_OBJ; i++ {
+		oy := int(r.g.oam[i].y)
+		if y < oy-16 || y >= oy-16+spriteHeight {
+			continue
+		}
+
+		r.obj[o].obj = r.g.oam[i]
+		r.obj[o].index = int8(i)
+		o++
+		if o == 10 {
+			break
+		}
+	}
+	r.objMax = o
 }
