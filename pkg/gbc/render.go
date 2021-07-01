@@ -30,7 +30,7 @@ var (
 )
 
 func (g *GBC) Draw(screen *ebiten.Image) {
-	display := g.GPU.Display(g.Config.Display.HQ2x)
+	display := g.GPU.Display()
 	if g.Debug.Enable {
 		dScreen := ebiten.NewImage(int(debugWidth), int(debugHeight))
 		dScreen.Fill(color.RGBA{35, 27, 167, 255})
@@ -90,10 +90,6 @@ func (g *GBC) Draw(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 		screen.DrawImage(dScreen, op)
 		return
-	}
-
-	if !skipRender && g.Config.Display.HQ2x {
-		display = g.GPU.HQ2x()
 	}
 	screen.ReplacePixels(display.Pix)
 }

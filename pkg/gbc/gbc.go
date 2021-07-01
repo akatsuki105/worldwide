@@ -423,7 +423,7 @@ func (g *GBC) Update() error {
 	// save bgmap and tiledata on debug mode
 	if g.Debug.Enable {
 		if !skipRender {
-			bg := g.GPU.Display(false)
+			bg := g.GPU.Display()
 			g.GPU.Debug.SetBGMap(bg)
 		}
 		if frames%4 == 0 {
