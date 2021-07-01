@@ -41,12 +41,12 @@ func (g *GPU) setSPRLine(entryX, entryY, lineNumber int, addr uint16, tileType i
 	spriteYSize := g.fetchSPRYSize()
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
-	VRAMBankPtr := (attr >> 3) & 0x01
+	bank := uint16((attr >> 3) & 0x01)
 	if !isCGB {
-		VRAMBankPtr = 0
+		bank = 0
 	}
 
-	lowerByte, upperByte := g.VRAM.Bank[VRAMBankPtr][addr-0x8000], g.VRAM.Bank[VRAMBankPtr][addr-0x8000+1]
+	lowerByte, upperByte := g.VRAM.Buffer[addr-0x8000+0x2000*bank], g.VRAM.Buffer[addr-0x8000+1+0x2000*bank]
 	for i := 0; i < 8; i++ {
 		bit := (7 - uint(i)) // 上位何ビット目を取り出すか
 		upperColor, lowerColor := (upperByte>>bit)&0x01, (lowerByte>>bit)&0x01

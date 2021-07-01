@@ -200,8 +200,8 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			} else {
 				bottomX = 7 - ((x - objX) & 7)
 			}
-			tileDataLower := r.g.VRAM.Bank[bank][(objTile*8+bottomY)*2]
-			tileDataUpper := r.g.VRAM.Bank[bank][(objTile*8+bottomY)*2+1]
+			tileDataLower := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+0x2000*bank]
+			tileDataUpper := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+1+0x2000*bank]
 			tileDataUpper >>= bottomX
 			tileDataLower >>= bottomX
 			current := r.row[x]
@@ -210,8 +210,8 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			}
 		}
 	} else if util.Bit(obj.obj.attr, ObjAttrXFlip) {
-		tileDataLower := r.g.VRAM.Bank[bank][(objTile*8+bottomY)*2]
-		tileDataUpper := r.g.VRAM.Bank[bank][(objTile*8+bottomY)*2+1]
+		tileDataLower := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+0x2000*bank]
+		tileDataUpper := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+1+0x2000*bank]
 		current := r.row[x]
 		if ((tileDataUpper|tileDataLower)&1) != 0 && (uint(current)&mask == 0) && (uint(current)&mask2) <= OBJ_PRIORITY {
 			r.row[x] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)
@@ -245,8 +245,8 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			r.row[x+7] = p | uint16((tileDataUpper&128)>>6) | uint16((tileDataLower&128)>>7)
 		}
 	} else {
-		tileDataLower := r.g.VRAM.Bank[bank][(objTile*8+bottomY)*2]
-		tileDataUpper := r.g.VRAM.Bank[bank][(objTile*8+bottomY)*2+1]
+		tileDataLower := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+0x2000*bank]
+		tileDataUpper := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+1+0x2000*bank]
 		current := r.row[x+7]
 		if ((tileDataUpper|tileDataLower)&1) != 0 && (uint(current)&mask) == 0 && (uint(current)&mask2) <= OBJ_PRIORITY {
 			r.row[x+7] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)

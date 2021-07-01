@@ -7,8 +7,8 @@ import (
 )
 
 type VRAM struct {
-	Ptr  uint8
-	Bank [2][0x2000]byte // 0x8000-0x9fff (using bank on CGB)
+	Bank   uint16       // 0 or 1
+	Buffer [0x4000]byte // (0x8000-0x9fff)x2 (using bank on CGB)
 }
 
 // GPU Graphic Processor Unit

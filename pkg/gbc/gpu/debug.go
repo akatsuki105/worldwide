@@ -67,8 +67,8 @@ func (g *GPU) UpdateTileData(isCGB bool) {
 
 			tileAddr := 0x8000 + 16*i
 			for y := 0; y < 8; y++ {
-				addr := tileAddr + 2*y
-				lowerByte, upperByte := g.VRAM.Bank[bank][addr-0x8000], g.VRAM.Bank[bank][addr-0x8000+1]
+				addr := uint16(tileAddr + 2*y)
+				lowerByte, upperByte := g.VRAM.Buffer[addr-0x8000+0x2000*uint16(bank)], g.VRAM.Buffer[addr-0x8000+1+0x2000*uint16(bank)]
 
 				for x := 0; x < 8; x++ {
 					bitCtr := (7 - uint(x)) // 上位何ビット目を取り出すか

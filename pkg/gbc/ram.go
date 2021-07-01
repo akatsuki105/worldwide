@@ -12,7 +12,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case addr >= 0x4000 && addr < 0x8000: // rom bank
 		value = g.ROMBank.bank[g.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000: // vram bank
-		value = g.GPU.VRAM.Bank[g.GPU.VRAM.Ptr][addr-0x8000]
+		value = g.GPU.VRAM.Buffer[addr-0x8000+0x2000*g.GPU.VRAM.Bank]
 	case addr >= 0xa000 && addr < 0xc000: // rtc or ram bank
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))
@@ -128,7 +128,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 
 		switch {
 		case addr >= 0x8000 && addr < 0xa000: // vram
-			g.GPU.VRAM.Bank[g.GPU.VRAM.Ptr][addr-0x8000] = value
+			g.GPU.VRAM.Buffer[addr-0x8000+0x2000*g.GPU.VRAM.Bank] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
 				g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000] = value
@@ -216,7 +216,7 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 
 	// below case statements, gbc only
 	case addr == VBKIO && g.GPU.HBlankDMALength == 0: // switch vram bank
-		g.GPU.VRAM.Ptr = value & 0x01
+		g.GPU.VRAM.Bank = uint16(value & 0x01)
 
 	case addr == HDMA5IO:
 		HDMA5 := value

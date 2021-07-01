@@ -26,7 +26,7 @@ func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, isWin, isC
 		}
 	}
 
-	tileIdx := g.VRAM.Bank[0][mapAddr-0x8000] // BG Mapから該当の画面の場所のタイル番号を取得
+	tileIdx := g.VRAM.Buffer[mapAddr-0x8000] // BG Mapから該当の画面の場所のタイル番号を取得
 	baseAddr := g.fetchTileBaseAddr()
 	if baseAddr == 0x8800 {
 		tileIdx = uint8(int(int8(tileIdx)) + 128)
@@ -35,7 +35,7 @@ func (g *GPU) SetBGLine(entryX int, entryY EntryY, tileX, tileY uint, isWin, isC
 	// bg attr
 	attr := byte(0)
 	if isCGB {
-		attr = g.VRAM.Bank[1][mapAddr-0x8000]
+		attr = g.VRAM.Buffer[mapAddr-0x8000+0x2000]
 	}
 
 	tileDataOffset := uint16(tileIdx)*8 + uint16(lineIdx) // 何枚目のタイルか*8 + タイルの何行目か = 描画対象のタイルデータのオフセット
@@ -59,12 +59,12 @@ func (g *GPU) SetBGPriorPixels() {
 func (g *GPU) setBGLine(entryX, entryY, lineNumber int, addr uint16, attr byte, isCGB bool) bool {
 
 	// entryX, entryY: 何Pixel目を基準として配置するか
-	VRAMBankPtr := (attr >> 3) & 0x01
+	bank := uint16((attr >> 3) & 0x01)
 	if !isCGB {
-		VRAMBankPtr = 0
+		bank = 0
 	}
 
-	lowerByte, upperByte := g.VRAM.Bank[VRAMBankPtr][addr-0x8000], g.VRAM.Bank[VRAMBankPtr][addr-0x8000+1]
+	lowerByte, upperByte := g.VRAM.Buffer[addr-0x8000+0x2000*bank], g.VRAM.Buffer[addr-0x8000+1+0x2000*bank]
 	for i := 0; i < 8; i++ {
 		bit := (7 - uint(i)) // upper bit
 		upperColor, lowerColor := (upperByte>>bit)&0x01, (lowerByte>>bit)&0x01
