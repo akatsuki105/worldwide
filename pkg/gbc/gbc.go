@@ -390,19 +390,6 @@ func (g *GBC) Update() error {
 		}
 	}
 
-	// save bgmap and tiledata on debug mode
-	if g.Debug.Enable {
-		if !skipRender {
-			bg := g.GPU.Display()
-			g.GPU.Debug.SetBGMap(bg)
-		}
-		if frames%4 == 0 {
-			go func() {
-				g.GPU.UpdateTileData(g.Cartridge.IsCGB)
-			}()
-		}
-	}
-
 	g.execVBlank()
 	g.GPU.UpdateFrameCount()
 	if g.Debug.Enable {
