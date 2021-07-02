@@ -12,6 +12,8 @@ const (
 	IFIO      uint16 = 0xff0f
 	LCDCIO    uint16 = 0xff40
 	LCDSTATIO uint16 = 0xff41
+	SCYIO     uint16 = 0xff42
+	SCXIO     uint16 = 0xff43
 	LYIO      uint16 = 0xff44
 	LYCIO     uint16 = 0xff45
 	DMAIO     uint16 = 0xff46

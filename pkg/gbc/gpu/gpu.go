@@ -17,17 +17,18 @@ type VRAM struct {
 type GPU struct {
 	display       *image.RGBA    // 160*144
 	LCDC          byte           // LCD Control
-	LCDSTAT       byte           // LCD Status
-	Scroll        [2]byte        // Scroll coord
 	displayColor  [144][160]byte // 160*144 color data
 	BGPriorPixels [][5]byte
 	VRAM
 	HBlankDMALength int
 	Debug
 
+	X, Ly int
+	Stat  byte // LCD Status
+
 	Mode     int
-	renderer *Renderer
-	oam      *OAM
+	Renderer *Renderer
+	oam      OAM
 
 	// 0xff68
 	BcpIndex, BcpIncrement int
@@ -52,14 +53,17 @@ const (
 	OBP1
 )
 
-// Init GPU
-func (g *GPU) Init(debug bool) {
+func New(debug bool) *GPU {
+	g := &GPU{}
+
 	g.display = image.NewRGBA(image.Rect(0, 0, 160, 144))
 	g.Debug.On = debug
 	if debug {
 		g.initTileData()
 		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))
 	}
+	g.Renderer = NewRenderer(g)
+	return g
 }
 
 // Display returns gameboy display data
@@ -86,9 +90,9 @@ func (g *GPU) fetchTileBaseAddr() uint16 {
 // GBVideoWritePalette
 // 0xff47, 0xff48, 0xff49, 0xff69, 0xff6b
 func (g *GPU) WritePalette(address uint16, value byte) {
-	if g.renderer.model < util.GB_MODEL_SGB {
+	if g.Renderer.model < util.GB_MODEL_SGB {
 
-	} else if g.renderer.model&util.GB_MODEL_SGB != 0 {
+	} else if g.Renderer.model&util.GB_MODEL_SGB != 0 {
 
 	} else {
 
@@ -110,4 +114,23 @@ func (g *GPU) SetPalette(index uint, color uint32) {
 }
 
 // GBVideoProcessDots
-func (g *GPU) ProcessDots(cyclesLate uint32) {}
+func (g *GPU) ProcessDots(cyclesLate uint32) {
+	if g.Mode != 3 {
+		return
+	}
+}
+
+// mode0 = HBlank
+// 204 cycles
+func EndMode0() {}
+
+// mode1 = VBlank
+func EndMode1() {}
+
+// mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
+// 80 cycles
+func EndMode2() {}
+
+// mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
+// 172 cycles
+func EndMode3() {}

@@ -3,6 +3,8 @@ package gbc
 import (
 	"fmt"
 	"math"
+	"os"
+	"runtime"
 
 	"gbc/pkg/emulator/config"
 	"gbc/pkg/emulator/joypad"
@@ -198,12 +200,12 @@ func (g *GBC) initDMGPalette() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
+	g.GPU = *gpu.New(debug)
 	g.initRegister()
 	g.initIOMap()
 
 	g.ROMBank.ptr, g.WRAMBank.ptr = 1, 1
 
-	g.GPU.Init(debug)
 	g.Config = config.Init()
 	g.boost = 1
 
@@ -306,7 +308,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 		g.exec(42 * g.boost)
 	}
 
-	scrollX, scrollY := uint(g.GPU.Scroll[0]), uint(g.GPU.Scroll[1])
+	scrollX, scrollY := uint(g.RAM[SCXIO]), uint(g.RAM[SCYIO])
 
 	// HBlank mode0
 	g.Cycle.scanline -= 42 * g.boost
@@ -362,7 +364,7 @@ func (g *GBC) Update() error {
 	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
 	LCDC := g.Load8(LCDCIO)
-	scrollX, scrollY := uint(g.GPU.Scroll[0]), uint(g.GPU.Scroll[1])
+	scrollX, scrollY := uint(g.RAM[SCXIO]), uint(g.RAM[SCYIO])
 	scrollPixelX := scrollX % 8
 
 	iterX, iterY := width, height
@@ -448,4 +450,18 @@ func (g *GBC) Update() error {
 		}
 	}
 	return nil
+}
+
+func (g *GBC) PanicHandler(place string, stack bool) {
+	if err := recover(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s emulation error: %s in 0x%04x\n", place, err, g.Reg.PC)
+		for depth := 0; ; depth++ {
+			_, file, line, ok := runtime.Caller(depth)
+			if !ok {
+				break
+			}
+			fmt.Printf("======> %d: %v:%d\n", depth, file, line)
+		}
+		os.Exit(0)
+	}
 }

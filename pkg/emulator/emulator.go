@@ -107,10 +107,12 @@ func (e *Emulator) LoadSav() {
 }
 
 func (e *Emulator) Update() error {
+	defer e.GBC.PanicHandler("update", true)
 	return e.GBC.Update()
 }
 
 func (e *Emulator) Draw(screen *ebiten.Image) {
+	defer e.GBC.PanicHandler("draw", true)
 	e.GBC.Draw(screen)
 }
 

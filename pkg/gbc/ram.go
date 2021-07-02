@@ -40,7 +40,7 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 	case addr == LCDCIO:
 		value = g.GPU.LCDC
 	case addr == LCDSTATIO:
-		value = g.GPU.LCDSTAT
+		value = g.GPU.Stat
 	default:
 		value = g.RAM[addr]
 	}
@@ -196,12 +196,12 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.GPU.LCDC = value
 
 	case addr == LCDSTATIO:
-		g.GPU.LCDSTAT = value
+		g.GPU.Stat = value
 
-	case addr == 0xff42:
-		g.GPU.Scroll[1] = value
-	case addr == 0xff43:
-		g.GPU.Scroll[0] = value
+	case addr == SCYIO || addr == SCXIO || addr == WYIO || addr == WXIO:
+		g.GPU.ProcessDots(0)
+		value = g.GPU.Renderer.WriteVideoRegister(addr, value)
+		g.RAM[addr] = value
 
 	case addr == BGPIO || addr == OBP0IO || addr == OBP1IO:
 		g.GPU.ProcessDots(0)

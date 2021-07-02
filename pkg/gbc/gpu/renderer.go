@@ -38,8 +38,9 @@ type Renderer struct {
 	sgbTransfer   int
 }
 
-func NewRenderer() *Renderer {
+func NewRenderer(g *GPU) *Renderer {
 	return &Renderer{
+		g:     g,
 		lastY: GB_VIDEO_VERTICAL_PIXELS,
 	}
 }
