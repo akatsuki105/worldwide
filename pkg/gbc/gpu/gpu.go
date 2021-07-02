@@ -29,7 +29,7 @@ type GPU struct {
 	Stat  byte // LCD Status
 
 	Renderer *Renderer
-	oam      OAM
+	Oam      *OAM
 
 	// 0xff68
 	BcpIndex, BcpIncrement int
@@ -65,6 +65,7 @@ func New(debug bool) *GPU {
 		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))
 	}
 	g.Renderer = NewRenderer(g)
+	g.Oam = &OAM{}
 	g.dmgPalette = defaultDmgPalette
 	g.Reset()
 	return g

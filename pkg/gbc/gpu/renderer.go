@@ -197,7 +197,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	if util.Bit(r.g.LCDC, ObjEnable) && !r.disableOBJ {
 		for i := 0; i < r.objMax; i++ {
 			r.drawObj(&Sprite{
-				obj:   r.g.oam[i],
+				obj:   r.g.Oam[i],
 				index: int8(i),
 			}, startX, endX, y)
 		}
@@ -593,12 +593,12 @@ func (r *Renderer) cleanOAM(y int) {
 
 	o := 0
 	for i := 0; i < GB_VIDEO_MAX_OBJ && o < GB_VIDEO_MAX_LINE_OBJ; i++ {
-		oy := int(r.g.oam[i].y)
+		oy := int(r.g.Oam[i].y)
 		if y < oy-16 || y >= oy-16+spriteHeight {
 			continue
 		}
 
-		r.obj[o].obj = r.g.oam[i]
+		r.obj[o].obj = r.g.Oam[i]
 		r.obj[o].index = int8(i)
 		o++
 		if o == 10 {
