@@ -591,12 +591,12 @@ func (r *Renderer) cleanOAM(y int) {
 
 	o := 0
 	for i := 0; i < GB_VIDEO_MAX_OBJ && o < GB_VIDEO_MAX_LINE_OBJ; i++ {
-		oy := int(r.g.Oam[i].y)
+		oy := int(r.g.Oam.objs[i].y)
 		if y < oy-16 || y >= oy-16+spriteHeight {
 			continue
 		}
 
-		r.obj[o].obj = *r.g.Oam[i]
+		r.obj[o].obj = *r.g.Oam.objs[i]
 		r.obj[o].index = int8(i)
 		o++
 		if o == 10 {

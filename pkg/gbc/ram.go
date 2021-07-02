@@ -21,6 +21,8 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 		}
 	case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
 		value = g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000]
+	case addr >= 0xfe00 && addr <= 0xfe9f:
+		value = g.GPU.Oam.Get(addr - 0xfe00)
 	case addr >= 0xff00:
 		value = g.loadIO(addr)
 	default:
@@ -129,9 +131,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 		case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram
 			g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xfe00 && addr <= 0xfe9f:
-			idx := (addr - 0xfe00) >> 2
-			g.RAM[addr] = value
-			g.GPU.Oam[idx].Set(int(addr&3), value)
+			g.GPU.Oam.Set(addr-0xfe00, value)
 		case addr >= 0xff00:
 			g.storeIO(addr, value)
 		default:
