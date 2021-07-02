@@ -56,19 +56,19 @@ const (
 	OBP1
 )
 
-func New(debug bool) *GPU {
+func New() *GPU {
 	g := &GPU{}
 
-	g.Debug.On = debug
-	if debug {
-		g.initTileData()
-		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))
-	}
+	g.Debug.On = false
 	g.Renderer = NewRenderer(g)
 	g.Oam = NewOAM()
 	g.dmgPalette = defaultDmgPalette
 	g.Reset()
 	return g
+}
+
+func (g *GPU) SetModel(m util.GBModel) {
+	g.Renderer.model = m
 }
 
 func (g *GPU) Reset() {

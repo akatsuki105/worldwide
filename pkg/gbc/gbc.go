@@ -200,7 +200,7 @@ func (g *GBC) initDMGPalette() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
-	g.GPU = gpu.New(debug)
+	g.GPU = gpu.New()
 	g.initRegister()
 	g.initIOMap()
 
@@ -209,8 +209,8 @@ func (g *GBC) Init(debug bool, test bool) {
 	g.Config = config.Init()
 	g.boost = 1
 
-	if !g.Cartridge.IsCGB {
-		g.initDMGPalette()
+	if g.Cartridge.IsCGB {
+		g.GPU.SetModel(util.GB_MODEL_CGB)
 	}
 
 	// Init APU
