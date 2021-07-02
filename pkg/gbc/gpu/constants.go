@@ -1,8 +1,8 @@
 package gpu
 
 const (
-	GB_VIDEO_HORIZONTAL_PIXELS     = 160
-	GB_VIDEO_VERTICAL_PIXELS       = 144
+	HORIZONTAL_PIXELS              = 160
+	VERTICAL_PIXELS                = 144
 	GB_VIDEO_MAX_OBJ               = 40
 	GB_VIDEO_MAX_LINE_OBJ          = 10
 	GB_VIDEO_VERTICAL_TOTAL_PIXELS = 154

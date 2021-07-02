@@ -45,7 +45,7 @@ type GPU struct {
 
 var (
 	// colors {R, G, B}
-	colors [4][3]uint8 = [4][3]uint8{
+	DmgColor [4][3]uint8 = [4][3]uint8{
 		{175, 197, 160}, {93, 147, 66}, {22, 63, 48}, {0, 40, 0},
 	}
 )
@@ -71,22 +71,19 @@ func New(debug bool) *GPU {
 
 // Display returns gameboy display data
 func (g *GPU) Display() *image.RGBA {
-	i := image.NewRGBA(image.Rect(0, 0, 160, 144))
-	for y := 0; y < 144; y++ {
-		for x := 0; x < 160; x++ {
-			p := g.Renderer.outputBuffer[y*160+x]
-			r, g, b := byte((p&0b11111)*8), byte(((p>>5)&0b11111)*8), byte(((p>>10)&0b11111)*8)
-			i.SetRGBA(x, y, color.RGBA{r, g, b, 0xff})
+	i := image.NewRGBA(image.Rect(0, 0, HORIZONTAL_PIXELS, VERTICAL_PIXELS))
+	for y := 0; y < VERTICAL_PIXELS; y++ {
+		for x := 0; x < HORIZONTAL_PIXELS; x++ {
+			p := g.Renderer.outputBuffer[y*HORIZONTAL_PIXELS+x]
+			red, green, blue := byte((p&0b11111)*8), byte(((p>>5)&0b11111)*8), byte(((p>>10)&0b11111)*8)
+			if g.Renderer.model == util.GB_MODEL_DMG {
+				red, green, blue = DmgColor[p][0], DmgColor[p][1], DmgColor[p][2]
+			}
+
+			i.SetRGBA(x, y, color.RGBA{red, green, blue, 0xff})
 		}
 	}
 	return i
-}
-
-func (g *GPU) fetchTileBaseAddr() uint16 {
-	if util.Bit(g.LCDC, 4) {
-		return 0x8000
-	}
-	return 0x8800
 }
 
 // GBVideoWritePalette
@@ -189,7 +186,7 @@ func (g *GPU) ProcessDots(cyclesLate uint32) {
 	}
 
 	oldX := 0
-	g.X = GB_VIDEO_HORIZONTAL_PIXELS
+	g.X = HORIZONTAL_PIXELS
 	g.Renderer.drawRange(oldX, g.X, g.Renderer.lastX)
 }
 
@@ -204,7 +201,7 @@ func (g *GPU) EndMode0() {
 	g.Ly++
 
 	// oldStat := g.Stat
-	if g.Ly < GB_VIDEO_VERTICAL_PIXELS {
+	if g.Ly < VERTICAL_PIXELS {
 		g.setMode(2)
 	} else {
 		g.setMode(1)
@@ -260,3 +257,18 @@ func (g *GPU) Mode() byte {
 func (g *GPU) setMode(mode byte) {
 	g.Stat = (g.Stat & 0xfc) | mode
 }
+
+// GBVideoWriteLCDC
+func (g *GPU) WriteLCDC(value byte) {
+	if util.Bit(g.LCDC, Enable) && !util.Bit(value, Enable) {
+		g.setMode(0)
+		g.Ly = 0
+		g.Renderer.writePalette(0, Color(g.dmgPalette[0]))
+	}
+}
+
+// GBVideoWriteSTAT
+func (g *GPU) WriteSTAT(value byte) {}
+
+// GBVideoWriteLYC
+func (g *GPU) WriteLYC(value byte) {}

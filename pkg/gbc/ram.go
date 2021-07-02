@@ -41,6 +41,8 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 		value = g.GPU.LCDC
 	case addr == LCDSTATIO:
 		value = g.GPU.Stat
+	case addr == LYIO:
+		value = byte(g.GPU.Ly)
 	default:
 		value = g.RAM[addr]
 	}
@@ -124,7 +126,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 
 		switch {
 		case addr >= 0x8000 && addr < 0xa000: // vram
-			g.GPU.VRAM.Buffer[addr-0x8000+0x2000*g.GPU.VRAM.Bank] = value
+			g.GPU.VRAM.Buffer[addr-0x8000+(0x2000*g.GPU.VRAM.Bank)] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
 				g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000] = value
@@ -193,7 +195,9 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.Sound.WriteWaveform(addr, value)
 
 	case addr == LCDCIO:
-		g.GPU.LCDC = value
+		g.GPU.ProcessDots(0)
+		g.GPU.Renderer.WriteVideoRegister(addr&0xff, value)
+		g.GPU.WriteLCDC(value)
 
 	case addr == LCDSTATIO:
 		g.GPU.Stat = value

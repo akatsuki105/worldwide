@@ -78,7 +78,7 @@ func (g *GPU) UpdateTileData(isCGB bool) {
 
 					// 色番号からRGB値を算出する
 					RGB, _ := g.parsePallete(OBP0, colorNumber)
-					R, G, B := colors[RGB][0], colors[RGB][1], colors[RGB][2]
+					R, G, B := DmgColor[RGB][0], DmgColor[RGB][1], DmgColor[RGB][2]
 					c := color.RGBA{R, G, B, 0xff}
 
 					// overall と 各タイルに対して

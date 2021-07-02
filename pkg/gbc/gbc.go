@@ -318,7 +318,11 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	g.GPU.EndMode0()
 	g.Cycle.scanline -= (cyclePerLine - (20 + 42)) * g.boost
 
-	g.incrementLY()
+	LY := g.Load8(LYIO)
+	if LY == 144 { // set vblank flag
+		g.setVBlankFlag(true)
+	}
+	g.checkLYC(LY)
 	return scrollX, scrollY, true
 }
 
@@ -329,8 +333,12 @@ func (g *GBC) execVBlank() {
 			g.exec(cyclePerLine * g.boost)
 		}
 		g.GPU.EndMode1()
-		g.incrementLY()
 		LY := g.Load8(LYIO)
+		if LY == 144 { // set vblank flag
+			g.setVBlankFlag(true)
+		}
+		g.checkLYC(LY)
+
 		if LY == 0 {
 			break
 		}

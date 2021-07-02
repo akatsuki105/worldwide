@@ -4,17 +4,6 @@ import (
 	"gbc/pkg/util"
 )
 
-func (g *GBC) incrementLY() {
-	LY := g.Load8(LYIO)
-	LY++
-	if LY == 144 { // set vblank flag
-		g.setVBlankFlag(true)
-	}
-	LY %= 154 // LY = LY >= 154 ? 0 : LY
-	g.RAM[LYIO] = LY
-	g.checkLYC(LY)
-}
-
 func (g *GBC) checkLYC(LY uint8) {
 	LYC := g.Load8(LYCIO)
 	if LYC == LY {

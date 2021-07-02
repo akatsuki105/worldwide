@@ -19,7 +19,7 @@ type Renderer struct {
 	outputBuffer       [160 * 144]Color
 	outputBufferStride int
 
-	row [GB_VIDEO_HORIZONTAL_PIXELS + 8]uint16
+	row [HORIZONTAL_PIXELS + 8]uint16
 
 	palette [192]Color
 	lookup  [192]byte
@@ -44,7 +44,7 @@ type Renderer struct {
 func NewRenderer(g *GPU) *Renderer {
 	r := &Renderer{
 		g:     g,
-		lastY: GB_VIDEO_VERTICAL_PIXELS,
+		lastY: VERTICAL_PIXELS,
 	}
 
 	for i := byte(0); i < byte(len(r.lookup)); i++ {
@@ -56,10 +56,10 @@ func NewRenderer(g *GPU) *Renderer {
 
 // GBVideoSoftwareRendererUpdateWindow
 func (r *Renderer) updateWindow(before, after bool, oldWy byte) {
-	if r.lastY >= GB_VIDEO_VERTICAL_PIXELS || !(after || before) {
+	if r.lastY >= VERTICAL_PIXELS || !(after || before) {
 		return
 	}
-	if !r.hasWindow && r.lastX == GB_VIDEO_HORIZONTAL_PIXELS {
+	if !r.hasWindow && r.lastX == HORIZONTAL_PIXELS {
 		return
 	}
 	if r.lastY >= int(oldWy) {
@@ -295,7 +295,7 @@ func (r *Renderer) finishScanline(y int) {
 func (r *Renderer) finishFrame() {
 	/*
 			if (softwareRenderer->temporaryBuffer) {
-			mappedMemoryFree(softwareRenderer->temporaryBuffer, GB_VIDEO_HORIZONTAL_PIXELS * GB_VIDEO_VERTICAL_PIXELS * 4);
+			mappedMemoryFree(softwareRenderer->temporaryBuffer, HORIZONTAL_PIXELS * VERTICAL_PIXELS * 4);
 			softwareRenderer->temporaryBuffer = 0;
 		}
 	*/
@@ -305,7 +305,7 @@ func (r *Renderer) finishFrame() {
 	if r.model&util.GB_MODEL_SGB > 0 {
 		// TODO
 	}
-	r.lastY, r.lastX = GB_VIDEO_VERTICAL_PIXELS, 0
+	r.lastY, r.lastX = VERTICAL_PIXELS, 0
 	r.currentWy, r.currentWx = 0, 0
 	r.hasWindow = false
 }
@@ -413,9 +413,10 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 				continue
 			}
 		}
+
 		tileDataLower := r.g.VRAM.Buffer[localData+(bgTile*8+localY)*2]
 		tileDataUpper := r.g.VRAM.Buffer[localData+(bgTile*8+localY)*2+1]
-		r.row[x+7] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)
+		r.row[x+7] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1) // DMG -> 0 or 1 or 2 or 3
 		r.row[x+6] = p | uint16(tileDataUpper&2) | uint16((tileDataLower&2)>>1)
 		r.row[x+5] = p | uint16((tileDataUpper&4)>>1) | uint16((tileDataLower&4)>>2)
 		r.row[x+4] = p | uint16((tileDataUpper&8)>>2) | uint16((tileDataLower&8)>>3)
@@ -604,7 +605,7 @@ func (r *Renderer) cleanOAM(y int) {
 
 // _inWindow
 func (r *Renderer) inWindow() bool {
-	return util.Bit(r.g.LCDC, Window) && GB_VIDEO_HORIZONTAL_PIXELS+7 > r.wx
+	return util.Bit(r.g.LCDC, Window) && HORIZONTAL_PIXELS+7 > r.wx
 }
 
 // _clearScreen
@@ -614,9 +615,9 @@ func (r *Renderer) clearScreen() {
 		return
 	}
 
-	for y := 0; y < GB_VIDEO_VERTICAL_PIXELS; y++ {
+	for y := 0; y < VERTICAL_PIXELS; y++ {
 		row := r.outputBuffer[r.outputBufferStride*y+sgbOffset:]
-		for x := 0; x < GB_VIDEO_HORIZONTAL_PIXELS; x += 4 {
+		for x := 0; x < HORIZONTAL_PIXELS; x += 4 {
 			row[x+0] = r.palette[0]
 			row[x+1] = r.palette[0]
 			row[x+2] = r.palette[0]
