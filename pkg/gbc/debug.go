@@ -111,7 +111,7 @@ func (g *GBC) DebugExec(frame int, output string) error {
 		}
 	}
 	g.execVBlank()
-	screen := g.GPU.GetOriginal()
+	screen := g.GPU.Display()
 
 	file, err := os.Create(output)
 	if err != nil {

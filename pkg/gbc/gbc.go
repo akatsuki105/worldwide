@@ -300,6 +300,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	for g.Cycle.scanline <= 20*g.boost {
 		g.exec(20 * g.boost)
 	}
+	g.GPU.EndMode2()
 
 	// LCD Driver mode3
 	g.Cycle.scanline -= 20 * g.boost
@@ -307,6 +308,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	for g.Cycle.scanline <= 42*g.boost {
 		g.exec(42 * g.boost)
 	}
+	g.GPU.EndMode3(0)
 
 	scrollX, scrollY := uint(g.RAM[SCXIO]), uint(g.RAM[SCYIO])
 
@@ -316,6 +318,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	for g.Cycle.scanline <= (cyclePerLine-(20+42))*g.boost {
 		g.exec((cyclePerLine - (20 + 42)) * g.boost)
 	}
+	g.GPU.EndMode0()
 	g.Cycle.scanline -= (cyclePerLine - (20 + 42)) * g.boost
 
 	g.incrementLY()
@@ -328,6 +331,7 @@ func (g *GBC) execVBlank() {
 		for g.Cycle.scanline < cyclePerLine*g.boost {
 			g.exec(cyclePerLine * g.boost)
 		}
+		g.GPU.EndMode1()
 		g.incrementLY()
 		LY := g.Load8(LYIO)
 		if LY == 0 {
@@ -436,8 +440,7 @@ func (g *GBC) Update() error {
 	}
 
 	if !skipRender {
-		g.renderSprite(&LCDC1)   // render sprite
-		g.GPU.SetBGPriorPixels() // render bg has higher priority
+		g.renderSprite(&LCDC1) // render sprite
 	}
 
 	g.execVBlank()

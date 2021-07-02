@@ -1,6 +1,8 @@
 package gpu
 
-import "gbc/pkg/util"
+import (
+	"gbc/pkg/util"
+)
 
 // GBVideoRenderer & GBVideoSoftwareRenderer
 type Renderer struct {
@@ -14,11 +16,11 @@ type Renderer struct {
 	highlightAmount                   byte
 
 	// GBVideoSoftwareRenderer
-	outputBuffer       []uint16
+	outputBuffer       [160 * 144]Color
 	outputBufferStride int
 
 	row     [168]uint16
-	palette [192]uint16
+	palette [192]Color
 	lookup  [192]byte
 
 	scy, scx, wy, wx, currentWy, currentWx byte
@@ -127,7 +129,7 @@ func (r *Renderer) WriteVideoRegister(address uint16, value byte) byte {
 
 // writePalette / GBVideoSoftwareRendererWritePalette
 // GBVideoWritePalette calls this
-func (r *Renderer) writePalette(index int, value uint16) {
+func (r *Renderer) writePalette(index int, value Color) {
 	r.palette[index] = value
 }
 
@@ -562,6 +564,12 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 		}
 	}
 }
+
+// getPixels / GBVideoSoftwareRendererGetPixels
+// func (r *Renderer) getPixels() {}
+
+// putPixels / GBVideoSoftwareRendererPutPixels
+// func (r *Renderer) putPixels() {}
 
 // _cleanOAM
 func (r *Renderer) cleanOAM(y int) {
