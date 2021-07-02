@@ -3,7 +3,6 @@ package gbc
 import (
 	"fmt"
 	"gbc/pkg/emulator/debug"
-	"gbc/pkg/gbc/gpu"
 	"gbc/pkg/util"
 	"image/jpeg"
 	"os"
@@ -76,39 +75,6 @@ func (g *GBC) DebugExec(frame int, output string) error {
 	// 最後の1frameは背景データを生成する
 	for y := 0; y < 144; y++ {
 		g.execScanline()
-
-		LCDC := g.Load8(LCDCIO)
-		for x := 0; x < 160; x += 8 {
-			blockX, blockY := x/8, y/8
-
-			var tileX, tileY uint
-			var isWin bool
-			var entryX int
-
-			lineIdx := y % 8 // タイルの何行目を描画するか
-			entryY := gpu.EntryY{}
-			if util.Bit(LCDC, 5) && (WY <= uint(y)) && (WX <= uint(x)) {
-				tileX, tileY = ((uint(x)-WX)/8)%32, ((uint(y)-WY)/8)%32
-				isWin = true
-
-				entryX = blockX * 8
-				entryY.Block, entryY.Offset = blockY*8, y%8
-			} else {
-				tileX, tileY = (scrollX+uint(x))/8%32, (scrollY+uint(y))/8%32
-				isWin = false
-
-				entryX = blockX*8 - int(scrollPixelX)
-				entryY.Block = blockY * 8
-				entryY.Offset = y % 8
-				lineIdx = (int(scrollY) + y) % 8
-			}
-
-			if util.Bit(LCDC, 7) {
-				if !g.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, g.Cartridge.IsCGB, lineIdx) {
-					break
-				}
-			}
-		}
 	}
 	g.execVBlank()
 	screen := g.GPU.Display()

@@ -127,9 +127,9 @@ func (g *GPU) Display() *image.RGBA {
 
 // GBVideoWritePalette
 // 0xff47, 0xff48, 0xff49, 0xff69, 0xff6b
-func (g *GPU) WritePalette(address uint16, value byte) {
+func (g *GPU) WritePalette(offset byte, value byte) {
 	if g.Renderer.model < util.GB_MODEL_SGB {
-		switch address {
+		switch offset {
 		case GB_REG_BGP:
 			// Palette = 0(white) or 1(light gray) or 2(dark gray) or 3(black)
 			g.Palette[0] = Color(g.dmgPalette[value&3])
@@ -160,18 +160,20 @@ func (g *GPU) WritePalette(address uint16, value byte) {
 			g.Renderer.writePalette(9*4+3, g.Palette[9*4+3])
 		}
 	} else if g.Renderer.model&util.GB_MODEL_SGB != 0 {
-		g.Renderer.WriteVideoRegister(address&0xff, value)
+		g.Renderer.WriteVideoRegister(offset&0xff, value)
 	} else {
-		switch address {
+		switch offset {
 		// gameboy color
 		case GB_REG_BCPD:
 			if g.Mode() != 3 {
 				if g.BcpIndex&1 == 1 {
+					// update upper
 					g.Palette[g.BcpIndex>>1] &= 0x00FF
 					g.Palette[g.BcpIndex>>1] |= Color(value) << 8
 				} else {
-					g.Palette[g.BcpIndex>>1] &= 0xFF00
+					// update lower
 					g.Palette[g.BcpIndex>>1] |= Color(value)
+					g.Palette[g.BcpIndex>>1] &= 0xFF00
 				}
 				g.Renderer.writePalette(g.BcpIndex>>1, g.Palette[g.BcpIndex>>1])
 			}

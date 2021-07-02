@@ -13,13 +13,13 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 	case addr == LYIO:
 		value = byte(g.GPU.Ly)
 	default:
-		value = g.IO[addr-0xff00]
+		value = g.IO[byte(addr)]
 	}
 	return value
 }
 
 func (g *GBC) storeIO(addr uint16, value byte) {
-	g.IO[addr-0xff00] = value
+	g.IO[byte(addr)] = value
 
 	switch {
 	case addr == JOYPADIO:
@@ -71,7 +71,7 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 
 	case addr == LCDCIO:
 		g.GPU.ProcessDots(0)
-		g.GPU.Renderer.WriteVideoRegister(addr&0xff, value)
+		g.GPU.Renderer.WriteVideoRegister(byte(addr), value)
 		g.GPU.WriteLCDC(value)
 
 	case addr == LCDSTATIO:
@@ -79,12 +79,12 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 
 	case addr == SCYIO || addr == SCXIO || addr == WYIO || addr == WXIO:
 		g.GPU.ProcessDots(0)
-		value = g.GPU.Renderer.WriteVideoRegister(addr, value)
-		g.IO[addr-0xff00] = value
+		value = g.GPU.Renderer.WriteVideoRegister(byte(addr), value)
+		g.IO[byte(addr)] = value
 
 	case addr == BGPIO || addr == OBP0IO || addr == OBP1IO:
 		g.GPU.ProcessDots(0)
-		g.GPU.WritePalette(addr, value)
+		g.GPU.WritePalette(byte(addr), value)
 
 	// below case statements, gbc only
 	case addr == VBKIO: // switch vram bank
@@ -123,7 +123,7 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		if g.GPU.Mode() != 3 {
 			g.GPU.ProcessDots(0)
 		}
-		g.GPU.WritePalette(addr, value)
+		g.GPU.WritePalette(byte(addr), value)
 
 	case addr == SVBKIO: // switch wram bank
 		newWRAMBankPtr := value & 0x07

@@ -85,11 +85,11 @@ func (r *Renderer) updateWindow(before, after bool, oldWy byte) {
 
 // writeVideoRegister / GBVideoSoftwareRendererWriteVideoRegister
 // this is called from GBIOWrite/GBVideoWritePalette/etc...
-func (r *Renderer) WriteVideoRegister(address uint16, value byte) byte {
+func (r *Renderer) WriteVideoRegister(offset byte, value byte) byte {
 	wasWindow := r.inWindow()
 	wy := r.wy
 
-	switch address {
+	switch offset {
 	case GB_REG_LCDC:
 		r.g.LCDC = value
 		r.updateWindow(wasWindow, r.inWindow(), wy)

@@ -194,11 +194,6 @@ func (g *GBC) initIOMap() {
 	g.IO[OBP0IO-0xff00], g.IO[OBP1IO-0xff00] = 0xff, 0xff
 }
 
-func (g *GBC) initDMGPalette() {
-	c0, c1, c2, c3 := g.Config.Palette.Color0, g.Config.Palette.Color1, g.Config.Palette.Color2, g.Config.Palette.Color3
-	gpu.InitPalette(c0, c1, c2, c3)
-}
-
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
 	g.GPU = gpu.New(&g.IO)
@@ -373,8 +368,7 @@ func (g *GBC) Update() error {
 
 	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
-	LCDC := g.Load8(LCDCIO)
-	scrollX, scrollY := uint(g.IO[SCXIO-0xff00]), uint(g.IO[SCYIO-0xff00])
+	scrollX := uint(g.IO[SCXIO-0xff00])
 	scrollPixelX := scrollX % 8
 
 	iterX, iterY := width, height
@@ -385,50 +379,14 @@ func (g *GBC) Update() error {
 	// render bg and run g
 	LCDC1 := [144]bool{}
 	for y := 0; y < iterY; y++ {
-		scx, scy, ok := g.execScanline()
+		scx, _, ok := g.execScanline()
 		if !ok {
 			break
 		}
-		scrollX, scrollY = scx, scy
-		scrollPixelX = scrollX % 8
+		scrollX = scx
 
 		if y < height {
 			LCDC1[y] = util.Bit(g.Load8(LCDCIO), 1)
-		}
-
-		// render background(or window)
-		WY, WX := uint(g.Load8(WYIO)), uint(g.Load8(WXIO))-7
-		if !skipRender {
-			for x := 0; x < iterX; x += 8 {
-				blockX, blockY := x/8, y/8
-
-				var tileX, tileY uint
-				var isWin bool
-				var entryX int
-
-				lineIdx := y % 8 // タイルの何行目を描画するか
-				entryY := gpu.EntryY{}
-				if util.Bit(LCDC, 5) && (WY <= uint(y)) && (WX <= uint(x)) {
-					tileX, tileY = ((uint(x)-WX)/8)%32, ((uint(y)-WY)/8)%32
-					isWin = true
-
-					entryX = blockX * 8
-					entryY.Block = blockY * 8
-					entryY.Offset = y % 8
-				} else {
-					tileX, tileY = (scrollX+uint(x))/8%32, (scrollY+uint(y))/8%32
-					isWin = false
-
-					entryX = blockX*8 - int(scrollPixelX)
-					entryY.Block = blockY * 8
-					entryY.Offset = y % 8
-					lineIdx = (int(scrollY) + y) % 8
-				}
-
-				if util.Bit(LCDC, 7) {
-					g.GPU.SetBGLine(entryX, entryY, tileX, tileY, isWin, g.Cartridge.IsCGB, lineIdx)
-				}
-			}
 		}
 	}
 
