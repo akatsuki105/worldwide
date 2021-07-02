@@ -117,13 +117,6 @@ func (g *GBC) Store8(addr uint16, value byte) {
 			}
 		}
 	} else {
-
-		if addr < 0xff80 || addr > 0xfffe { // only 0xff80-0xfffe can be accessed during OAMDMA
-			if g.OAMDMA.ptr > 0 && g.OAMDMA.ptr <= 160 {
-				return
-			}
-		}
-
 		switch {
 		case addr >= 0x8000 && addr < 0xa000: // vram
 			g.GPU.VRAM.Buffer[addr-0x8000+(0x2000*g.GPU.VRAM.Bank)] = value

@@ -1,6 +1,8 @@
 package gbc
 
-import "gbc/pkg/util"
+import (
+	"gbc/pkg/util"
+)
 
 type Cycle struct {
 	tac      int    // use in normal timer
@@ -123,10 +125,10 @@ func (g *GBC) tick() {
 	// OAMDMA
 	if g.OAMDMA.ptr > 0 {
 		if g.OAMDMA.ptr == 160 {
-			g.RAM[0xfe00+uint16(g.OAMDMA.ptr)-1] = g.Load8(g.OAMDMA.start + uint16(g.OAMDMA.ptr) - 1)
-			g.RAM[OAM] = 0xff
+			g.Store8(0xfe00+uint16(g.OAMDMA.ptr)-1, g.Load8(g.OAMDMA.start+uint16(g.OAMDMA.ptr)-1))
+			g.Store8(OAM, 0xff)
 		} else if g.OAMDMA.ptr < 160 {
-			g.RAM[0xfe00+uint16(g.OAMDMA.ptr)-1] = g.Load8(g.OAMDMA.start + uint16(g.OAMDMA.ptr) - 1)
+			g.Store8(0xfe00+uint16(g.OAMDMA.ptr)-1, g.Load8(g.OAMDMA.start+uint16(g.OAMDMA.ptr)-1))
 		}
 
 		g.OAMDMA.ptr--          // increment OAMDMA count

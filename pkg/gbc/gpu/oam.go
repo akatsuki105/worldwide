@@ -1,6 +1,14 @@
 package gpu
 
-type OAM [40]Obj
+type OAM [40]*Obj
+
+func NewOAM() *OAM {
+	o := &OAM{}
+	for i := 0; i < 40; i++ {
+		o[i] = &Obj{}
+	}
+	return o
+}
 
 // GBObj
 type Obj struct {

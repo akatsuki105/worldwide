@@ -196,10 +196,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	}
 	if util.Bit(r.g.LCDC, ObjEnable) && !r.disableOBJ {
 		for i := 0; i < r.objMax; i++ {
-			r.drawObj(&Sprite{
-				obj:   r.g.Oam[i],
-				index: int8(i),
-			}, startX, endX, y)
+			r.drawObj(r.obj[i], startX, endX, y)
 		}
 	}
 
@@ -433,7 +430,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 }
 
 // GBVideoSoftwareRendererDrawObj
-func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
+func (r *Renderer) drawObj(obj Sprite, startX, endX, y int) {
 	objX := int(obj.obj.x) + int(r.objOffsetX)
 	ix := objX - 8
 	if endX < ix || startX >= ix+8 {
@@ -467,22 +464,23 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 		tileOffset--
 	}
 
-	mask, mask2 := uint(0x60), uint(0x100/3)
+	mask, mask2 := uint(0x60), uint(OBJ_PRIORITY/3)
 	if util.Bit(obj.obj.attr, ObjAttrPriority) {
 		mask, mask2 = 0x63, 0
 	}
 
-	p := uint16(0x20)
+	p := uint16(PAL_OBJ)
 	if r.highlightOBJ[obj.index] {
-		p = 0x80 | 0x20
+		p = PAL_HIGHLIGHT_OBJ
 	}
-	if r.model == util.GB_MODEL_CGB {
+
+	if r.model >= util.GB_MODEL_CGB {
 		p |= uint16(obj.obj.attr&0x07) * 4
 		if util.Bit(obj.obj.attr, ObjAttrBank) {
-			vramIdx = 0x2000
+			vramIdx += GB_SIZE_VRAM_BANK0
 		}
 		if !util.Bit(r.g.LCDC, BgEnable) {
-			mask, mask2 = 0x60, 0x100/3
+			mask, mask2 = 0x60, OBJ_PRIORITY/3
 		}
 	} else {
 		p |= (uint16(obj.obj.attr&(1<<ObjAttrPalette)) + 8) * 4
@@ -496,8 +494,8 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			} else {
 				bottomX = 7 - ((x - objX) & 7)
 			}
-			tileDataLower := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+vramIdx]
-			tileDataUpper := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+1+vramIdx]
+			tileDataLower := r.g.VRAM.Buffer[vramIdx+(objTile*8+bottomY)*2]
+			tileDataUpper := r.g.VRAM.Buffer[vramIdx+(objTile*8+bottomY)*2+1]
 			tileDataUpper >>= bottomX
 			tileDataLower >>= bottomX
 			current := r.row[x]
@@ -506,8 +504,8 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			}
 		}
 	} else if util.Bit(obj.obj.attr, ObjAttrXFlip) {
-		tileDataLower := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+vramIdx]
-		tileDataUpper := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+1+vramIdx]
+		tileDataLower := r.g.VRAM.Buffer[vramIdx+(objTile*8+bottomY)*2]
+		tileDataUpper := r.g.VRAM.Buffer[vramIdx+(objTile*8+bottomY)*2+1]
 		current := r.row[x]
 		if ((tileDataUpper|tileDataLower)&1) != 0 && (uint(current)&mask == 0) && (uint(current)&mask2) <= OBJ_PRIORITY {
 			r.row[x] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)
@@ -541,8 +539,8 @@ func (r *Renderer) drawObj(obj *Sprite, startX, endX, y int) {
 			r.row[x+7] = p | uint16((tileDataUpper&128)>>6) | uint16((tileDataLower&128)>>7)
 		}
 	} else {
-		tileDataLower := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+vramIdx]
-		tileDataUpper := r.g.VRAM.Buffer[(objTile*8+bottomY)*2+1+vramIdx]
+		tileDataLower := r.g.VRAM.Buffer[vramIdx+(objTile*8+bottomY)*2]
+		tileDataUpper := r.g.VRAM.Buffer[vramIdx+(objTile*8+bottomY)*2+1]
 		current := r.row[x+7]
 		if ((tileDataUpper|tileDataLower)&1) != 0 && (uint(current)&mask) == 0 && (uint(current)&mask2) <= OBJ_PRIORITY {
 			r.row[x+7] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)
@@ -598,7 +596,7 @@ func (r *Renderer) cleanOAM(y int) {
 			continue
 		}
 
-		r.obj[o].obj = r.g.Oam[i]
+		r.obj[o].obj = *r.g.Oam[i]
 		r.obj[o].index = int8(i)
 		o++
 		if o == 10 {

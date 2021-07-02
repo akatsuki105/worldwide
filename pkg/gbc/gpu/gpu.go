@@ -65,7 +65,7 @@ func New(debug bool) *GPU {
 		g.OAM = image.NewRGBA(image.Rect(0, 0, 16*8-1, 20*5-3))
 	}
 	g.Renderer = NewRenderer(g)
-	g.Oam = &OAM{}
+	g.Oam = NewOAM()
 	g.dmgPalette = defaultDmgPalette
 	g.Reset()
 	return g
@@ -265,7 +265,6 @@ func (g *GPU) EndMode1() {
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 80 cycles
 func (g *GPU) EndMode2() {
-	g.Renderer.cleanOAM(g.Ly)
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
 }

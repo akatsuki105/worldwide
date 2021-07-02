@@ -82,11 +82,6 @@ func (g *GBC) Draw(screen *ebiten.Image) {
 			dScreen.DrawImage(tile, op)
 		}
 
-		// debug OAM
-		if g.GPU.OAM != nil {
-			g.debugPrintOAM(dScreen)
-		}
-
 		op := &ebiten.DrawImageOptions{}
 		screen.DrawImage(dScreen, op)
 		return
