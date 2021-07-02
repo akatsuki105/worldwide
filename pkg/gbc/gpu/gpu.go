@@ -66,7 +66,45 @@ func New(debug bool) *GPU {
 	}
 	g.Renderer = NewRenderer(g)
 	g.dmgPalette = defaultDmgPalette
+	g.Reset()
 	return g
+}
+
+func (g *GPU) Reset() {
+	g.Ly, g.X = 0, 0
+	g.Stat = 1
+	g.frameCounter, g.frameskipCounter = 0, 0
+
+	g.SwitchBank(0)
+	for i := 0; i < len(g.VRAM.Buffer); i++ {
+		g.VRAM.Buffer[i] = 0
+	}
+
+	g.Palette[0] = Color(g.dmgPalette[0])
+	g.Palette[1] = Color(g.dmgPalette[1])
+	g.Palette[2] = Color(g.dmgPalette[2])
+	g.Palette[3] = Color(g.dmgPalette[3])
+	g.Palette[8*4+0] = Color(g.dmgPalette[4])
+	g.Palette[8*4+1] = Color(g.dmgPalette[5])
+	g.Palette[8*4+2] = Color(g.dmgPalette[6])
+	g.Palette[8*4+3] = Color(g.dmgPalette[7])
+	g.Palette[9*4+0] = Color(g.dmgPalette[8])
+	g.Palette[9*4+1] = Color(g.dmgPalette[9])
+	g.Palette[9*4+2] = Color(g.dmgPalette[10])
+	g.Palette[9*4+3] = Color(g.dmgPalette[11])
+
+	g.Renderer.writePalette(0, g.Palette[0])
+	g.Renderer.writePalette(1, g.Palette[1])
+	g.Renderer.writePalette(2, g.Palette[2])
+	g.Renderer.writePalette(3, g.Palette[3])
+	g.Renderer.writePalette(8*4+0, g.Palette[8*4+0])
+	g.Renderer.writePalette(8*4+1, g.Palette[8*4+1])
+	g.Renderer.writePalette(8*4+2, g.Palette[8*4+2])
+	g.Renderer.writePalette(8*4+3, g.Palette[8*4+3])
+	g.Renderer.writePalette(9*4+0, g.Palette[9*4+0])
+	g.Renderer.writePalette(9*4+1, g.Palette[9*4+1])
+	g.Renderer.writePalette(9*4+2, g.Palette[9*4+2])
+	g.Renderer.writePalette(9*4+3, g.Palette[9*4+3])
 }
 
 // Display returns gameboy display data
@@ -76,9 +114,6 @@ func (g *GPU) Display() *image.RGBA {
 		for x := 0; x < HORIZONTAL_PIXELS; x++ {
 			p := g.Renderer.outputBuffer[y*HORIZONTAL_PIXELS+x]
 			red, green, blue := byte((p&0b11111)*8), byte(((p>>5)&0b11111)*8), byte(((p>>10)&0b11111)*8)
-			if g.Renderer.model == util.GB_MODEL_DMG {
-				red, green, blue = DmgColor[p][0], DmgColor[p][1], DmgColor[p][2]
-			}
 
 			i.SetRGBA(x, y, color.RGBA{red, green, blue, 0xff})
 		}
