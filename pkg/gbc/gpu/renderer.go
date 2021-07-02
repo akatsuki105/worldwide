@@ -35,6 +35,7 @@ type Renderer struct {
 	sgbBorders    bool
 	sgbRenderMode int
 	sgbAttributes []byte
+	sgbTransfer   int
 }
 
 func NewRenderer() *Renderer {
@@ -273,6 +274,30 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			row[x] = r.palette[0]
 		}
 	}
+}
+
+// finishScanline / GBVideoSoftwareRendererFinishScanline
+func (r *Renderer) finishScanline(y int) {
+	r.lastX, r.currentWx = 0, 0
+}
+
+// finishFrame / GBVideoSoftwareRendererFinishFrame
+func (r *Renderer) finishFrame() {
+	/*
+			if (softwareRenderer->temporaryBuffer) {
+			mappedMemoryFree(softwareRenderer->temporaryBuffer, GB_VIDEO_HORIZONTAL_PIXELS * GB_VIDEO_VERTICAL_PIXELS * 4);
+			softwareRenderer->temporaryBuffer = 0;
+		}
+	*/
+	if !util.Bit(r.g.LCDC, Enable) {
+		r.clearScreen()
+	}
+	if r.model&util.GB_MODEL_SGB > 0 {
+		// TODO
+	}
+	r.lastY, r.lastX = GB_VIDEO_VERTICAL_PIXELS, 0
+	r.currentWy, r.currentWx = 0, 0
+	r.hasWindow = false
 }
 
 // GBVideoSoftwareRendererDrawBackground
@@ -564,4 +589,22 @@ func (r *Renderer) cleanOAM(y int) {
 // _inWindow
 func (r *Renderer) inWindow() bool {
 	return util.Bit(r.g.LCDC, Window) && GB_VIDEO_HORIZONTAL_PIXELS+7 > r.wx
+}
+
+// _clearScreen
+func (r *Renderer) clearScreen() {
+	sgbOffset := 0
+	if r.model == util.GB_MODEL_SGB {
+		return
+	}
+
+	for y := 0; y < GB_VIDEO_VERTICAL_PIXELS; y++ {
+		row := r.outputBuffer[r.outputBufferStride*y+sgbOffset:]
+		for x := 0; x < GB_VIDEO_HORIZONTAL_PIXELS; x += 4 {
+			row[x+0] = r.palette[0]
+			row[x+1] = r.palette[0]
+			row[x+2] = r.palette[0]
+			row[x+3] = r.palette[0]
+		}
+	}
 }

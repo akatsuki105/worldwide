@@ -41,10 +41,6 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 		value = g.GPU.LCDC
 	case addr == LCDSTATIO:
 		value = g.GPU.LCDSTAT
-	case addr == BCPDIO: // BG Palette
-		value = g.GPU.Palette.BGPalette[g.GPU.BgPalIdx()]
-	case addr == OCPDIO: // OAM Palette
-		value = g.GPU.Palette.SPRPalette[g.GPU.SprPalIdx()]
 	default:
 		value = g.RAM[addr]
 	}
@@ -207,12 +203,9 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 	case addr == 0xff43:
 		g.GPU.Scroll[0] = value
 
-	case addr == BGPIO:
-		g.GPU.Palette.DMGPalette[0] = value
-	case addr == OBP0IO:
-		g.GPU.Palette.DMGPalette[1] = value
-	case addr == OBP1IO:
-		g.GPU.Palette.DMGPalette[2] = value
+	case addr == BGPIO || addr == OBP0IO || addr == OBP1IO:
+		g.GPU.ProcessDots(0)
+		g.GPU.WritePalette(addr, value)
 
 	// below case statements, gbc only
 	case addr == VBKIO && g.GPU.HBlankDMALength == 0: // switch vram bank
@@ -238,19 +231,20 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		}
 
 	case addr == BCPSIO:
-		g.GPU.Palette.CGBPalette[0] = value
+		g.GPU.BcpIndex = int(value & 0x3f)
+		g.GPU.BcpIncrement = int(value & 0x80)
+		g.RAM[BCPDIO] = byte(g.GPU.Palette[g.GPU.BcpIndex>>1] >> (8 * (g.GPU.BcpIndex & 1)))
+
 	case addr == OCPSIO:
-		g.GPU.Palette.CGBPalette[1] = value
-	case addr == BCPDIO: // write bg palette
-		g.GPU.Palette.BGPalette[g.GPU.BgPalIdx()] = value
-		if g.GPU.IsBgPalIncrement() {
-			g.GPU.Palette.CGBPalette[0]++
+		g.GPU.OcpIndex = int(value & 0x3f)
+		g.GPU.OcpIncrement = int(value & 0x80)
+		g.RAM[OCPDIO] = byte(g.GPU.Palette[8*4+(g.GPU.OcpIndex>>1)] >> (8 * (g.GPU.OcpIndex & 1)))
+
+	case addr == BCPDIO || addr == OCPDIO:
+		if g.GPU.Mode != 3 {
+			g.GPU.ProcessDots(0)
 		}
-	case addr == OCPDIO: // write oam palette
-		g.GPU.Palette.SPRPalette[g.GPU.SprPalIdx()] = value
-		if g.GPU.IsSprPalIncrement() {
-			g.GPU.Palette.CGBPalette[1]++
-		}
+		g.GPU.WritePalette(addr, value)
 
 	case addr == SVBKIO: // switch wram bank
 		newWRAMBankPtr := value & 0x07

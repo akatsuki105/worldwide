@@ -2,7 +2,6 @@ package gpu
 
 import (
 	"fmt"
-	"gbc/pkg/util"
 )
 
 type Palette struct {
@@ -19,30 +18,8 @@ func InitPalette(color0, color1, color2, color3 [3]int) {
 	colors[3] = [3]uint8{uint8(color3[0]), uint8(color3[1]), uint8(color3[2])}
 }
 
-// BgPalIdx returns bg palette index for CGB
-func (g *GPU) BgPalIdx() byte {
-	BCPS := g.Palette.CGBPalette[0]
-	return BCPS & 0x3f
-}
-
-// isBGPalIncrement returns whether bg palette index is incremented after write
-func (g *GPU) IsBgPalIncrement() bool {
-	return util.Bit(g.Palette.CGBPalette[0], 7)
-}
-
-// SprPalIdx returns spr palette index for CGB
-func (g *GPU) SprPalIdx() byte {
-	OCPS := g.Palette.CGBPalette[1]
-	return OCPS & 0x3f
-}
-
-// isBGPalIncrement returns whether spr palette index is incremented after write
-func (g *GPU) IsSprPalIncrement() bool {
-	return util.Bit(g.Palette.CGBPalette[1], 7)
-}
-
 func (g *GPU) parsePallete(tileType int, colorIdx byte) (rgb byte, transparent bool) {
-	pal := g.Palette.DMGPalette[tileType]
+	pal := byte(0)
 	transparent = false
 	switch colorIdx {
 	case 0:
@@ -59,8 +36,7 @@ func (g *GPU) parseCGBPallete(tileType int, palIdx, colorIdx byte) (R, G, B byte
 	transparent = false
 	switch tileType {
 	case BGP:
-		i := palIdx*8 + colorIdx*2
-		RGBLower, RGBUpper := uint16(g.Palette.BGPalette[i]), uint16(g.Palette.BGPalette[i+1])
+		RGBLower, RGBUpper := uint16(0), uint16(0)
 		RGB := (RGBUpper << 8) | RGBLower
 		R = byte(RGB & 0b11111)                 // bit 0-4
 		G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9
@@ -69,8 +45,7 @@ func (g *GPU) parseCGBPallete(tileType int, palIdx, colorIdx byte) (R, G, B byte
 		if colorIdx == 0 {
 			transparent = true
 		} else {
-			i := palIdx*8 + colorIdx*2
-			RGBLower, RGBUpper := uint16(g.Palette.SPRPalette[i]), uint16(g.Palette.SPRPalette[i+1])
+			RGBLower, RGBUpper := uint16(0), uint16(0)
 			RGB := (RGBUpper << 8) | RGBLower
 			R = byte(RGB & 0b11111)                 // bit 0-4
 			G = byte((RGB & (0b11111 << 5)) >> 5)   // bit 5-9

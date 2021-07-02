@@ -20,16 +20,23 @@ type GPU struct {
 	LCDSTAT       byte           // LCD Status
 	Scroll        [2]byte        // Scroll coord
 	displayColor  [144][160]byte // 160*144 color data
-	Palette       Palette
 	BGPriorPixels [][5]byte
 	VRAM
 	HBlankDMALength int
 	Debug
 
-	renderer   *Renderer
-	oam        *OAM
+	Mode     int
+	renderer *Renderer
+	oam      *OAM
+
+	// 0xff68
+	BcpIndex, BcpIncrement int
+
+	// 0xff6a
+	OcpIndex, OcpIncrement int
+
 	dmgPalette [12]uint16
-	palette    [64]uint16
+	Palette    [64]uint16
 }
 
 var (
@@ -77,6 +84,7 @@ func (g *GPU) fetchTileBaseAddr() uint16 {
 }
 
 // GBVideoWritePalette
+// 0xff47, 0xff48, 0xff49, 0xff69, 0xff6b
 func (g *GPU) WritePalette(address uint16, value byte) {
 	if g.renderer.model < util.GB_MODEL_SGB {
 
@@ -100,3 +108,6 @@ func (g *GPU) SetPalette(index uint, color uint32) {
 	}
 	g.dmgPalette[index] = uint16((((color) & 0xF8) << 7) | (((color) & 0xF800) >> 6) | (((color) & 0xF80000) >> 19))
 }
+
+// GBVideoProcessDots
+func (g *GPU) ProcessDots(cyclesLate uint32) {}
