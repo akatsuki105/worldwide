@@ -16,13 +16,13 @@ type Renderer struct {
 	highlightAmount                   byte
 
 	// GBVideoSoftwareRenderer
-	outputBuffer       [160 * 144]Color
+	outputBuffer       [256 * 256]Color
 	outputBufferStride int
 
 	row [HORIZONTAL_PIXELS + 8]uint16
 
 	palette [192]Color
-	lookup  [192]byte
+	lookup  [64 * 3]byte // DMG -> 0 or 1 or 2 or 3
 
 	scy, scx, wy, wx, currentWy, currentWx byte
 	lastY, lastX                           int
@@ -43,8 +43,9 @@ type Renderer struct {
 
 func NewRenderer(g *GPU) *Renderer {
 	r := &Renderer{
-		g:     g,
-		lastY: VERTICAL_PIXELS,
+		g:                  g,
+		outputBufferStride: 160,
+		lastY:              VERTICAL_PIXELS,
 	}
 
 	for i := byte(0); i < byte(len(r.lookup)); i++ {
@@ -148,6 +149,7 @@ func (r *Renderer) writeVRAM(address uint16) {}
 func (r *Renderer) writeOAM(oam uint16) {}
 
 // drawRange / GBVideoSoftwareRendererDrawRange
+// by row
 func (r *Renderer) drawRange(startX, endX, y int) {
 	r.lastY, r.lastX = y, endX
 	if startX >= endX {
@@ -311,6 +313,7 @@ func (r *Renderer) finishFrame() {
 }
 
 // GBVideoSoftwareRendererDrawBackground
+// by row
 func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bool) {
 	vramIdx := 0
 	attrIdx := mapIdx + GB_SIZE_VRAM_BANK0
@@ -369,10 +372,12 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 		startX = startX2
 	}
 
+	// by tile row
 	for x = startX; x < endX; x += 8 {
 		localData := vramIdx
 		localY := bottomY
 		topX := ((x + sx) >> 3) & 0x1F
+
 		bgTile := 0
 		if util.Bit(r.g.LCDC, TileData) {
 			// 0x8000-0x8800 [0, 255]

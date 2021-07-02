@@ -222,7 +222,7 @@ func (g *GPU) ProcessDots(cyclesLate uint32) {
 
 	oldX := 0
 	g.X = HORIZONTAL_PIXELS
-	g.Renderer.drawRange(oldX, g.X, g.Renderer.lastX)
+	g.Renderer.drawRange(oldX, g.X, g.Ly)
 }
 
 // mode0 = HBlank
