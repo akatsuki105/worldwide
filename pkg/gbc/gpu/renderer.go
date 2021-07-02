@@ -292,12 +292,6 @@ func (r *Renderer) finishScanline(y int) {
 
 // finishFrame / GBVideoSoftwareRendererFinishFrame
 func (r *Renderer) finishFrame() {
-	/*
-			if (softwareRenderer->temporaryBuffer) {
-			mappedMemoryFree(softwareRenderer->temporaryBuffer, HORIZONTAL_PIXELS * VERTICAL_PIXELS * 4);
-			softwareRenderer->temporaryBuffer = 0;
-		}
-	*/
 	if !util.Bit(r.g.LCDC, Enable) {
 		r.clearScreen()
 	}
