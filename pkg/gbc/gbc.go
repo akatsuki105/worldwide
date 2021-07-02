@@ -47,7 +47,7 @@ type GBC struct {
 	WRAMBank
 	bankMode uint
 	Sound    apu.APU
-	GPU      gpu.GPU
+	GPU      *gpu.GPU
 	RTC      rtc.RTC
 	boost    int // 1 or 2
 	IMESwitch
@@ -200,7 +200,7 @@ func (g *GBC) initDMGPalette() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
-	g.GPU = *gpu.New(debug)
+	g.GPU = gpu.New(debug)
 	g.initRegister()
 	g.initIOMap()
 
@@ -296,7 +296,6 @@ func (g *GBC) exec(max int) {
 
 func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
-	g.setOAMRAMMode()
 	for g.Cycle.scanline <= 20*g.boost {
 		g.exec(20 * g.boost)
 	}
@@ -304,7 +303,6 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 
 	// LCD Driver mode3
 	g.Cycle.scanline -= 20 * g.boost
-	g.setLCDMode()
 	for g.Cycle.scanline <= 42*g.boost {
 		g.exec(42 * g.boost)
 	}
@@ -314,7 +312,6 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 
 	// HBlank mode0
 	g.Cycle.scanline -= 42 * g.boost
-	g.setHBlankMode()
 	for g.Cycle.scanline <= (cyclePerLine-(20+42))*g.boost {
 		g.exec((cyclePerLine - (20 + 42)) * g.boost)
 	}
@@ -439,11 +436,8 @@ func (g *GBC) Update() error {
 		}
 	}
 
-	if !skipRender {
-		g.renderSprite(&LCDC1) // render sprite
-	}
-
 	g.execVBlank()
+	g.GPU.UpdateFrameCount()
 	if g.Debug.Enable {
 		select {
 		case <-second:

@@ -28,7 +28,6 @@ type GPU struct {
 	X, Ly int
 	Stat  byte // LCD Status
 
-	Mode     int
 	Renderer *Renderer
 	oam      OAM
 
@@ -130,7 +129,7 @@ func (g *GPU) WritePalette(address uint16, value byte) {
 		switch address {
 		// gameboy color
 		case GB_REG_BCPD:
-			if g.Mode != 3 {
+			if g.Mode() != 3 {
 				if g.BcpIndex&1 == 1 {
 					g.Palette[g.BcpIndex>>1] &= 0x00FF
 					g.Palette[g.BcpIndex>>1] |= Color(value) << 8
@@ -148,7 +147,7 @@ func (g *GPU) WritePalette(address uint16, value byte) {
 			}
 			// video->p->memory.io[GB_REG_BCPD] = g.Palette[g.BcpIndex >> 1] >> (8 * (g.BcpIndex & 1));
 		case GB_REG_OCPD:
-			if g.Mode != 3 {
+			if g.Mode() != 3 {
 				if g.OcpIndex&1 == 1 {
 					g.Palette[8*4+(g.OcpIndex>>1)] &= 0x00FF
 					g.Palette[8*4+(g.OcpIndex>>1)] |= Color(value) << 8
@@ -170,7 +169,7 @@ func (g *GPU) WritePalette(address uint16, value byte) {
 }
 
 // GBVideoSwitchBank
-func (g *GPU) SwitchBank(value int8) {
+func (g *GPU) SwitchBank(value byte) {
 	value &= 1
 	g.VRAM.Bank = uint16(value)
 }
@@ -185,7 +184,7 @@ func (g *GPU) SetPalette(index uint, color uint32) {
 
 // GBVideoProcessDots
 func (g *GPU) ProcessDots(cyclesLate uint32) {
-	if g.Mode != 3 {
+	if g.Mode() != 3 {
 		return
 	}
 
@@ -206,9 +205,9 @@ func (g *GPU) EndMode0() {
 
 	// oldStat := g.Stat
 	if g.Ly < GB_VIDEO_VERTICAL_PIXELS {
-		g.Mode = 2
+		g.setMode(2)
 	} else {
-		g.Mode = 1
+		g.setMode(1)
 	}
 }
 
@@ -222,7 +221,7 @@ func (g *GPU) EndMode1() {
 	switch g.Ly {
 	case GB_VIDEO_VERTICAL_TOTAL_PIXELS + 1:
 		g.Ly = 0
-		g.Mode = 2
+		g.setMode(2)
 	case GB_VIDEO_VERTICAL_TOTAL_PIXELS:
 	case GB_VIDEO_VERTICAL_TOTAL_PIXELS - 1:
 	default:
@@ -235,12 +234,29 @@ func (g *GPU) EndMode1() {
 func (g *GPU) EndMode2() {
 	g.Renderer.cleanOAM(g.Ly)
 	g.X = -(int(g.Renderer.scx) & 7)
-	g.Mode = 3
+	g.setMode(3)
 }
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
 func (g *GPU) EndMode3(cyclesLate uint32) {
 	g.ProcessDots(cyclesLate)
-	g.Mode = 0
+	g.setMode(0)
+}
+
+func (g *GPU) UpdateFrameCount() {
+	g.frameskipCounter--
+	if g.frameskipCounter < 0 {
+		g.Renderer.finishFrame()
+		g.frameskipCounter = g.frameskip
+	}
+	g.frameCounter++
+}
+
+func (g *GPU) Mode() byte {
+	return g.Stat & 0x3
+}
+
+func (g *GPU) setMode(mode byte) {
+	g.Stat = (g.Stat & 0xfc) | mode
 }

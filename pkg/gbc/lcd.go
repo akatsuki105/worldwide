@@ -4,49 +4,10 @@ import (
 	"gbc/pkg/util"
 )
 
-func (g *GBC) setHBlankMode() {
-	stat := g.Load8(LCDSTATIO) & 0b1111_1100
-	g.Store8(LCDSTATIO, stat)
-
-	if g.GPU.HBlankDMALength > 0 {
-		g.doVRAMDMATransfer(0x10)
-		if g.GPU.HBlankDMALength == 1 {
-			g.GPU.HBlankDMALength--
-			g.RAM[HDMA5IO] = 0xff
-		} else {
-			g.GPU.HBlankDMALength--
-			g.RAM[HDMA5IO] = byte(g.GPU.HBlankDMALength)
-		}
-	}
-
-	if util.Bit(stat, 3) {
-		g.setLCDSTATFlag(true)
-	}
-}
-
-func (g *GBC) setVBlankMode() {
-	stat := (g.Load8(LCDSTATIO) | 0x01) & 0xfd // bit0-1: 01
-	g.Store8(LCDSTATIO, stat)
-}
-
-func (g *GBC) setOAMRAMMode() {
-	stat := (g.Load8(LCDSTATIO) | 0x02) & 0xfe // bit0-1: 10
-	g.Store8(LCDSTATIO, stat)
-	if util.Bit(stat, 5) {
-		g.setLCDSTATFlag(true)
-	}
-}
-
-func (g *GBC) setLCDMode() {
-	stat := g.Load8(LCDSTATIO) | 0b11
-	g.Store8(LCDSTATIO, stat)
-}
-
 func (g *GBC) incrementLY() {
 	LY := g.Load8(LYIO)
 	LY++
 	if LY == 144 { // set vblank flag
-		g.setVBlankMode()
 		g.setVBlankFlag(true)
 	}
 	LY %= 154 // LY = LY >= 154 ? 0 : LY

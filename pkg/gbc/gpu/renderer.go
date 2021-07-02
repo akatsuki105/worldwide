@@ -19,7 +19,8 @@ type Renderer struct {
 	outputBuffer       [160 * 144]Color
 	outputBufferStride int
 
-	row     [168]uint16
+	row [GB_VIDEO_HORIZONTAL_PIXELS + 8]uint16
+
 	palette [192]Color
 	lookup  [192]byte
 
@@ -41,10 +42,16 @@ type Renderer struct {
 }
 
 func NewRenderer(g *GPU) *Renderer {
-	return &Renderer{
+	r := &Renderer{
 		g:     g,
 		lastY: GB_VIDEO_VERTICAL_PIXELS,
 	}
+
+	for i := byte(0); i < byte(len(r.lookup)); i++ {
+		r.lookup[i] = i
+	}
+
+	return r
 }
 
 // GBVideoSoftwareRendererUpdateWindow
@@ -140,7 +147,7 @@ func (r *Renderer) writeVRAM(address uint16) {}
 // writeOAM / GBVideoSoftwareRendererWriteOAM
 func (r *Renderer) writeOAM(oam uint16) {}
 
-// drawRange/ GBVideoSoftwareRendererDrawRange
+// drawRange / GBVideoSoftwareRendererDrawRange
 func (r *Renderer) drawRange(startX, endX, y int) {
 	r.lastY, r.lastX = y, endX
 	if startX >= endX {

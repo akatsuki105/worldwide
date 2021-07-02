@@ -125,25 +125,3 @@ func (g *GBC) handleJoypad() {
 		}
 	}
 }
-
-func (g *GBC) renderSprite(LCDC1 *[144]bool) {
-	if g.Debug.Enable {
-		g.GPU.FillOAM()
-	}
-
-	for i := 0; i < 40; i++ {
-		Y := int(g.Load8(0xfe00 + 4*uint16(i)))
-		if Y != 0 && Y < 160 {
-			Y -= 16
-			X := int(g.Load8(0xfe00+4*uint16(i)+1)) - 8
-			tileIdx, attr := uint(g.Load8(0xfe00+4*uint16(i)+2)), g.Load8(0xfe00+4*uint16(i)+3)
-			if Y >= 0 && LCDC1[Y] {
-				g.GPU.SetSPRTile(i, int(X), Y, tileIdx, attr, g.Cartridge.IsCGB)
-			}
-
-			if g.Debug.Enable {
-				g.GPU.SetOAMProperty(i, byte(X+8), byte(Y+16), byte(tileIdx), attr)
-			}
-		}
-	}
-}

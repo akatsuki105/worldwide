@@ -208,8 +208,8 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.GPU.WritePalette(addr, value)
 
 	// below case statements, gbc only
-	case addr == VBKIO && g.GPU.HBlankDMALength == 0: // switch vram bank
-		g.GPU.VRAM.Bank = uint16(value & 0x01)
+	case addr == VBKIO: // switch vram bank
+		g.GPU.SwitchBank(value)
 
 	case addr == HDMA5IO:
 		HDMA5 := value
@@ -241,7 +241,7 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.RAM[OCPDIO] = byte(g.GPU.Palette[8*4+(g.GPU.OcpIndex>>1)] >> (8 * (g.GPU.OcpIndex & 1)))
 
 	case addr == BCPDIO || addr == OCPDIO:
-		if g.GPU.Mode != 3 {
+		if g.GPU.Mode() != 3 {
 			g.GPU.ProcessDots(0)
 		}
 		g.GPU.WritePalette(addr, value)
