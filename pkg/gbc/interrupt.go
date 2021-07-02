@@ -17,7 +17,7 @@ type intrIEIF struct {
 
 func (g *GBC) ieif() intrIEIF {
 	ieif := intrIEIF{}
-	ieio, ifio := g.RAM[IEIO], g.RAM[IFIO]
+	ieio, ifio := g.IO[IEIO-0xff00], g.IO[IFIO-0xff00]
 
 	ieif.VBlank.IE, ieif.VBlank.IF = util.Bit(ieio, 0), util.Bit(ifio, 0)
 	ieif.LCDSTAT.IE, ieif.LCDSTAT.IF = util.Bit(ieio, 1), util.Bit(ifio, 1)

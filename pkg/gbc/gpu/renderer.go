@@ -21,7 +21,7 @@ type Renderer struct {
 
 	row [HORIZONTAL_PIXELS + 8]uint16
 
-	palette [192]Color
+	palette [64 * 3]Color
 	lookup  [64 * 3]byte // DMG -> 0 or 1 or 2 or 3
 
 	scy, scx, wy, wx, currentWy, currentWx byte

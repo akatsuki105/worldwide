@@ -258,7 +258,7 @@ func halt(g *GBC, _, _ int) {
 
 	// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 	if !g.Reg.IME {
-		IE, IF := g.RAM[IEIO], g.RAM[IFIO]
+		IE, IF := g.IO[IEIO-0xff00], g.IO[IFIO-0xff00]
 		pending = IE&IF != 0
 	}
 }

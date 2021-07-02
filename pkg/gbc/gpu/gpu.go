@@ -22,6 +22,7 @@ type VRAM struct {
 type GPU struct {
 	LCDC byte // LCD Control
 	VRAM
+	io              *[0x100]byte
 	HBlankDMALength int
 	Debug
 
@@ -56,13 +57,15 @@ const (
 	OBP1
 )
 
-func New() *GPU {
-	g := &GPU{}
+func New(io *[0x100]byte) *GPU {
+	g := &GPU{
+		io:         io,
+		Oam:        NewOAM(),
+		dmgPalette: defaultDmgPalette,
+	}
 
 	g.Debug.On = false
 	g.Renderer = NewRenderer(g)
-	g.Oam = NewOAM()
-	g.dmgPalette = defaultDmgPalette
 	g.Reset()
 	return g
 }
@@ -175,10 +178,10 @@ func (g *GPU) WritePalette(address uint16, value byte) {
 			if g.BcpIncrement != 0 {
 				g.BcpIndex++
 				g.BcpIndex &= 0x3F
-				// video->p->memory.io[GB_REG_BCPS] &= 0x80;
-				// video->p->memory.io[GB_REG_BCPS] |= g.BcpIndex;
+				g.io[GB_REG_BCPS] &= 0x80
+				g.io[GB_REG_BCPS] |= byte(g.BcpIndex)
 			}
-			// video->p->memory.io[GB_REG_BCPD] = g.Palette[g.BcpIndex >> 1] >> (8 * (g.BcpIndex & 1));
+			g.io[GB_REG_BCPD] = byte(g.Palette[g.BcpIndex>>1] >> (8 * (g.BcpIndex & 1)))
 		case GB_REG_OCPD:
 			if g.Mode() != 3 {
 				if g.OcpIndex&1 == 1 {
@@ -193,10 +196,10 @@ func (g *GPU) WritePalette(address uint16, value byte) {
 			if g.OcpIncrement != 0 {
 				g.OcpIndex++
 				g.OcpIndex &= 0x3F
-				// video->p->memory.io[GB_REG_OCPS] &= 0x80;
-				// video->p->memory.io[GB_REG_OCPS] |= g.OcpIndex;
+				g.io[GB_REG_OCPS] &= 0x80
+				g.io[GB_REG_OCPS] |= byte(g.OcpIndex)
 			}
-			// video->p->memory.io[GB_REG_OCPD] = g.Palette[8 * 4 + (g.OcpIndex >> 1)] >> (8 * (g.OcpIndex & 1));
+			g.io[GB_REG_OCPD] = byte(g.Palette[8*4+(g.OcpIndex>>1)] >> (8 * (g.OcpIndex & 1)))
 		}
 	}
 }

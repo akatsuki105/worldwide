@@ -37,6 +37,7 @@ type WRAMBank struct {
 type GBC struct {
 	Reg       Register
 	RAM       [0x10000]byte
+	IO        [0x100]byte // 0xff00-0xffff
 	Cartridge cart.Cartridge
 	joypad    joypad.Joypad
 	halt      bool
@@ -164,33 +165,33 @@ func (g *GBC) initRegister() {
 }
 
 func (g *GBC) initIOMap() {
-	g.RAM[0xff04] = 0x1e
-	g.RAM[0xff05] = 0x00
-	g.RAM[0xff06] = 0x00
-	g.RAM[0xff07] = 0xf8
-	g.RAM[0xff0f] = 0xe1
-	g.RAM[0xff10] = 0x80
-	g.RAM[0xff11] = 0xbf
-	g.RAM[0xff12] = 0xf3
-	g.RAM[0xff14] = 0xbf
-	g.RAM[0xff16] = 0x3f
-	g.RAM[0xff17] = 0x00
-	g.RAM[0xff19] = 0xbf
-	g.RAM[0xff1a] = 0x7f
-	g.RAM[0xff1b] = 0xff
-	g.RAM[0xff1c] = 0x9f
-	g.RAM[0xff1e] = 0xbf
-	g.RAM[0xff20] = 0xff
-	g.RAM[0xff21] = 0x00
-	g.RAM[0xff22] = 0x00
-	g.RAM[0xff23] = 0xbf
-	g.RAM[0xff24] = 0x77
-	g.RAM[0xff25] = 0xf3
-	g.RAM[0xff26] = 0xf1
+	g.IO[0x04] = 0x1e
+	g.IO[0x05] = 0x00
+	g.IO[0x06] = 0x00
+	g.IO[0x07] = 0xf8
+	g.IO[0x0f] = 0xe1
+	g.IO[0x10] = 0x80
+	g.IO[0x11] = 0xbf
+	g.IO[0x12] = 0xf3
+	g.IO[0x14] = 0xbf
+	g.IO[0x16] = 0x3f
+	g.IO[0x17] = 0x00
+	g.IO[0x19] = 0xbf
+	g.IO[0x1a] = 0x7f
+	g.IO[0x1b] = 0xff
+	g.IO[0x1c] = 0x9f
+	g.IO[0x1e] = 0xbf
+	g.IO[0x20] = 0xff
+	g.IO[0x21] = 0x00
+	g.IO[0x22] = 0x00
+	g.IO[0x23] = 0xbf
+	g.IO[0x24] = 0x77
+	g.IO[0x25] = 0xf3
+	g.IO[0x26] = 0xf1
 	g.Store8(LCDCIO, 0x91)
 	g.Store8(LCDSTATIO, 0x85)
-	g.RAM[BGPIO] = 0xfc
-	g.RAM[OBP0IO], g.RAM[OBP1IO] = 0xff, 0xff
+	g.IO[BGPIO-0xff00] = 0xfc
+	g.IO[OBP0IO-0xff00], g.IO[OBP1IO-0xff00] = 0xff, 0xff
 }
 
 func (g *GBC) initDMGPalette() {
@@ -200,7 +201,7 @@ func (g *GBC) initDMGPalette() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
-	g.GPU = gpu.New()
+	g.GPU = gpu.New(&g.IO)
 	g.initRegister()
 	g.initIOMap()
 
@@ -280,7 +281,7 @@ func (g *GBC) exec(max int) {
 			cycle++
 		}
 		if !g.Reg.IME { // ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
-			IE, IF := g.RAM[IEIO], g.RAM[IFIO]
+			IE, IF := g.IO[IEIO-0xff00], g.IO[IFIO-0xff00]
 			if pending := IE&IF > 0; pending {
 				g.halt = false
 			}
@@ -308,7 +309,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	}
 	g.GPU.EndMode3(0)
 
-	scrollX, scrollY := uint(g.RAM[SCXIO]), uint(g.RAM[SCYIO])
+	scrollX, scrollY := uint(g.IO[SCXIO-0xff00]), uint(g.IO[SCYIO-0xff00])
 
 	// HBlank mode0
 	g.Cycle.scanline -= 42 * g.boost
@@ -373,7 +374,7 @@ func (g *GBC) Update() error {
 	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
 	LCDC := g.Load8(LCDCIO)
-	scrollX, scrollY := uint(g.RAM[SCXIO]), uint(g.RAM[SCYIO])
+	scrollX, scrollY := uint(g.IO[SCXIO-0xff00]), uint(g.IO[SCYIO-0xff00])
 	scrollPixelX := scrollX % 8
 
 	iterX, iterY := width, height

@@ -53,7 +53,7 @@ func (g *GBC) timer(cycle int) {
 var clocks = [4]int{1024 / 4, 16 / 4, 64 / 4, 256 / 4}
 
 func (g *GBC) tick() {
-	tac := g.RAM[TACIO]
+	tac := g.IO[TACIO-0xff00]
 	tickFlag := false
 
 	if g.Timer.ResetAll {
@@ -62,7 +62,7 @@ func (g *GBC) tick() {
 	}
 	if g.Timer.TAC.Change && !tickFlag {
 		g.Timer.TAC.Change = false
-		oldTAC, newTAC := g.Timer.TAC.Old, g.RAM[TACIO]
+		oldTAC, newTAC := g.Timer.TAC.Old, g.IO[TACIO-0xff00]
 		oldClock, newClock := uint16(clocks[oldTAC&0b11]), uint16(clocks[newTAC&0b11])
 		oldEnable, newEnable := oldTAC&0b100 > 0, newTAC&0b100 > 0
 		if oldEnable {
@@ -87,7 +87,7 @@ func (g *GBC) tick() {
 	g.Cycle.sys++ // 16 bit system counter
 	g.Cycle.div++
 	if g.Cycle.div >= 64 {
-		g.RAM[DIVIO]++
+		g.IO[DIVIO-0xff00]++
 		g.Cycle.div -= 64
 	}
 
@@ -102,23 +102,23 @@ func (g *GBC) tick() {
 	g.TIMAReload.after = false
 	if g.TIMAReload.flag {
 		g.TIMAReload.flag = false
-		g.RAM[TIMAIO] = g.TIMAReload.value
+		g.IO[TIMAIO-0xff00] = g.TIMAReload.value
 		g.TIMAReload.after = true
 		g.setTimerFlag() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
 	}
 
 	if tickFlag {
-		TIMABefore := g.RAM[TIMAIO]
+		TIMABefore := g.IO[TIMAIO-0xff00]
 		TIMAAfter := TIMABefore + 1
 		if TIMAAfter < TIMABefore { // overflow occurs
 			g.TIMAReload = TIMAReload{
 				flag:  true,
-				value: uint8(g.RAM[TMAIO]),
+				value: uint8(g.IO[TMAIO-0xff00]),
 				after: false,
 			}
-			g.RAM[TIMAIO] = 0
+			g.IO[TIMAIO-0xff00] = 0
 		} else {
-			g.RAM[TIMAIO] = TIMAAfter
+			g.IO[TIMAIO-0xff00] = TIMAAfter
 		}
 	}
 
@@ -143,13 +143,13 @@ func (g *GBC) tick() {
 }
 
 func (g *GBC) resetTimer() bool {
-	g.Cycle.sys, g.Cycle.div, g.RAM[DIVIO] = 0, 0, 0
+	g.Cycle.sys, g.Cycle.div, g.IO[DIVIO-0xff00] = 0, 0, 0
 
 	old := g.Cycle.tac
 	g.Cycle.tac = 0
 
 	tickFlag := false
-	tac := g.RAM[TACIO]
+	tac := g.IO[TACIO-0xff00]
 	if util.Bit(tac, 2) {
 		tickFlag = old >= (clocks[tac&0b11] / 2) // ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim00_div_trigger.s
 	}
