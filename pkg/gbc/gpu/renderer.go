@@ -19,10 +19,13 @@ type Renderer struct {
 	outputBuffer       [256 * 256]Color
 	outputBufferStride int
 
-	row [HORIZONTAL_PIXELS + 8]uint16
+	row [HORIZONTAL_PIXELS + 8]uint16 // basically, 0 or 1 or 2 or 3
 
 	palette [64 * 3]Color
-	lookup  [64 * 3]byte // DMG -> 0 or 1 or 2 or 3
+
+	// DMG -> basically, 0 or 1 or 2 or 3
+	// CGB -> always 0
+	lookup [64 * 3]byte
 
 	scy, scx, wy, wx, currentWy, currentWx byte
 	lastY, lastX                           int
@@ -223,6 +226,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		for ; x < ((startX+7) & ^7) && x < endX; x++ {
 			row[x] = r.palette[p|int(r.lookup[r.row[x]&OBJ_PRIO_MASK])]
 		}
+
 		for ; x+7 < (endX & ^7); x += 8 {
 			if (r.model & util.GB_MODEL_SGB) != 0 {
 				p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
@@ -295,9 +299,6 @@ func (r *Renderer) finishFrame() {
 	if !util.Bit(r.g.LCDC, Enable) {
 		r.clearScreen()
 	}
-	if r.model&util.GB_MODEL_SGB > 0 {
-		// TODO
-	}
 	r.lastY, r.lastX = VERTICAL_PIXELS, 0
 	r.currentWy, r.currentWx = 0, 0
 	r.hasWindow = false
@@ -307,7 +308,7 @@ func (r *Renderer) finishFrame() {
 // by row
 func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bool) {
 	vramIdx := 0
-	attrIdx := mapIdx + GB_SIZE_VRAM_BANK0
+	attrIdx := mapIdx + GB_SIZE_VRAM_BANK0 // for CGB
 	if !util.Bit(r.g.LCDC, TileData) {
 		vramIdx += 0x1000
 	}
@@ -378,14 +379,15 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 			bgTile = int(int8(r.g.VRAM.Buffer[mapIdx+topX+topY]))
 		}
 
-		p := uint16(0)
+		p := uint16(PAL_BG)
 		if highlight {
-			p = 0x80
+			p = PAL_HIGHLIGHT_BG
 		}
 
 		if r.model >= util.GB_MODEL_CGB {
 			attrs := r.g.VRAM.Buffer[attrIdx+topX+topY]
-			p |= uint16(attrs&0x7) * 4
+			bgPal := uint16(attrs & 0x7)
+			p |= bgPal * 4
 			if util.Bit(attrs, ObjAttrPriority) && util.Bit(r.g.LCDC, BgEnable) {
 				p |= OBJ_PRIORITY
 			}
@@ -570,12 +572,6 @@ func (r *Renderer) drawObj(obj Sprite, startX, endX, y int) {
 	}
 }
 
-// getPixels / GBVideoSoftwareRendererGetPixels
-// func (r *Renderer) getPixels() {}
-
-// putPixels / GBVideoSoftwareRendererPutPixels
-// func (r *Renderer) putPixels() {}
-
 // _cleanOAM
 func (r *Renderer) cleanOAM(y int) {
 	spriteHeight := 8
@@ -607,13 +603,12 @@ func (r *Renderer) inWindow() bool {
 
 // _clearScreen
 func (r *Renderer) clearScreen() {
-	sgbOffset := 0
-	if r.model == util.GB_MODEL_SGB {
+	if r.model&util.GB_MODEL_SGB != 0 {
 		return
 	}
 
 	for y := 0; y < VERTICAL_PIXELS; y++ {
-		row := r.outputBuffer[r.outputBufferStride*y+sgbOffset:]
+		row := r.outputBuffer[r.outputBufferStride*y:]
 		for x := 0; x < HORIZONTAL_PIXELS; x += 4 {
 			row[x+0] = r.palette[0]
 			row[x+1] = r.palette[0]
