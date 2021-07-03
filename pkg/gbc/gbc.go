@@ -281,7 +281,7 @@ func (g *GBC) step(max int) {
 			}
 		}
 	} else {
-		cycle = (max - g.cycles)
+		cycle = (max - g.cycles) / 4
 		if cycle > 16 { // make sound seemless
 			cycle = 16
 		}
@@ -305,30 +305,26 @@ func (g *GBC) step(max int) {
 
 func (g *GBC) execScanline() {
 	// OAM mode2
-	for g.cycles <= 20*g.boost {
-		g.step(20 * g.boost)
+	for g.cycles <= video.MODE_2_LENGTH*g.boost {
+		g.step(video.MODE_2_LENGTH * g.boost)
 	}
 	g.video.EndMode2()
+	g.cycles = 0
 
 	// LCD Driver mode3
-	g.cycles -= 20 * g.boost
-	for g.cycles <= 42*g.boost {
-		g.step(42 * g.boost)
+	for g.cycles <= video.MODE_3_LENGTH*g.boost {
+		g.step(video.MODE_3_LENGTH * g.boost)
 	}
 	g.video.EndMode3()
+	g.cycles = 0
 
 	// HBlank mode0
-	g.cycles -= 42 * g.boost
-	for g.cycles <= (cyclePerLine-(20+42))*g.boost {
-		g.step((cyclePerLine - (20 + 42)) * g.boost)
+	for g.cycles <= video.MODE_0_LENGTH*g.boost {
+		g.step(video.MODE_0_LENGTH * g.boost)
 	}
 	g.video.EndMode0()
-	g.cycles -= (cyclePerLine - (20 + 42)) * g.boost
+	g.cycles = 0
 
-	LY := g.Load8(LYIO)
-	if LY == 144 { // set vblank flag
-		g.setVBlankFlag(true)
-	}
 	if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
 		g.setLCDSTATFlag(true)
 	}
@@ -337,10 +333,12 @@ func (g *GBC) execScanline() {
 // VBlank
 func (g *GBC) execVBlank() {
 	for {
-		for g.cycles < cyclePerLine*g.boost {
-			g.step(cyclePerLine * g.boost)
+		for g.cycles < video.HORIZONTAL_LENGTH*g.boost {
+			g.step(video.HORIZONTAL_LENGTH * g.boost)
 		}
 		g.video.EndMode1()
+		g.cycles = 0
+
 		if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
 			g.setLCDSTATFlag(true)
 		}
@@ -348,7 +346,6 @@ func (g *GBC) execVBlank() {
 		if g.video.Mode() == 2 {
 			break
 		}
-		g.cycles = 0
 	}
 	g.cycles = 0
 }

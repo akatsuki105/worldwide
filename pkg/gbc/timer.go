@@ -78,7 +78,7 @@ func (g *GBC) tick() {
 		}
 	}
 
-	g.cycles++
+	g.cycles += 4
 	g.timer.sys++ // 16 bit system counter
 	g.timer.div++
 	if g.timer.div >= 64 {

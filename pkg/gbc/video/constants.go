@@ -3,6 +3,9 @@ package video
 const (
 	HORIZONTAL_PIXELS     = 160
 	VERTICAL_PIXELS       = 144
+	MODE_2_LENGTH         = 80
+	MODE_3_LENGTH         = 172
+	MODE_0_LENGTH         = 204
 	HORIZONTAL_LENGTH     = 456
 	TOTAL_LENGTH          = 70224
 	MAX_OBJ               = 40
