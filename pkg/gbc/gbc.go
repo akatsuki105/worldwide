@@ -240,7 +240,7 @@ func (g *GBC) Exit() {
 }
 
 // Exec 1cycle
-func (g *GBC) exec(max int) {
+func (g *GBC) step(max int) {
 	bank, PC := g.ROMBank.ptr, g.Reg.PC
 
 	bytecode := g.Load8(PC)
@@ -305,14 +305,14 @@ func (g *GBC) exec(max int) {
 func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	// OAM mode2
 	for g.Cycle.scanline <= 20*g.boost {
-		g.exec(20 * g.boost)
+		g.step(20 * g.boost)
 	}
 	g.GPU.EndMode2()
 
 	// LCD Driver mode3
 	g.Cycle.scanline -= 20 * g.boost
 	for g.Cycle.scanline <= 42*g.boost {
-		g.exec(42 * g.boost)
+		g.step(42 * g.boost)
 	}
 	g.GPU.EndMode3(0)
 
@@ -321,7 +321,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	// HBlank mode0
 	g.Cycle.scanline -= 42 * g.boost
 	for g.Cycle.scanline <= (cyclePerLine-(20+42))*g.boost {
-		g.exec((cyclePerLine - (20 + 42)) * g.boost)
+		g.step((cyclePerLine - (20 + 42)) * g.boost)
 	}
 	g.GPU.EndMode0()
 	g.Cycle.scanline -= (cyclePerLine - (20 + 42)) * g.boost
@@ -340,7 +340,7 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 func (g *GBC) execVBlank() {
 	for {
 		for g.Cycle.scanline < cyclePerLine*g.boost {
-			g.exec(cyclePerLine * g.boost)
+			g.step(cyclePerLine * g.boost)
 		}
 		g.GPU.EndMode1()
 		LY := g.Load8(LYIO)
