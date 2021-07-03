@@ -94,7 +94,7 @@ func (g *GBC) tick() {
 		g.timer.TIMAReload.flag = false
 		g.IO[TIMAIO-0xff00] = g.timer.TIMAReload.value
 		g.timer.TIMAReload.after = true
-		g.IO[IFIO-0xff00] |= (1 << 2)
+		g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 2, true)
 		g.updateIRQs() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
 	}
 

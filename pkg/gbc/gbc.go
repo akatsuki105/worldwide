@@ -216,6 +216,8 @@ func (g *GBC) step(max int) {
 		if g.irqPending > 0 {
 			oldIrqPending := g.irqPending
 			g.irqPending = 0
+			g.Reg.IME = false
+			g.updateIRQs()
 			switch oldIrqPending {
 			case VBlankIRQ:
 				g.triggerVBlank()

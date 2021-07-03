@@ -266,7 +266,7 @@ func (g *Video) EndMode1() {
 	oldStat := g.Stat
 	g.Stat = util.SetBit8(g.Stat, 2, lyc == g.io[GB_REG_LY])
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
-		g.io[GB_REG_IF] |= (1 << 1)
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
 	}
 }
@@ -278,7 +278,7 @@ func (g *Video) EndMode2() {
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
-		g.io[GB_REG_IF] |= (1 << 1)
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
 	}
 }
@@ -290,7 +290,7 @@ func (g *Video) EndMode3() {
 	g.ProcessDots(0)
 	g.setMode(0)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
-		g.io[GB_REG_IF] |= (1 << 1)
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
 	}
 }
@@ -329,7 +329,7 @@ func (g *Video) WriteSTAT(value byte) {
 		return
 	}
 	if !statIRQAsserted(oldStat) && g.Mode() < 3 {
-		g.io[GB_REG_IF] |= (1 << 1)
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
 	}
 }
@@ -340,7 +340,7 @@ func (g *Video) WriteLYC(value byte) {
 	if util.Bit(g.LCDC, Enable) {
 		g.Stat = util.SetBit8(g.Stat, 2, value == g.io[GB_REG_LY])
 		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
-			g.io[GB_REG_IF] |= (1 << 1)
+			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 			g.updateIRQs()
 		}
 	}

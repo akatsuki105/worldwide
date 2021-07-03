@@ -69,7 +69,6 @@ func (g *GBC) setJoypadFlag(b bool) {
 // ------------ trigger --------------------
 
 func (g *GBC) triggerInterrupt() {
-	g.Reg.IME, g.halt = false, false
 	g.updateTimer(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
 	g.pushPC()
 }
