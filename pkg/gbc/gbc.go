@@ -42,7 +42,8 @@ type GBC struct {
 	joypad    joypad.Joypad
 	halt      bool
 	Config    *config.Config
-	Timer
+	cycles    int
+	timer     Timer
 	ROMBank
 	RAMBank
 	WRAMBank
@@ -280,7 +281,7 @@ func (g *GBC) step(max int) {
 			}
 		}
 	} else {
-		cycle = (max - g.Cycle.scanline)
+		cycle = (max - g.cycles)
 		if cycle > 16 { // make sound seemless
 			cycle = 16
 		}
@@ -298,31 +299,31 @@ func (g *GBC) step(max int) {
 		}
 	}
 
-	g.timer(cycle)
+	g.updateTimer(cycle)
 	g.handleInterrupt()
 }
 
 func (g *GBC) execScanline() {
 	// OAM mode2
-	for g.Cycle.scanline <= 20*g.boost {
+	for g.cycles <= 20*g.boost {
 		g.step(20 * g.boost)
 	}
 	g.video.EndMode2()
 
 	// LCD Driver mode3
-	g.Cycle.scanline -= 20 * g.boost
-	for g.Cycle.scanline <= 42*g.boost {
+	g.cycles -= 20 * g.boost
+	for g.cycles <= 42*g.boost {
 		g.step(42 * g.boost)
 	}
-	g.video.EndMode3(0)
+	g.video.EndMode3()
 
 	// HBlank mode0
-	g.Cycle.scanline -= 42 * g.boost
-	for g.Cycle.scanline <= (cyclePerLine-(20+42))*g.boost {
+	g.cycles -= 42 * g.boost
+	for g.cycles <= (cyclePerLine-(20+42))*g.boost {
 		g.step((cyclePerLine - (20 + 42)) * g.boost)
 	}
 	g.video.EndMode0()
-	g.Cycle.scanline -= (cyclePerLine - (20 + 42)) * g.boost
+	g.cycles -= (cyclePerLine - (20 + 42)) * g.boost
 
 	LY := g.Load8(LYIO)
 	if LY == 144 { // set vblank flag
@@ -336,7 +337,7 @@ func (g *GBC) execScanline() {
 // VBlank
 func (g *GBC) execVBlank() {
 	for {
-		for g.Cycle.scanline < cyclePerLine*g.boost {
+		for g.cycles < cyclePerLine*g.boost {
 			g.step(cyclePerLine * g.boost)
 		}
 		g.video.EndMode1()
@@ -347,9 +348,9 @@ func (g *GBC) execVBlank() {
 		if g.video.Mode() == 2 {
 			break
 		}
-		g.Cycle.scanline = 0
+		g.cycles = 0
 	}
-	g.Cycle.scanline = 0
+	g.cycles = 0
 }
 
 // 1 frame

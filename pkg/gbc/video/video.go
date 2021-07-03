@@ -272,8 +272,8 @@ func (g *Video) EndMode2() {
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
-func (g *Video) EndMode3(cyclesLate uint32) {
-	g.ProcessDots(cyclesLate)
+func (g *Video) EndMode3() {
+	g.ProcessDots(0)
 	g.setMode(0)
 }
 

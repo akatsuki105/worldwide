@@ -4,13 +4,6 @@ import (
 	"gbc/pkg/util"
 )
 
-type Cycle struct {
-	tac      int    // use in normal timer
-	div      int    // use in div timer
-	scanline int    // use in scanline counter
-	sys      uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
-}
-
 type TIMAReload struct {
 	flag  bool
 	value byte
@@ -18,7 +11,9 @@ type TIMAReload struct {
 }
 
 type Timer struct {
-	Cycle
+	tac int    // use in normal timer
+	div int    // use in div timer
+	sys uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
 	OAMDMA
 	TIMAReload
 	ResetAll bool
@@ -42,7 +37,7 @@ func (g *GBC) clearTimerFlag() {
 	g.storeIO(IFIO, g.loadIO(IFIO)&0xfb)
 }
 
-func (g *GBC) timer(cycle int) {
+func (g *GBC) updateTimer(cycle int) {
 	for i := 0; i < cycle; i++ {
 		g.tick()
 	}
@@ -56,20 +51,20 @@ func (g *GBC) tick() {
 	tac := g.IO[TACIO-0xff00]
 	tickFlag := false
 
-	if g.Timer.ResetAll {
-		g.Timer.ResetAll = false
+	if g.timer.ResetAll {
+		g.timer.ResetAll = false
 		tickFlag = g.resetTimer()
 	}
-	if g.Timer.TAC.Change && !tickFlag {
-		g.Timer.TAC.Change = false
-		oldTAC, newTAC := g.Timer.TAC.Old, g.IO[TACIO-0xff00]
+	if g.timer.TAC.Change && !tickFlag {
+		g.timer.TAC.Change = false
+		oldTAC, newTAC := g.timer.TAC.Old, g.IO[TACIO-0xff00]
 		oldClock, newClock := uint16(clocks[oldTAC&0b11]), uint16(clocks[newTAC&0b11])
 		oldEnable, newEnable := oldTAC&0b100 > 0, newTAC&0b100 > 0
 		if oldEnable {
 			if newEnable {
-				tickFlag = g.Cycle.sys&(oldClock/2) > 0
+				tickFlag = g.timer.sys&(oldClock/2) > 0
 			} else {
-				tickFlag = g.Cycle.sys&(oldClock/2) > 0 && g.Cycle.sys&(newClock/2) == 0
+				tickFlag = g.timer.sys&(oldClock/2) > 0 && g.timer.sys&(newClock/2) == 0
 			}
 		}
 	}
@@ -83,27 +78,27 @@ func (g *GBC) tick() {
 		}
 	}
 
-	g.Cycle.scanline++
-	g.Cycle.sys++ // 16 bit system counter
-	g.Cycle.div++
-	if g.Cycle.div >= 64 {
+	g.cycles++
+	g.timer.sys++ // 16 bit system counter
+	g.timer.div++
+	if g.timer.div >= 64 {
 		g.IO[DIVIO-0xff00]++
-		g.Cycle.div -= 64
+		g.timer.div -= 64
 	}
 
 	if util.Bit(tac, 2) {
-		g.Cycle.tac++
-		if g.Cycle.tac >= clocks[tac&0b11] {
-			g.Cycle.tac -= clocks[tac&0b11]
+		g.timer.tac++
+		if g.timer.tac >= clocks[tac&0b11] {
+			g.timer.tac -= clocks[tac&0b11]
 			tickFlag = true
 		}
 	}
 
-	g.TIMAReload.after = false
-	if g.TIMAReload.flag {
-		g.TIMAReload.flag = false
-		g.IO[TIMAIO-0xff00] = g.TIMAReload.value
-		g.TIMAReload.after = true
+	g.timer.TIMAReload.after = false
+	if g.timer.TIMAReload.flag {
+		g.timer.TIMAReload.flag = false
+		g.IO[TIMAIO-0xff00] = g.timer.TIMAReload.value
+		g.timer.TIMAReload.after = true
 		g.setTimerFlag() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
 	}
 
@@ -111,7 +106,7 @@ func (g *GBC) tick() {
 		TIMABefore := g.IO[TIMAIO-0xff00]
 		TIMAAfter := TIMABefore + 1
 		if TIMAAfter < TIMABefore { // overflow occurs
-			g.TIMAReload = TIMAReload{
+			g.timer.TIMAReload = TIMAReload{
 				flag:  true,
 				value: uint8(g.IO[TMAIO-0xff00]),
 				after: false,
@@ -123,30 +118,30 @@ func (g *GBC) tick() {
 	}
 
 	// OAMDMA
-	if g.OAMDMA.ptr > 0 {
-		if g.OAMDMA.ptr == 160 {
-			g.Store8(0xfe00+uint16(g.OAMDMA.ptr)-1, g.Load8(g.OAMDMA.start+uint16(g.OAMDMA.ptr)-1))
+	if g.timer.OAMDMA.ptr > 0 {
+		if g.timer.OAMDMA.ptr == 160 {
+			g.Store8(0xfe00+uint16(g.timer.OAMDMA.ptr)-1, g.Load8(g.timer.OAMDMA.start+uint16(g.timer.OAMDMA.ptr)-1))
 			g.Store8(OAM, 0xff)
-		} else if g.OAMDMA.ptr < 160 {
-			g.Store8(0xfe00+uint16(g.OAMDMA.ptr)-1, g.Load8(g.OAMDMA.start+uint16(g.OAMDMA.ptr)-1))
+		} else if g.timer.OAMDMA.ptr < 160 {
+			g.Store8(0xfe00+uint16(g.timer.OAMDMA.ptr)-1, g.Load8(g.timer.OAMDMA.start+uint16(g.timer.OAMDMA.ptr)-1))
 		}
 
-		g.OAMDMA.ptr--          // increment OAMDMA count
-		if g.OAMDMA.reptr > 0 { // if next OAM is requested, increment that one too
-			g.OAMDMA.reptr--
-			if g.OAMDMA.reptr == 160 {
-				g.OAMDMA.start = g.OAMDMA.restart
-				g.OAMDMA.ptr, g.OAMDMA.reptr = 160, 0
+		g.timer.OAMDMA.ptr--          // increment timer.OAMDMA count
+		if g.timer.OAMDMA.reptr > 0 { // if next OAM is requested, increment that one too
+			g.timer.OAMDMA.reptr--
+			if g.timer.OAMDMA.reptr == 160 {
+				g.timer.OAMDMA.start = g.timer.OAMDMA.restart
+				g.timer.OAMDMA.ptr, g.timer.OAMDMA.reptr = 160, 0
 			}
 		}
 	}
 }
 
 func (g *GBC) resetTimer() bool {
-	g.Cycle.sys, g.Cycle.div, g.IO[DIVIO-0xff00] = 0, 0, 0
+	g.timer.sys, g.timer.div, g.IO[DIVIO-0xff00] = 0, 0, 0
 
-	old := g.Cycle.tac
-	g.Cycle.tac = 0
+	old := g.timer.tac
+	g.timer.tac = 0
 
 	tickFlag := false
 	tac := g.IO[TACIO-0xff00]

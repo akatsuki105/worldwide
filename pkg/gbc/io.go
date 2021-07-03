@@ -24,29 +24,29 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.joypad.P1 = value
 
 	case addr == DIVIO:
-		g.Timer.ResetAll = true
+		g.timer.ResetAll = true
 
 	case addr == TIMAIO:
-		if g.TIMAReload.flag {
-			g.TIMAReload.flag = false
+		if g.timer.TIMAReload.flag {
+			g.timer.TIMAReload.flag = false
 			g.IO[TIMAIO-0xff00] = value
-		} else if g.TIMAReload.after {
-			g.IO[TIMAIO-0xff00] = g.TIMAReload.value
+		} else if g.timer.TIMAReload.after {
+			g.IO[TIMAIO-0xff00] = g.timer.TIMAReload.value
 		} else {
 			g.IO[TIMAIO-0xff00] = value
 		}
 
 	case addr == TMAIO:
-		if g.TIMAReload.flag {
-			g.TIMAReload.value = value
-		} else if g.TIMAReload.after {
+		if g.timer.TIMAReload.flag {
+			g.timer.TIMAReload.value = value
+		} else if g.timer.TIMAReload.after {
 			g.IO[TIMAIO-0xff00] = value
 		}
 		g.IO[TMAIO-0xff00] = value
 
 	case addr == TACIO:
-		g.Timer.TAC.Change = true
-		g.Timer.TAC.Old = g.IO[TACIO-0xff00]
+		g.timer.TAC.Change = true
+		g.timer.TAC.Old = g.IO[TACIO-0xff00]
 		g.IO[TACIO-0xff00] = value
 
 	case addr == IFIO:
@@ -54,12 +54,12 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 
 	case addr == DMAIO: // dma transfer
 		start := uint16(g.Reg.R[A]) << 8
-		if g.OAMDMA.ptr > 0 {
-			g.OAMDMA.restart = start
-			g.OAMDMA.reptr = 160 + 2 // lag
+		if g.timer.OAMDMA.ptr > 0 {
+			g.timer.OAMDMA.restart = start
+			g.timer.OAMDMA.reptr = 160 + 2 // lag
 		} else {
-			g.OAMDMA.start = start
-			g.OAMDMA.ptr = 160 + 2 // lag
+			g.timer.OAMDMA.start = start
+			g.timer.OAMDMA.ptr = 160 + 2 // lag
 		}
 
 	case addr >= 0xff10 && addr <= 0xff26: // sound io
