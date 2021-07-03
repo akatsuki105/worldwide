@@ -52,10 +52,7 @@ func NewRenderer(g *GPU) *Renderer {
 		lastY:              VERTICAL_PIXELS,
 	}
 
-	for i := byte(0); i < 192/4; i++ {
-		r.lookup[i] = i
-		r.lookup[i] = i
-		r.lookup[i] = i
+	for i := byte(0); i < 192; i++ {
 		r.lookup[i] = i
 	}
 
