@@ -32,7 +32,7 @@ type Renderer struct {
 	hasWindow                              bool
 
 	lastHighlightAmount byte
-	model               util.GBModel
+	Model               util.GBModel
 	obj                 [GB_VIDEO_MAX_LINE_OBJ]Sprite
 	objMax              int
 
@@ -47,11 +47,15 @@ type Renderer struct {
 func NewRenderer(g *GPU) *Renderer {
 	r := &Renderer{
 		g:                  g,
+		highlightColor:     0x7fff,
 		outputBufferStride: 160,
 		lastY:              VERTICAL_PIXELS,
 	}
 
-	for i := byte(0); i < byte(len(r.lookup)); i++ {
+	for i := byte(0); i < 192/4; i++ {
+		r.lookup[i] = i
+		r.lookup[i] = i
+		r.lookup[i] = i
 		r.lookup[i] = i
 	}
 
@@ -141,7 +145,21 @@ func (r *Renderer) WriteVideoRegister(offset byte, value byte) byte {
 // writePalette / GBVideoSoftwareRendererWritePalette
 // GBVideoWritePalette calls this
 func (r *Renderer) writePalette(index int, value Color) {
-	r.palette[index] = value
+	color := value
+	if r.Model&util.GB_MODEL_SGB != 0 {
+		if index < 0x10 && index != 0 && (index&3) == 0 {
+			color = r.palette[0]
+		} else if index >= PAL_SGB_BORDER && (index&0xf) == 0 {
+			color = r.palette[0]
+		} else if index > PAL_HIGHLIGHT && index < PAL_HIGHLIGHT_OBJ && (index&3) == 0 {
+			color = r.palette[PAL_HIGHLIGHT_BG]
+		}
+	}
+
+	r.palette[index] = color
+	if index < PAL_SGB_BORDER && (index < PAL_OBJ || (index&3) != 0) {
+		r.palette[index+PAL_HIGHLIGHT] = color
+	}
 }
 
 // writeVRAM / GBVideoSoftwareRendererWriteVRAM
@@ -170,7 +188,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 	}
 
-	if util.Bit(r.g.LCDC, BgEnable) || r.model >= util.GB_MODEL_CGB {
+	if util.Bit(r.g.LCDC, BgEnable) || r.Model >= util.GB_MODEL_CGB {
 		wy, wx := int(r.wy+r.currentWy), int(r.wx+r.currentWx)-7
 		if util.Bit(r.g.LCDC, Window) && wy == y && wx <= endX {
 			r.hasWindow = true
@@ -209,7 +227,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	}
 
 	sgbOffset := 0
-	if (r.model&util.GB_MODEL_SGB != 0) && r.sgbBorders {
+	if (r.Model&util.GB_MODEL_SGB != 0) && r.sgbBorders {
 		sgbOffset = r.outputBufferStride*40 + 48
 	}
 
@@ -217,7 +235,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	x, p := startX, 0
 	switch r.sgbRenderMode {
 	case 0:
-		if r.model&util.GB_MODEL_SGB != 0 {
+		if r.Model&util.GB_MODEL_SGB != 0 {
 			p = int(r.sgbAttributes[(startX>>5)+5*(y>>3)])
 			p >>= 6 - ((x / 4) & 0x6)
 			p &= 3
@@ -228,7 +246,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 
 		for ; x+7 < (endX & ^7); x += 8 {
-			if (r.model & util.GB_MODEL_SGB) != 0 {
+			if (r.Model & util.GB_MODEL_SGB) != 0 {
 				p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
 				p >>= 6 - ((x / 4) & 0x6)
 				p &= 3
@@ -243,7 +261,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			row[x+6] = r.palette[p|int(r.lookup[r.row[x+6]&OBJ_PRIO_MASK])]
 			row[x+7] = r.palette[p|int(r.lookup[r.row[x+7]&OBJ_PRIO_MASK])]
 		}
-		if (r.model & util.GB_MODEL_SGB) != 0 {
+		if (r.Model & util.GB_MODEL_SGB) != 0 {
 			p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
 			p >>= 6 - ((x / 4) & 0x6)
 			p &= 3
@@ -339,7 +357,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 			if highlight {
 				p = 0x80
 			}
-			if r.model >= util.GB_MODEL_CGB {
+			if r.Model >= util.GB_MODEL_CGB {
 				attrs := r.g.VRAM.Buffer[attrIdx+topX+topY]
 				p |= uint16(attrs&0x7) * 4
 				if util.Bit(attrs, ObjAttrPriority) && util.Bit(r.g.LCDC, BgEnable) {
@@ -384,7 +402,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 			p = PAL_HIGHLIGHT_BG
 		}
 
-		if r.model >= util.GB_MODEL_CGB {
+		if r.Model >= util.GB_MODEL_CGB {
 			attrs := r.g.VRAM.Buffer[attrIdx+topX+topY]
 			bgPal := uint16(attrs & 0x7)
 			p |= bgPal * 4
@@ -470,7 +488,7 @@ func (r *Renderer) drawObj(obj Sprite, startX, endX, y int) {
 		p = PAL_HIGHLIGHT_OBJ
 	}
 
-	if r.model >= util.GB_MODEL_CGB {
+	if r.Model >= util.GB_MODEL_CGB {
 		p |= uint16(obj.obj.attr&0x07) * 4
 		if util.Bit(obj.obj.attr, ObjAttrBank) {
 			vramIdx += GB_SIZE_VRAM_BANK0
@@ -603,7 +621,7 @@ func (r *Renderer) inWindow() bool {
 
 // _clearScreen
 func (r *Renderer) clearScreen() {
-	if r.model&util.GB_MODEL_SGB != 0 {
+	if r.Model&util.GB_MODEL_SGB != 0 {
 		return
 	}
 

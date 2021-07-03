@@ -165,6 +165,8 @@ func (g *GBC) initRegister() {
 }
 
 func (g *GBC) initIOMap() {
+	model := g.GPU.Renderer.Model
+
 	g.IO[0x04] = 0x1e
 	g.IO[0x05] = 0x00
 	g.IO[0x06] = 0x00
@@ -190,13 +192,26 @@ func (g *GBC) initIOMap() {
 	g.IO[0x26] = 0xf1
 	g.Store8(LCDCIO, 0x91)
 	g.Store8(LCDSTATIO, 0x85)
-	g.IO[BGPIO-0xff00] = 0xfc
-	g.IO[OBP0IO-0xff00], g.IO[OBP1IO-0xff00] = 0xff, 0xff
+	g.Store8(BGPIO, 0xfc)
+	if model < util.GB_MODEL_CGB {
+		g.Store8(OBP0IO, 0xff)
+		g.Store8(OBP1IO, 0xff)
+	}
+	if model&util.GB_MODEL_CGB != 0 {
+		g.Store8(VBKIO, 0)
+		g.Store8(BCPSIO, 0x80)
+		g.Store8(OCPSIO, 0)
+		g.Store8(SVBKIO, 1)
+	}
 }
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
 	g.GPU = gpu.New(&g.IO)
+	if g.Cartridge.IsCGB {
+		g.GPU.Renderer.Model = util.GB_MODEL_CGB
+	}
+
 	g.initRegister()
 	g.initIOMap()
 
@@ -204,10 +219,6 @@ func (g *GBC) Init(debug bool, test bool) {
 
 	g.Config = config.Init()
 	g.boost = 1
-
-	if g.Cartridge.IsCGB {
-		g.GPU.SetModel(util.GB_MODEL_CGB)
-	}
 
 	// Init APU
 	g.Sound.Init(!test)

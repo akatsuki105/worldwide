@@ -70,10 +70,6 @@ func New(io *[0x100]byte) *GPU {
 	return g
 }
 
-func (g *GPU) SetModel(m util.GBModel) {
-	g.Renderer.model = m
-}
-
 func (g *GPU) Reset() {
 	g.Ly, g.X = 0, 0
 	g.Stat = 1
@@ -128,7 +124,7 @@ func (g *GPU) Display() *image.RGBA {
 // GBVideoWritePalette
 // 0xff47, 0xff48, 0xff49, 0xff69, 0xff6b
 func (g *GPU) WritePalette(offset byte, value byte) {
-	if g.Renderer.model < util.GB_MODEL_SGB {
+	if g.Renderer.Model < util.GB_MODEL_SGB {
 		switch offset {
 		case GB_REG_BGP:
 			// Palette = 0(white) or 1(light gray) or 2(dark gray) or 3(black)
@@ -159,7 +155,7 @@ func (g *GPU) WritePalette(offset byte, value byte) {
 			g.Renderer.writePalette(9*4+2, g.Palette[9*4+2])
 			g.Renderer.writePalette(9*4+3, g.Palette[9*4+3])
 		}
-	} else if g.Renderer.model&util.GB_MODEL_SGB != 0 {
+	} else if g.Renderer.Model&util.GB_MODEL_SGB != 0 {
 		g.Renderer.WriteVideoRegister(offset&0xff, value)
 	} else {
 		switch offset {
