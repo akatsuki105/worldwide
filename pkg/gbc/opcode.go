@@ -267,7 +267,7 @@ func (g *GBC) pend() {
 	// Some pending
 	g.halt = false
 	PC := g.Reg.PC
-	g.exec(1)
+	g.step(1)
 	g.Reg.PC = PC
 
 	// IME turns on due to EI delay.
