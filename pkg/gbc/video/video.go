@@ -248,13 +248,13 @@ func (g *Video) EndMode1() {
 	lyc := g.io[GB_REG_LYC]
 	g.Ly++
 	switch g.Ly {
-	case GB_VIDEO_VERTICAL_TOTAL_PIXELS + 1:
+	case VERTICAL_TOTAL_PIXELS + 1:
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
-	case GB_VIDEO_VERTICAL_TOTAL_PIXELS:
+	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
-	case GB_VIDEO_VERTICAL_TOTAL_PIXELS - 1:
+	case VERTICAL_TOTAL_PIXELS - 1:
 		g.io[GB_REG_LY] = byte(g.Ly)
 	default:
 		g.io[GB_REG_LY] = byte(g.Ly)

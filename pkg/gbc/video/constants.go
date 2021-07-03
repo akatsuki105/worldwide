@@ -1,11 +1,13 @@
 package video
 
 const (
-	HORIZONTAL_PIXELS              = 160
-	VERTICAL_PIXELS                = 144
-	GB_VIDEO_MAX_OBJ               = 40
-	GB_VIDEO_MAX_LINE_OBJ          = 10
-	GB_VIDEO_VERTICAL_TOTAL_PIXELS = 154
+	HORIZONTAL_PIXELS     = 160
+	VERTICAL_PIXELS       = 144
+	HORIZONTAL_LENGTH     = 456
+	TOTAL_LENGTH          = 70224
+	MAX_OBJ               = 40
+	MAX_LINE_OBJ          = 10
+	VERTICAL_TOTAL_PIXELS = 154
 )
 
 const (

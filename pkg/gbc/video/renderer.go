@@ -10,7 +10,7 @@ type Renderer struct {
 	g                                 *Video
 	disableBG, disableOBJ, disableWIN bool
 	highlightBG                       bool
-	highlightOBJ                      [GB_VIDEO_MAX_OBJ]bool
+	highlightOBJ                      [MAX_OBJ]bool
 	highlightWIN                      bool
 	highlightColor                    uint16
 	highlightAmount                   byte
@@ -33,7 +33,7 @@ type Renderer struct {
 
 	lastHighlightAmount byte
 	Model               util.GBModel
-	obj                 [GB_VIDEO_MAX_LINE_OBJ]Sprite
+	obj                 [MAX_LINE_OBJ]Sprite
 	objMax              int
 
 	objOffsetX, objOffsetY, offsetScx, offsetScy, offsetWx, offsetWy int16
@@ -601,7 +601,7 @@ func (r *Renderer) cleanOAM(y int) {
 	}
 
 	o := 0
-	for i := 0; i < GB_VIDEO_MAX_OBJ && o < GB_VIDEO_MAX_LINE_OBJ; i++ {
+	for i := 0; i < MAX_OBJ && o < MAX_LINE_OBJ; i++ {
 		oy := int(r.g.Oam.objs[i].y)
 		if y < oy-16 || y >= oy-16+spriteHeight {
 			continue
