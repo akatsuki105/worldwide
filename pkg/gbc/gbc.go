@@ -158,53 +158,12 @@ func (g *GBC) transferROM(bankNum int, rom []byte) {
 	}
 }
 
-func (g *GBC) initRegister() {
+func (g *GBC) resetRegister() {
 	g.Reg.setAF(0x11b0) // A=01 => GB, A=11 => CGB
 	g.Reg.setBC(0x0013)
 	g.Reg.setDE(0x00d8)
 	g.Reg.setHL(0x014d)
 	g.Reg.PC, g.Reg.SP = 0x0100, 0xfffe
-}
-
-func (g *GBC) initIOMap() {
-	model := g.video.Renderer.Model
-
-	g.IO[0x04] = 0x1e
-	g.IO[0x05] = 0x00
-	g.IO[0x06] = 0x00
-	g.IO[0x07] = 0xf8
-	g.IO[0x0f] = 0xe1
-	g.IO[0x10] = 0x80
-	g.IO[0x11] = 0xbf
-	g.IO[0x12] = 0xf3
-	g.IO[0x14] = 0xbf
-	g.IO[0x16] = 0x3f
-	g.IO[0x17] = 0x00
-	g.IO[0x19] = 0xbf
-	g.IO[0x1a] = 0x7f
-	g.IO[0x1b] = 0xff
-	g.IO[0x1c] = 0x9f
-	g.IO[0x1e] = 0xbf
-	g.IO[0x20] = 0xff
-	g.IO[0x21] = 0x00
-	g.IO[0x22] = 0x00
-	g.IO[0x23] = 0xbf
-	g.IO[0x24] = 0x77
-	g.IO[0x25] = 0xf3
-	g.IO[0x26] = 0xf1
-	g.Store8(LCDCIO, 0x91)
-	g.Store8(LCDSTATIO, 0x85)
-	g.Store8(BGPIO, 0xfc)
-	if model < util.GB_MODEL_CGB {
-		g.Store8(OBP0IO, 0xff)
-		g.Store8(OBP1IO, 0xff)
-	}
-	if model&util.GB_MODEL_CGB != 0 {
-		g.Store8(VBKIO, 0)
-		g.Store8(BCPSIO, 0x80)
-		g.Store8(OCPSIO, 0)
-		g.Store8(SVBKIO, 1)
-	}
 }
 
 // Init g and ram
@@ -214,8 +173,8 @@ func (g *GBC) Init(debug bool, test bool) {
 		g.setModel(util.GB_MODEL_CGB)
 	}
 
-	g.initRegister()
-	g.initIOMap()
+	g.resetRegister()
+	g.resetIO()
 
 	g.ROMBank.ptr, g.WRAMBank.ptr = 1, 1
 
@@ -234,10 +193,6 @@ func (g *GBC) Init(debug bool, test bool) {
 		g.Debug.history.SetFlag(g.Config.Debug.History)
 		g.Debug.Break.ParseBreakpoints(g.Config.Debug.BreakPoints)
 	}
-}
-
-// Exit gbc
-func (g *GBC) Exit() {
 }
 
 // Exec 1cycle

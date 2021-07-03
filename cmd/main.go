@@ -63,7 +63,6 @@ func Run() int {
 	emu.GBC.Init(*debug, test)
 	defer func() {
 		os.Chdir(cur)
-		emu.GBC.Exit()
 	}()
 
 	if test {
