@@ -53,6 +53,10 @@ const (
 )
 
 const (
+	// Interrupts
+	GB_REG_IF = 0x0F
+	GB_REG_IE = 0xFF
+
 	GB_REG_LCDC = 0x40
 	GB_REG_STAT = 0x41
 	GB_REG_SCY  = 0x42

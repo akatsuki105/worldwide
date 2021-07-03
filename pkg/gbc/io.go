@@ -118,6 +118,9 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 	case addr == LCDSTATIO:
 		g.video.Stat = value
 
+	case addr == LYCIO:
+		g.video.WriteLYC(value)
+
 	case addr == SCYIO || addr == SCXIO || addr == WYIO || addr == WXIO:
 		g.video.ProcessDots(0)
 		value = g.video.Renderer.WriteVideoRegister(byte(addr), value)
@@ -172,5 +175,11 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 			newWRAMBankPtr++
 		}
 		g.WRAMBank.ptr = newWRAMBankPtr
+
+	case addr == IEIO:
+		g.updateIRQs()
+	case addr == IFIO:
+		g.IO[IFIO-0xff00] = value | 0xE0
+		g.updateIRQs()
 	}
 }

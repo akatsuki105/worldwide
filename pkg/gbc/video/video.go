@@ -42,6 +42,7 @@ type Video struct {
 	Palette    [64]Color
 
 	frameCounter, frameskip, frameskipCounter int
+	updateIRQs                                func()
 }
 
 var (
@@ -57,11 +58,12 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte) *Video {
+func New(io *[0x100]byte, updateIRQs func()) *Video {
 	g := &Video{
 		io:         io,
 		Oam:        NewOAM(),
 		dmgPalette: defaultDmgPalette,
+		updateIRQs: updateIRQs,
 	}
 
 	g.Debug.On = false
@@ -237,6 +239,7 @@ func (g *Video) EndMode0() {
 	}
 
 	g.Stat = util.SetBit8(g.Stat, 2, lyc == g.io[GB_REG_LY])
+	g.updateIRQs()
 }
 
 // mode1 = VBlank
@@ -260,21 +263,36 @@ func (g *Video) EndMode1() {
 		g.io[GB_REG_LY] = byte(g.Ly)
 	}
 
+	oldStat := g.Stat
 	g.Stat = util.SetBit8(g.Stat, 2, lyc == g.io[GB_REG_LY])
+	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+		g.io[GB_REG_IF] |= (1 << 1)
+		g.updateIRQs()
+	}
 }
 
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 80 cycles
 func (g *Video) EndMode2() {
+	oldStat := g.Stat
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
+	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+		g.io[GB_REG_IF] |= (1 << 1)
+		g.updateIRQs()
+	}
 }
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
 func (g *Video) EndMode3() {
+	oldStat := g.Stat
 	g.ProcessDots(0)
 	g.setMode(0)
+	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+		g.io[GB_REG_IF] |= (1 << 1)
+		g.updateIRQs()
+	}
 }
 
 func (g *Video) UpdateFrameCount() {
@@ -307,4 +325,28 @@ func (g *Video) WriteLCDC(value byte) {
 func (g *Video) WriteSTAT(value byte) {}
 
 // GBVideoWriteLYC
-func (g *Video) WriteLYC(value byte) {}
+func (g *Video) WriteLYC(value byte) {
+	oldStat := g.Stat
+	if util.Bit(g.LCDC, Enable) {
+		g.Stat = util.SetBit8(g.Stat, 2, value == g.io[GB_REG_LY])
+		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+			g.io[GB_REG_IF] |= (1 << 1)
+			g.updateIRQs()
+		}
+	}
+}
+
+func statIRQAsserted(stat byte) bool {
+	if util.Bit(stat, 6) && util.Bit(stat, 2) {
+		return true
+	}
+	switch stat & 0x3 {
+	case 0:
+		return util.Bit(stat, 3)
+	case 1:
+		return util.Bit(stat, 4)
+	case 2:
+		return util.Bit(stat, 5)
+	}
+	return false
+}

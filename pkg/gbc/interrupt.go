@@ -105,37 +105,3 @@ func (g *GBC) triggerJoypad() {
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0060
 }
-
-// ------------ handler --------------------
-
-// 能動的な割り込みに対処する
-func (g *GBC) handleInterrupt() {
-	if g.Reg.IME {
-		intr := g.ieif()
-
-		if intr.VBlank.IE && intr.VBlank.IF {
-			g.triggerVBlank()
-			return
-		}
-
-		if intr.LCDSTAT.IE && intr.LCDSTAT.IF {
-			g.triggerLCDC()
-			return
-		}
-
-		if intr.Timer.IE && intr.Timer.IF {
-			g.triggerTimer()
-			return
-		}
-
-		if intr.Serial.IE && intr.Serial.IF {
-			g.triggerSerial()
-			return
-		}
-
-		if intr.Joypad.IE && intr.Joypad.IF {
-			g.triggerJoypad()
-			return
-		}
-	}
-}

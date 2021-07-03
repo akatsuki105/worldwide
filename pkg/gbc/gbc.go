@@ -33,6 +33,15 @@ type WRAMBank struct {
 	bank [8][0x1000]byte
 }
 
+const (
+	NoIRQ = iota
+	VBlankIRQ
+	LCDCIRQ
+	TimerIRQ
+	SerialIRQ
+	JoypadIRQ
+)
+
 // GBC core structure
 type GBC struct {
 	Reg       Register
@@ -53,8 +62,9 @@ type GBC struct {
 	RTC      rtc.RTC
 	boost    int // 1 or 2
 	IMESwitch
-	Debug Debug
-	model util.GBModel
+	Debug      Debug
+	model      util.GBModel
+	irqPending int
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -168,7 +178,7 @@ func (g *GBC) resetRegister() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
-	g.video = video.New(&g.IO)
+	g.video = video.New(&g.IO, func() { g.updateIRQs() })
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
@@ -197,18 +207,28 @@ func (g *GBC) Init(debug bool, test bool) {
 
 // Exec 1cycle
 func (g *GBC) step(max int) {
-	bank, PC := g.ROMBank.ptr, g.Reg.PC
-
+	PC := g.Reg.PC
 	bytecode := g.Load8(PC)
 	opcode := opcodes[bytecode]
 	instruction, operand1, operand2, cycle, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 
 	if !g.halt {
-		if g.Debug.Enable && g.Debug.history.Flag() {
-			g.Debug.history.SetHistory(bank, PC, bytecode)
-		}
-
-		if handler != nil {
+		if g.irqPending > 0 {
+			oldIrqPending := g.irqPending
+			g.irqPending = 0
+			switch oldIrqPending {
+			case VBlankIRQ:
+				g.triggerVBlank()
+			case LCDCIRQ:
+				g.triggerLCDC()
+			case TimerIRQ:
+				g.triggerTimer()
+			case SerialIRQ:
+				g.triggerSerial()
+			case JoypadIRQ:
+				g.triggerJoypad()
+			}
+		} else if handler != nil {
 			handler(g, operand1, operand2)
 		} else {
 			switch instruction {
@@ -255,7 +275,6 @@ func (g *GBC) step(max int) {
 	}
 
 	g.updateTimer(cycle)
-	g.handleInterrupt()
 }
 
 func (g *GBC) execScanline() {
@@ -365,4 +384,28 @@ func (g *GBC) PanicHandler(place string, stack bool) {
 func (g *GBC) setModel(m util.GBModel) {
 	g.model = m
 	g.video.Renderer.Model = m
+}
+
+func (g *GBC) updateIRQs() {
+	irqs := g.IO[IEIO-0xff00] & g.IO[IFIO-0xff00] & 0x1f
+	if irqs == 0 {
+		g.irqPending = 0
+		return
+	}
+
+	g.halt = false
+	if !g.Reg.IME {
+		g.irqPending = 0
+		return
+	}
+	if g.irqPending > 0 {
+		return
+	}
+
+	for i := 0; i < 4; i++ {
+		if util.Bit(irqs, i) {
+			g.irqPending = i + 1
+			return
+		}
+	}
 }
