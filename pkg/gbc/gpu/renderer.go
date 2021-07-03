@@ -224,6 +224,12 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	highlightAmount := (r.highlightAmount + 6) >> 4
 	if r.lastHighlightAmount != highlightAmount {
 		r.lastHighlightAmount = highlightAmount
+		for i := 0; i < PAL_SGB_BORDER; i++ {
+			if i >= PAL_OBJ && i&3 == 0 {
+				continue
+			}
+			r.palette[i+PAL_HIGHLIGHT] = r.palette[i]
+		}
 	}
 
 	sgbOffset := 0
@@ -497,7 +503,7 @@ func (r *Renderer) drawObj(obj Sprite, startX, endX, y int) {
 			mask, mask2 = 0x60, OBJ_PRIORITY/3
 		}
 	} else {
-		p |= (uint16(obj.obj.attr&(1<<ObjAttrPalette)) + 8) * 4
+		p |= (uint16((obj.obj.attr>>ObjAttrPalette)&1) + 8) * 4 // 8x4 or 9x4
 	}
 
 	bottomX, x, objTile := 0, startX, int(obj.obj.tile)+tileOffset
