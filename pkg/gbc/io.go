@@ -60,7 +60,9 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 }
 
 func (g *GBC) storeIO(addr uint16, value byte) {
-	g.IO[byte(addr)] = value
+	defer func() {
+		g.IO[byte(addr)] = value
+	}()
 
 	switch {
 	case addr == JOYPADIO:
@@ -116,7 +118,7 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.video.WriteLCDC(value)
 
 	case addr == LCDSTATIO:
-		g.video.Stat = value
+		g.video.WriteSTAT(value)
 
 	case addr == LYCIO:
 		g.video.WriteLYC(value)

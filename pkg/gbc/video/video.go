@@ -322,7 +322,17 @@ func (g *Video) WriteLCDC(value byte) {
 }
 
 // GBVideoWriteSTAT
-func (g *Video) WriteSTAT(value byte) {}
+func (g *Video) WriteSTAT(value byte) {
+	oldStat := g.Stat
+	g.Stat = (g.Stat & 0x7) | (value & 0x78)
+	if !util.Bit(g.LCDC, Enable) || g.Renderer.Model >= util.GB_MODEL_CGB {
+		return
+	}
+	if !statIRQAsserted(oldStat) && g.Mode() < 3 {
+		g.io[GB_REG_IF] |= (1 << 1)
+		g.updateIRQs()
+	}
+}
 
 // GBVideoWriteLYC
 func (g *Video) WriteLYC(value byte) {
