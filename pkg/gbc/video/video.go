@@ -232,13 +232,24 @@ func (g *Video) EndMode0() {
 	g.Ly++
 	g.io[GB_REG_LY] = byte(g.Ly)
 
+	oldStat := g.Stat
 	if g.Ly < VERTICAL_PIXELS {
 		g.setMode(2)
 	} else {
 		g.setMode(1)
 	}
 
+	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
+	}
+
+	// LYC stat is delayed 1 T-cycle
+	oldStat = g.Stat
 	g.Stat = util.SetBit8(g.Stat, 2, lyc == g.io[GB_REG_LY])
+	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
+	}
+
 	g.updateIRQs()
 }
 

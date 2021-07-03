@@ -300,10 +300,6 @@ func (g *GBC) execScanline() {
 	}
 	g.video.EndMode0()
 	g.cycles = 0
-
-	if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
-		g.setLCDSTATFlag(true)
-	}
 }
 
 // VBlank
@@ -314,10 +310,6 @@ func (g *GBC) execVBlank() {
 		}
 		g.video.EndMode1()
 		g.cycles = 0
-
-		if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
-			g.setLCDSTATFlag(true)
-		}
 
 		if g.video.Mode() == 2 {
 			break
