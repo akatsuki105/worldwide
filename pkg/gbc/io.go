@@ -10,8 +10,6 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 		value = g.GPU.LCDC
 	case addr == LCDSTATIO:
 		value = g.GPU.Stat
-	case addr == LYIO:
-		value = byte(g.GPU.Ly)
 	default:
 		value = g.IO[byte(addr)]
 	}

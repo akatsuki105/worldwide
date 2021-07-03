@@ -226,15 +226,17 @@ func (g *GPU) EndMode0() {
 		g.Renderer.finishScanline(g.Ly)
 	}
 
-	// lyc := 0
+	lyc := g.io[GB_REG_LYC]
 	g.Ly++
+	g.io[GB_REG_LY] = byte(g.Ly)
 
-	// oldStat := g.Stat
 	if g.Ly < VERTICAL_PIXELS {
 		g.setMode(2)
 	} else {
 		g.setMode(1)
 	}
+
+	g.Stat = util.SetBit8(g.Stat, 2, lyc == g.io[GB_REG_LY])
 }
 
 // mode1 = VBlank
@@ -243,16 +245,22 @@ func (g *GPU) EndMode1() {
 		return
 	}
 
+	lyc := g.io[GB_REG_LYC]
 	g.Ly++
 	switch g.Ly {
 	case GB_VIDEO_VERTICAL_TOTAL_PIXELS + 1:
 		g.Ly = 0
+		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
 	case GB_VIDEO_VERTICAL_TOTAL_PIXELS:
+		g.io[GB_REG_LY] = 0
 	case GB_VIDEO_VERTICAL_TOTAL_PIXELS - 1:
+		g.io[GB_REG_LY] = byte(g.Ly)
 	default:
+		g.io[GB_REG_LY] = byte(g.Ly)
 	}
 
+	g.Stat = util.SetBit8(g.Stat, 2, lyc == g.io[GB_REG_LY])
 }
 
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...

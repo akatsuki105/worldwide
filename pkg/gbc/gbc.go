@@ -330,7 +330,9 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	if LY == 144 { // set vblank flag
 		g.setVBlankFlag(true)
 	}
-	g.checkLYC(LY)
+	if util.Bit(g.GPU.Stat, 2) && util.Bit(g.GPU.Stat, 6) { // trigger LYC=LY interrupt
+		g.setLCDSTATFlag(true)
+	}
 	return scrollX, scrollY, true
 }
 
@@ -345,9 +347,11 @@ func (g *GBC) execVBlank() {
 		if LY == 144 { // set vblank flag
 			g.setVBlankFlag(true)
 		}
-		g.checkLYC(LY)
+		if util.Bit(g.GPU.Stat, 2) && util.Bit(g.GPU.Stat, 6) { // trigger LYC=LY interrupt
+			g.setLCDSTATFlag(true)
+		}
 
-		if LY == 0 {
+		if g.GPU.Mode() == 2 {
 			break
 		}
 		g.Cycle.scanline = 0
@@ -432,20 +436,4 @@ func (g *GBC) PanicHandler(place string, stack bool) {
 func (g *GBC) setModel(m util.GBModel) {
 	g.model = m
 	g.GPU.Renderer.Model = m
-}
-
-func (g *GBC) checkLYC(LY uint8) {
-	LYC := g.Load8(LYCIO)
-	if LYC == LY {
-		stat := g.Load8(LCDSTATIO) | 0x04 // set lyc flag
-		g.Store8(LCDSTATIO, stat)
-
-		if util.Bit(stat, 6) { // trigger LYC=LY interrupt
-			g.setLCDSTATFlag(true)
-		}
-		return
-	}
-
-	stat := g.Load8(LCDSTATIO) & 0b11111011 // clear lyc flag
-	g.Store8(LCDSTATIO, stat)
 }
