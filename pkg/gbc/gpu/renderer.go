@@ -189,7 +189,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 	}
 
 	if util.Bit(r.g.LCDC, BgEnable) || r.Model >= util.GB_MODEL_CGB {
-		wy, wx := int(r.wy+r.currentWy), int(r.wx+r.currentWx)-7
+		wy, wx := int(r.wy)+int(r.currentWy), int(r.wx)+int(r.currentWx)-7
 		if util.Bit(r.g.LCDC, Window) && wy == y && wx <= endX {
 			r.hasWindow = true
 		}
@@ -199,7 +199,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			}
 
 			mapIdx = GB_BASE_MAP
-			if util.Bit(r.g.LCDC, TileMap) {
+			if util.Bit(r.g.LCDC, WindowTileMap) {
 				mapIdx += GB_SIZE_MAP // 0x9c00
 			}
 			r.drawBackground(mapIdx, wx, endX, -wx-int(r.offsetWx), y-wy-int(r.offsetWy), r.highlightWIN)
