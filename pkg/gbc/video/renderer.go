@@ -1,4 +1,4 @@
-package gpu
+package video
 
 import (
 	"gbc/pkg/util"
@@ -7,7 +7,7 @@ import (
 // GBVideoRenderer & GBVideoSoftwareRenderer
 type Renderer struct {
 	// GBVideoRenderer
-	g                                 *GPU
+	g                                 *Video
 	disableBG, disableOBJ, disableWIN bool
 	highlightBG                       bool
 	highlightOBJ                      [GB_VIDEO_MAX_OBJ]bool
@@ -44,7 +44,7 @@ type Renderer struct {
 	sgbTransfer   int
 }
 
-func NewRenderer(g *GPU) *Renderer {
+func NewRenderer(g *Video) *Renderer {
 	r := &Renderer{
 		g:                  g,
 		highlightColor:     0x7fff,

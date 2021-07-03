@@ -1,4 +1,4 @@
-package gpu
+package video
 
 import (
 	"gbc/pkg/util"
@@ -18,8 +18,8 @@ type VRAM struct {
 	Buffer [0x4000]byte // (0x8000-0x9fff)x2 (using bank on CGB)
 }
 
-// GPU Graphic Processor Unit
-type GPU struct {
+// Video processes graphics
+type Video struct {
 	LCDC byte // LCD Control
 	VRAM
 	io              *[0x100]byte
@@ -57,8 +57,8 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte) *GPU {
-	g := &GPU{
+func New(io *[0x100]byte) *Video {
+	g := &Video{
 		io:         io,
 		Oam:        NewOAM(),
 		dmgPalette: defaultDmgPalette,
@@ -70,7 +70,7 @@ func New(io *[0x100]byte) *GPU {
 	return g
 }
 
-func (g *GPU) Reset() {
+func (g *Video) Reset() {
 	g.Ly, g.X = 0, 0
 	g.Stat = 1
 	g.frameCounter, g.frameskipCounter = 0, 0
@@ -108,7 +108,7 @@ func (g *GPU) Reset() {
 }
 
 // Display returns gameboy display data
-func (g *GPU) Display() *image.RGBA {
+func (g *Video) Display() *image.RGBA {
 	i := image.NewRGBA(image.Rect(0, 0, HORIZONTAL_PIXELS, VERTICAL_PIXELS))
 	for y := 0; y < VERTICAL_PIXELS; y++ {
 		for x := 0; x < HORIZONTAL_PIXELS; x++ {
@@ -123,7 +123,7 @@ func (g *GPU) Display() *image.RGBA {
 
 // GBVideoWritePalette
 // 0xff47, 0xff48, 0xff49, 0xff69, 0xff6b
-func (g *GPU) WritePalette(offset byte, value byte) {
+func (g *Video) WritePalette(offset byte, value byte) {
 	if g.Renderer.Model < util.GB_MODEL_SGB {
 		switch offset {
 		case GB_REG_BGP:
@@ -203,13 +203,13 @@ func (g *GPU) WritePalette(offset byte, value byte) {
 }
 
 // GBVideoSwitchBank
-func (g *GPU) SwitchBank(value byte) {
+func (g *Video) SwitchBank(value byte) {
 	value &= 1
 	g.VRAM.Bank = uint16(value)
 }
 
 // GBVideoProcessDots
-func (g *GPU) ProcessDots(cyclesLate uint32) {
+func (g *Video) ProcessDots(cyclesLate uint32) {
 	if g.Mode() != 3 {
 		return
 	}
@@ -221,7 +221,7 @@ func (g *GPU) ProcessDots(cyclesLate uint32) {
 
 // mode0 = HBlank
 // 204 cycles
-func (g *GPU) EndMode0() {
+func (g *Video) EndMode0() {
 	if g.frameskipCounter <= 0 {
 		g.Renderer.finishScanline(g.Ly)
 	}
@@ -240,7 +240,7 @@ func (g *GPU) EndMode0() {
 }
 
 // mode1 = VBlank
-func (g *GPU) EndMode1() {
+func (g *Video) EndMode1() {
 	if !util.Bit(g.LCDC, Enable) {
 		return
 	}
@@ -265,19 +265,19 @@ func (g *GPU) EndMode1() {
 
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 80 cycles
-func (g *GPU) EndMode2() {
+func (g *Video) EndMode2() {
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
 }
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
-func (g *GPU) EndMode3(cyclesLate uint32) {
+func (g *Video) EndMode3(cyclesLate uint32) {
 	g.ProcessDots(cyclesLate)
 	g.setMode(0)
 }
 
-func (g *GPU) UpdateFrameCount() {
+func (g *Video) UpdateFrameCount() {
 	g.frameskipCounter--
 	if g.frameskipCounter < 0 {
 		g.Renderer.finishFrame()
@@ -286,16 +286,16 @@ func (g *GPU) UpdateFrameCount() {
 	g.frameCounter++
 }
 
-func (g *GPU) Mode() byte {
+func (g *Video) Mode() byte {
 	return g.Stat & 0x3
 }
 
-func (g *GPU) setMode(mode byte) {
+func (g *Video) setMode(mode byte) {
 	g.Stat = (g.Stat & 0xfc) | mode
 }
 
 // GBVideoWriteLCDC
-func (g *GPU) WriteLCDC(value byte) {
+func (g *Video) WriteLCDC(value byte) {
 	if util.Bit(g.LCDC, Enable) && !util.Bit(value, Enable) {
 		g.setMode(0)
 		g.Ly = 0
@@ -304,7 +304,7 @@ func (g *GPU) WriteLCDC(value byte) {
 }
 
 // GBVideoWriteSTAT
-func (g *GPU) WriteSTAT(value byte) {}
+func (g *Video) WriteSTAT(value byte) {}
 
 // GBVideoWriteLYC
-func (g *GPU) WriteLYC(value byte) {}
+func (g *Video) WriteLYC(value byte) {}

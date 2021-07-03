@@ -10,8 +10,8 @@ import (
 	"gbc/pkg/emulator/joypad"
 	"gbc/pkg/gbc/apu"
 	"gbc/pkg/gbc/cart"
-	"gbc/pkg/gbc/gpu"
 	"gbc/pkg/gbc/rtc"
+	"gbc/pkg/gbc/video"
 	"gbc/pkg/util"
 )
 
@@ -48,7 +48,7 @@ type GBC struct {
 	WRAMBank
 	bankMode uint
 	Sound    apu.APU
-	GPU      *gpu.GPU
+	video    *video.Video
 	RTC      rtc.RTC
 	boost    int // 1 or 2
 	IMESwitch
@@ -166,7 +166,7 @@ func (g *GBC) initRegister() {
 }
 
 func (g *GBC) initIOMap() {
-	model := g.GPU.Renderer.Model
+	model := g.video.Renderer.Model
 
 	g.IO[0x04] = 0x1e
 	g.IO[0x05] = 0x00
@@ -208,7 +208,7 @@ func (g *GBC) initIOMap() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
-	g.GPU = gpu.New(&g.IO)
+	g.video = video.New(&g.IO)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
@@ -307,14 +307,14 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	for g.Cycle.scanline <= 20*g.boost {
 		g.step(20 * g.boost)
 	}
-	g.GPU.EndMode2()
+	g.video.EndMode2()
 
 	// LCD Driver mode3
 	g.Cycle.scanline -= 20 * g.boost
 	for g.Cycle.scanline <= 42*g.boost {
 		g.step(42 * g.boost)
 	}
-	g.GPU.EndMode3(0)
+	g.video.EndMode3(0)
 
 	scrollX, scrollY := uint(g.IO[SCXIO-0xff00]), uint(g.IO[SCYIO-0xff00])
 
@@ -323,14 +323,14 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	for g.Cycle.scanline <= (cyclePerLine-(20+42))*g.boost {
 		g.step((cyclePerLine - (20 + 42)) * g.boost)
 	}
-	g.GPU.EndMode0()
+	g.video.EndMode0()
 	g.Cycle.scanline -= (cyclePerLine - (20 + 42)) * g.boost
 
 	LY := g.Load8(LYIO)
 	if LY == 144 { // set vblank flag
 		g.setVBlankFlag(true)
 	}
-	if util.Bit(g.GPU.Stat, 2) && util.Bit(g.GPU.Stat, 6) { // trigger LYC=LY interrupt
+	if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
 		g.setLCDSTATFlag(true)
 	}
 	return scrollX, scrollY, true
@@ -342,16 +342,16 @@ func (g *GBC) execVBlank() {
 		for g.Cycle.scanline < cyclePerLine*g.boost {
 			g.step(cyclePerLine * g.boost)
 		}
-		g.GPU.EndMode1()
+		g.video.EndMode1()
 		LY := g.Load8(LYIO)
 		if LY == 144 { // set vblank flag
 			g.setVBlankFlag(true)
 		}
-		if util.Bit(g.GPU.Stat, 2) && util.Bit(g.GPU.Stat, 6) { // trigger LYC=LY interrupt
+		if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
 			g.setLCDSTATFlag(true)
 		}
 
-		if g.GPU.Mode() == 2 {
+		if g.video.Mode() == 2 {
 			break
 		}
 		g.Cycle.scanline = 0
@@ -407,7 +407,7 @@ func (g *GBC) Update() error {
 	}
 
 	g.execVBlank()
-	g.GPU.UpdateFrameCount()
+	g.video.UpdateFrameCount()
 	if g.Debug.Enable {
 		select {
 		case <-second:
@@ -435,5 +435,5 @@ func (g *GBC) PanicHandler(place string, stack bool) {
 
 func (g *GBC) setModel(m util.GBModel) {
 	g.model = m
-	g.GPU.Renderer.Model = m
+	g.video.Renderer.Model = m
 }

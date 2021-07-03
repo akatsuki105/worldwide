@@ -7,9 +7,9 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 	case (addr >= 0xff10 && addr <= 0xff26) || (addr >= 0xff30 && addr <= 0xff3f): // sound IO
 		value = g.Sound.Read(addr)
 	case addr == LCDCIO:
-		value = g.GPU.LCDC
+		value = g.video.LCDC
 	case addr == LCDSTATIO:
-		value = g.GPU.Stat
+		value = g.video.Stat
 	default:
 		value = g.IO[byte(addr)]
 	}
@@ -68,31 +68,31 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.Sound.WriteWaveform(addr, value)
 
 	case addr == LCDCIO:
-		g.GPU.ProcessDots(0)
-		g.GPU.Renderer.WriteVideoRegister(byte(addr), value)
-		g.GPU.WriteLCDC(value)
+		g.video.ProcessDots(0)
+		g.video.Renderer.WriteVideoRegister(byte(addr), value)
+		g.video.WriteLCDC(value)
 
 	case addr == LCDSTATIO:
-		g.GPU.Stat = value
+		g.video.Stat = value
 
 	case addr == SCYIO || addr == SCXIO || addr == WYIO || addr == WXIO:
-		g.GPU.ProcessDots(0)
-		value = g.GPU.Renderer.WriteVideoRegister(byte(addr), value)
+		g.video.ProcessDots(0)
+		value = g.video.Renderer.WriteVideoRegister(byte(addr), value)
 		g.IO[byte(addr)] = value
 
 	case addr == BGPIO || addr == OBP0IO || addr == OBP1IO:
-		g.GPU.ProcessDots(0)
-		g.GPU.WritePalette(byte(addr), value)
+		g.video.ProcessDots(0)
+		g.video.WritePalette(byte(addr), value)
 
 	// below case statements, gbc only
 	case addr == VBKIO: // switch vram bank
-		g.GPU.SwitchBank(value)
+		g.video.SwitchBank(value)
 
 	case addr == HDMA5IO:
 		HDMA5 := value
 		mode := HDMA5 >> 7 // transfer mode
-		if g.GPU.HBlankDMALength > 0 && mode == 0 {
-			g.GPU.HBlankDMALength = 0
+		if g.video.HBlankDMALength > 0 && mode == 0 {
+			g.video.HBlankDMALength = 0
 			g.IO[HDMA5IO-0xff00] |= 0x80
 		} else {
 			length := (int(HDMA5&0x7f) + 1) * 16 // transfer size
@@ -102,26 +102,26 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 				g.doVRAMDMATransfer(length)
 				g.IO[HDMA5IO-0xff00] = 0xff // complete
 			case 1: // hblank dma
-				g.GPU.HBlankDMALength = int(HDMA5&0x7f) + 1
+				g.video.HBlankDMALength = int(HDMA5&0x7f) + 1
 				g.IO[HDMA5IO-0xff00] &= 0x7f
 			}
 		}
 
 	case addr == BCPSIO:
-		g.GPU.BcpIndex = int(value & 0x3f)
-		g.GPU.BcpIncrement = int(value & 0x80)
-		g.IO[BCPDIO-0xff00] = byte(g.GPU.Palette[g.GPU.BcpIndex>>1] >> (8 * (g.GPU.BcpIndex & 1)))
+		g.video.BcpIndex = int(value & 0x3f)
+		g.video.BcpIncrement = int(value & 0x80)
+		g.IO[BCPDIO-0xff00] = byte(g.video.Palette[g.video.BcpIndex>>1] >> (8 * (g.video.BcpIndex & 1)))
 
 	case addr == OCPSIO:
-		g.GPU.OcpIndex = int(value & 0x3f)
-		g.GPU.OcpIncrement = int(value & 0x80)
-		g.IO[OCPDIO-0xff00] = byte(g.GPU.Palette[8*4+(g.GPU.OcpIndex>>1)] >> (8 * (g.GPU.OcpIndex & 1)))
+		g.video.OcpIndex = int(value & 0x3f)
+		g.video.OcpIncrement = int(value & 0x80)
+		g.IO[OCPDIO-0xff00] = byte(g.video.Palette[8*4+(g.video.OcpIndex>>1)] >> (8 * (g.video.OcpIndex & 1)))
 
 	case addr == BCPDIO || addr == OCPDIO:
-		if g.GPU.Mode() != 3 {
-			g.GPU.ProcessDots(0)
+		if g.video.Mode() != 3 {
+			g.video.ProcessDots(0)
 		}
-		g.GPU.WritePalette(byte(addr), value)
+		g.video.WritePalette(byte(addr), value)
 
 	case addr == SVBKIO: // switch wram bank
 		newWRAMBankPtr := value & 0x07

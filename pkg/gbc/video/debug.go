@@ -1,4 +1,4 @@
-package gpu
+package video
 
 import (
 	"image"

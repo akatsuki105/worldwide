@@ -77,7 +77,7 @@ func (g *GBC) DebugExec(frame int, output string) error {
 		g.execScanline()
 	}
 	g.execVBlank()
-	screen := g.GPU.Display()
+	screen := g.video.Display()
 
 	file, err := os.Create(output)
 	if err != nil {
@@ -133,14 +133,14 @@ func (g *GBC) debugPrintOAM(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(4, 4)
 	op.GeoM.Translate(float64(750), float64(340))
-	OAMScreen := ebiten.NewImageFromImage(g.GPU.OAM)
+	OAMScreen := ebiten.NewImageFromImage(g.video.OAM)
 	screen.DrawImage(OAMScreen, op)
 
 	properties := [8]string{}
 	for col := 0; col < 8; col++ {
 		for row := 0; row < 5; row++ {
 			i := row*8 + col
-			Y, X, index, attr := g.GPU.OAMProperty(i)
+			Y, X, index, attr := g.video.OAMProperty(i)
 			properties[col] += fmt.Sprintf("%02x\n%02x\n%02x\n%02x\n\n", Y, X, index, attr)
 		}
 	}

@@ -30,7 +30,7 @@ var (
 )
 
 func (g *GBC) Draw(screen *ebiten.Image) {
-	display := g.GPU.Display()
+	display := g.video.Display()
 	if g.Debug.Enable {
 		dScreen := ebiten.NewImage(int(debugWidth), int(debugHeight))
 		dScreen.Fill(color.RGBA{35, 27, 167, 255})
@@ -63,7 +63,7 @@ func (g *GBC) Draw(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(dScreen, "GBC", cpuUsageX, 120)
 		g.Debug.monitor.GBC.DrawUsage(dScreen, cpuUsageX+2, 140, g.isBoost())
 
-		bgMap := g.GPU.Debug.BGMap()
+		bgMap := g.video.Debug.BGMap()
 		if bgMap != nil {
 			// debug BG
 			ebitenutil.DebugPrintAt(dScreen, "BG map", 10, 320)
@@ -75,7 +75,7 @@ func (g *GBC) Draw(screen *ebiten.Image) {
 		{
 			// debug tiles
 			ebitenutil.DebugPrintAt(dScreen, "Tiles", 200, 320)
-			tile := g.GPU.GetTileData()
+			tile := g.video.GetTileData()
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(2, 2)
 			op.GeoM.Translate(float64(200), float64(340))

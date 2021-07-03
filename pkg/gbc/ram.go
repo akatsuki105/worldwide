@@ -10,7 +10,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case addr >= 0x4000 && addr < 0x8000: // rom bank
 		value = g.ROMBank.bank[g.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000: // vram bank
-		value = g.GPU.VRAM.Buffer[addr-0x8000+0x2000*g.GPU.VRAM.Bank]
+		value = g.video.VRAM.Buffer[addr-0x8000+0x2000*g.video.VRAM.Bank]
 	case addr >= 0xa000 && addr < 0xc000: // rtc or ram bank
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))
@@ -20,7 +20,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
 		value = g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000]
 	case addr >= 0xfe00 && addr <= 0xfe9f:
-		value = g.GPU.Oam.Get(addr - 0xfe00)
+		value = g.video.Oam.Get(addr - 0xfe00)
 	case addr >= 0xff00:
 		value = g.loadIO(addr)
 	default:
@@ -44,7 +44,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 				newROMBankPtr := (upper2 << 5) | lower5
 				g.switchROMBank(newROMBankPtr)
 			case cart.MBC3:
-				if g.GPU.HBlankDMALength == 0 {
+				if g.video.HBlankDMALength == 0 {
 					newROMBankPtr := value & 0x7f
 					if newROMBankPtr == 0 {
 						newROMBankPtr++
@@ -70,7 +70,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 				}
 			case cart.MBC3:
 				switch {
-				case value <= 0x07 && g.GPU.HBlankDMALength == 0:
+				case value <= 0x07 && g.video.HBlankDMALength == 0:
 					g.RTC.Mapped = 0
 					g.RAMBank.ptr = value
 				case value >= 0x08 && value <= 0x0c:
@@ -99,7 +99,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 	} else {
 		switch {
 		case addr >= 0x8000 && addr < 0xa000: // vram
-			g.GPU.VRAM.Buffer[addr-0x8000+(0x2000*g.GPU.VRAM.Bank)] = value
+			g.video.VRAM.Buffer[addr-0x8000+(0x2000*g.video.VRAM.Bank)] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
 				g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000] = value
@@ -109,7 +109,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 		case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram
 			g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xfe00 && addr <= 0xfe9f:
-			g.GPU.Oam.Set(addr-0xfe00, value)
+			g.video.Oam.Set(addr-0xfe00, value)
 		case addr >= 0xff00:
 			g.storeIO(addr, value)
 		default:

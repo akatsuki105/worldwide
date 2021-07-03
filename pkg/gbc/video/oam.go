@@ -1,4 +1,4 @@
-package gpu
+package video
 
 type OAM struct {
 	objs   [40]*Obj

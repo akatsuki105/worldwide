@@ -1,4 +1,4 @@
-package gpu
+package video
 
 const (
 	HORIZONTAL_PIXELS              = 160
