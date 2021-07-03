@@ -28,11 +28,6 @@ type OAMDMA struct {
 	restart, reptr uint16 // OAM DMA is requested in OAM DMA
 }
 
-func (g *GBC) setTimerFlag() {
-	g.storeIO(IFIO, g.loadIO(IFIO)|0x04)
-	g.halt = false
-}
-
 func (g *GBC) clearTimerFlag() {
 	g.storeIO(IFIO, g.loadIO(IFIO)&0xfb)
 }
@@ -99,7 +94,8 @@ func (g *GBC) tick() {
 		g.timer.TIMAReload.flag = false
 		g.IO[TIMAIO-0xff00] = g.timer.TIMAReload.value
 		g.timer.TIMAReload.after = true
-		g.setTimerFlag() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
+		g.IO[IFIO-0xff00] |= (1 << 2)
+		g.updateIRQs() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
 	}
 
 	if tickFlag {
