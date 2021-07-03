@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	width        = 160
-	height       = 144
 	cyclePerLine = 114
 )
 
@@ -61,7 +59,7 @@ func (g *GBC) Draw(screen *ebiten.Image) {
 		}
 		// debug GBC Usage
 		ebitenutil.DebugPrintAt(dScreen, "GBC", cpuUsageX, 120)
-		g.Debug.monitor.GBC.DrawUsage(dScreen, cpuUsageX+2, 140, g.isBoost())
+		g.Debug.monitor.GBC.DrawUsage(dScreen, cpuUsageX+2, 140, g.boost > 1)
 
 		bgMap := g.video.Debug.BGMap()
 		if bgMap != nil {

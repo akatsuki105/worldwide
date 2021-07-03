@@ -302,7 +302,7 @@ func (g *GBC) step(max int) {
 	g.handleInterrupt()
 }
 
-func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
+func (g *GBC) execScanline() {
 	// OAM mode2
 	for g.Cycle.scanline <= 20*g.boost {
 		g.step(20 * g.boost)
@@ -315,8 +315,6 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 		g.step(42 * g.boost)
 	}
 	g.video.EndMode3(0)
-
-	scrollX, scrollY := uint(g.IO[SCXIO-0xff00]), uint(g.IO[SCYIO-0xff00])
 
 	// HBlank mode0
 	g.Cycle.scanline -= 42 * g.boost
@@ -333,7 +331,6 @@ func (g *GBC) execScanline() (scx uint, scy uint, ok bool) {
 	if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
 		g.setLCDSTATFlag(true)
 	}
-	return scrollX, scrollY, true
 }
 
 // VBlank
@@ -343,10 +340,6 @@ func (g *GBC) execVBlank() {
 			g.step(cyclePerLine * g.boost)
 		}
 		g.video.EndMode1()
-		LY := g.Load8(LYIO)
-		if LY == 144 { // set vblank flag
-			g.setVBlankFlag(true)
-		}
 		if util.Bit(g.video.Stat, 2) && util.Bit(g.video.Stat, 6) { // trigger LYC=LY interrupt
 			g.setLCDSTATFlag(true)
 		}
@@ -357,10 +350,6 @@ func (g *GBC) execVBlank() {
 		g.Cycle.scanline = 0
 	}
 	g.Cycle.scanline = 0
-}
-
-func (g *GBC) isBoost() bool {
-	return g.boost > 1
 }
 
 func (g *GBC) Update() error {
@@ -384,29 +373,15 @@ func (g *GBC) Update() error {
 
 	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
-	scrollX := uint(g.IO[SCXIO-0xff00])
-	scrollPixelX := scrollX % 8
-
-	iterX, iterY := width, height
-	if scrollPixelX > 0 {
-		iterX += 8
+	// 0-143
+	for y := 0; y < video.VERTICAL_PIXELS; y++ {
+		g.execScanline()
 	}
 
-	// render bg and run g
-	LCDC1 := [144]bool{}
-	for y := 0; y < iterY; y++ {
-		scx, _, ok := g.execScanline()
-		if !ok {
-			break
-		}
-		scrollX = scx
-
-		if y < height {
-			LCDC1[y] = util.Bit(g.Load8(LCDCIO), 1)
-		}
-	}
-
+	// 143-154
+	g.setVBlankFlag(true)
 	g.execVBlank()
+
 	g.video.UpdateFrameCount()
 	if g.Debug.Enable {
 		select {
