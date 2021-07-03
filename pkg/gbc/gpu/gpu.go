@@ -165,11 +165,11 @@ func (g *GPU) WritePalette(offset byte, value byte) {
 				if g.BcpIndex&1 == 1 {
 					// update upper
 					g.Palette[g.BcpIndex>>1] &= 0x00FF
-					g.Palette[g.BcpIndex>>1] |= Color(value) << 8
+					g.Palette[g.BcpIndex>>1] |= Color(uint16(value) << 8)
 				} else {
 					// update lower
-					g.Palette[g.BcpIndex>>1] |= Color(value)
 					g.Palette[g.BcpIndex>>1] &= 0xFF00
+					g.Palette[g.BcpIndex>>1] |= Color(value)
 				}
 				g.Renderer.writePalette(g.BcpIndex>>1, g.Palette[g.BcpIndex>>1])
 			}
@@ -184,7 +184,7 @@ func (g *GPU) WritePalette(offset byte, value byte) {
 			if g.Mode() != 3 {
 				if g.OcpIndex&1 == 1 {
 					g.Palette[8*4+(g.OcpIndex>>1)] &= 0x00FF
-					g.Palette[8*4+(g.OcpIndex>>1)] |= Color(value) << 8
+					g.Palette[8*4+(g.OcpIndex>>1)] |= Color(uint16(value) << 8)
 				} else {
 					g.Palette[8*4+(g.OcpIndex>>1)] &= 0xFF00
 					g.Palette[8*4+(g.OcpIndex>>1)] |= Color(value)
@@ -206,14 +206,6 @@ func (g *GPU) WritePalette(offset byte, value byte) {
 func (g *GPU) SwitchBank(value byte) {
 	value &= 1
 	g.VRAM.Bank = uint16(value)
-}
-
-// GBVideoSetPalette
-func (g *GPU) SetPalette(index uint, color uint32) {
-	if index >= 12 {
-		return
-	}
-	g.dmgPalette[index] = uint16((((color) & 0xF8) << 7) | (((color) & 0xF800) >> 6) | (((color) & 0xF80000) >> 19))
 }
 
 // GBVideoProcessDots

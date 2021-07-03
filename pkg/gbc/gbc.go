@@ -53,6 +53,7 @@ type GBC struct {
 	boost    int // 1 or 2
 	IMESwitch
 	Debug Debug
+	model util.GBModel
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -209,7 +210,7 @@ func (g *GBC) initIOMap() {
 func (g *GBC) Init(debug bool, test bool) {
 	g.GPU = gpu.New(&g.IO)
 	if g.Cartridge.IsCGB {
-		g.GPU.Renderer.Model = util.GB_MODEL_CGB
+		g.setModel(util.GB_MODEL_CGB)
 	}
 
 	g.initRegister()
@@ -426,4 +427,25 @@ func (g *GBC) PanicHandler(place string, stack bool) {
 		}
 		os.Exit(0)
 	}
+}
+
+func (g *GBC) setModel(m util.GBModel) {
+	g.model = m
+	g.GPU.Renderer.Model = m
+}
+
+func (g *GBC) checkLYC(LY uint8) {
+	LYC := g.Load8(LYCIO)
+	if LYC == LY {
+		stat := g.Load8(LCDSTATIO) | 0x04 // set lyc flag
+		g.Store8(LCDSTATIO, stat)
+
+		if util.Bit(stat, 6) { // trigger LYC=LY interrupt
+			g.setLCDSTATFlag(true)
+		}
+		return
+	}
+
+	stat := g.Load8(LCDSTATIO) & 0b11111011 // clear lyc flag
+	g.Store8(LCDSTATIO, stat)
 }
