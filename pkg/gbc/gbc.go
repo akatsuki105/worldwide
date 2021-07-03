@@ -352,6 +352,7 @@ func (g *GBC) execVBlank() {
 	g.Cycle.scanline = 0
 }
 
+// 1 frame
 func (g *GBC) Update() error {
 	if frames == 0 {
 		g.Debug.monitor.GBC.Reset()
