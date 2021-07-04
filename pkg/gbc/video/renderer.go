@@ -358,8 +358,9 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 
 			p := uint16(0)
 			if highlight {
-				p = 0x80
+				p = PAL_HIGHLIGHT_BG
 			}
+
 			if r.Model >= util.GB_MODEL_CGB {
 				attrs := r.g.VRAM.Buffer[attrIdx+topX+topY]
 				p |= uint16(attrs&0x7) * 4
@@ -407,8 +408,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 
 		if r.Model >= util.GB_MODEL_CGB {
 			attrs := r.g.VRAM.Buffer[attrIdx+topX+topY]
-			bgPal := uint16(attrs & 0x7)
-			p |= bgPal * 4
+			p |= uint16(attrs&0x7) * 4
 			if util.Bit(attrs, ObjAttrPriority) && util.Bit(r.g.LCDC, BgEnable) {
 				p |= OBJ_PRIORITY
 			}

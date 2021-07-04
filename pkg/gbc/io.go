@@ -179,6 +179,7 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.WRAMBank.ptr = newWRAMBankPtr
 
 	case addr == IEIO:
+		g.IO[IEIO-0xff00] = value
 		g.updateIRQs()
 	case addr == IFIO:
 		g.IO[IFIO-0xff00] = value | 0xE0

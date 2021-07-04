@@ -230,6 +230,7 @@ func (g *GBC) step(max int) {
 			case JoypadIRQ:
 				g.triggerJoypad()
 			}
+			return
 		} else if handler != nil {
 			handler(g, operand1, operand2)
 		} else {
@@ -266,8 +267,7 @@ func (g *GBC) step(max int) {
 			cycle++
 		}
 		if !g.Reg.IME { // ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
-			IE, IF := g.IO[IEIO-0xff00], g.IO[IFIO-0xff00]
-			if pending := IE&IF > 0; pending {
+			if pending := g.IO[IEIO-0xff00]&g.IO[IFIO-0xff00] > 0; pending {
 				g.halt = false
 			}
 		}
@@ -305,8 +305,8 @@ func (g *GBC) execScanline() {
 // VBlank
 func (g *GBC) execVBlank() {
 	for {
-		for g.cycles < video.HORIZONTAL_LENGTH*g.boost {
-			g.step(video.HORIZONTAL_LENGTH * g.boost)
+		for g.cycles < g.video.NextLength*g.boost {
+			g.step(g.video.NextLength * g.boost)
 		}
 		g.video.EndMode1()
 		g.cycles = 0
@@ -346,7 +346,6 @@ func (g *GBC) Update() error {
 	}
 
 	// 143-154
-	g.setVBlankFlag(true)
 	g.execVBlank()
 
 	g.video.UpdateFrameCount()

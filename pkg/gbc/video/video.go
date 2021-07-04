@@ -43,6 +43,8 @@ type Video struct {
 
 	frameCounter, frameskip, frameskipCounter int
 	updateIRQs                                func()
+
+	NextLength int
 }
 
 var (
@@ -237,6 +239,10 @@ func (g *Video) EndMode0() {
 		g.setMode(2)
 	} else {
 		g.setMode(1)
+		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
+		}
+		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 0, true)
 	}
 
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
@@ -268,10 +274,13 @@ func (g *Video) EndMode1() {
 		g.setMode(2)
 	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
+		g.NextLength = HORIZONTAL_LENGTH - 8
 	case VERTICAL_TOTAL_PIXELS - 1:
 		g.io[GB_REG_LY] = byte(g.Ly)
+		g.NextLength = 8
 	default:
 		g.io[GB_REG_LY] = byte(g.Ly)
+		g.NextLength = HORIZONTAL_LENGTH
 	}
 
 	oldStat := g.Stat
@@ -325,9 +334,23 @@ func (g *Video) setMode(mode byte) {
 
 // GBVideoWriteLCDC
 func (g *Video) WriteLCDC(value byte) {
+	if !util.Bit(g.LCDC, Enable) && util.Bit(value, Enable) {
+		g.setMode(2)
+		g.Ly = 0
+		g.io[GB_REG_LY] = 0
+		oldStat := g.Stat
+		g.setMode(0)
+		g.Stat = util.SetBit8(g.Stat, 2, byte(g.Ly) == g.io[GB_REG_LYC])
+		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
+			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
+			g.updateIRQs()
+		}
+		g.Renderer.writePalette(0, g.Palette[0])
+	}
 	if util.Bit(g.LCDC, Enable) && !util.Bit(value, Enable) {
 		g.setMode(0)
 		g.Ly = 0
+		g.io[GB_REG_LY] = 0
 		g.Renderer.writePalette(0, Color(g.dmgPalette[0]))
 	}
 }
@@ -349,7 +372,7 @@ func (g *Video) WriteSTAT(value byte) {
 func (g *Video) WriteLYC(value byte) {
 	oldStat := g.Stat
 	if util.Bit(g.LCDC, Enable) {
-		g.Stat = util.SetBit8(g.Stat, 2, value == g.io[GB_REG_LY])
+		g.Stat = util.SetBit8(g.Stat, 2, value == byte(g.Ly))
 		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 			g.updateIRQs()
