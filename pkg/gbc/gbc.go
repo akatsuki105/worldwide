@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"time"
 
 	"gbc/pkg/emulator/config"
 	"gbc/pkg/emulator/joypad"
@@ -13,6 +14,13 @@ import (
 	"gbc/pkg/gbc/rtc"
 	"gbc/pkg/gbc/video"
 	"gbc/pkg/util"
+)
+
+var (
+	frames     = 0
+	second     = time.Tick(time.Second)
+	skipRender bool
+	fps        = 0
 )
 
 // ROMBank - 0x4000-0x7fff
@@ -399,6 +407,24 @@ func (g *GBC) updateIRQs() {
 		if util.Bit(irqs, i) {
 			g.irqPending = i + 1
 			return
+		}
+	}
+}
+
+func (g *GBC) Draw() []uint8 {
+	display := g.video.Display()
+	return display.Pix
+}
+
+func (g *GBC) handleJoypad() {
+	pad := g.Config.Joypad
+	result := g.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
+	if result != 0 {
+		switch result {
+		case joypad.Pressed: // Joypad Interrupt
+			if g.Reg.IME && g.getJoypadEnable() {
+				g.setJoypadFlag(true)
+			}
 		}
 	}
 }

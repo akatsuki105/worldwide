@@ -113,7 +113,7 @@ func (e *Emulator) Update() error {
 
 func (e *Emulator) Draw(screen *ebiten.Image) {
 	defer e.GBC.PanicHandler("draw", true)
-	e.GBC.Draw(screen)
+	screen.ReplacePixels(e.GBC.Draw())
 }
 
 func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
