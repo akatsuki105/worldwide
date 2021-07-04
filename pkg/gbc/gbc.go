@@ -281,22 +281,22 @@ func (g *GBC) step(max int) {
 
 func (g *GBC) execScanline() {
 	// OAM mode2
-	for g.cycles <= video.MODE_2_LENGTH*g.boost {
-		g.step(video.MODE_2_LENGTH * g.boost)
+	for g.cycles <= g.video.NextLength*g.boost {
+		g.step(g.video.NextLength * g.boost)
 	}
 	g.video.EndMode()
 	g.cycles = 0
 
 	// LCD Driver mode3
-	for g.cycles <= video.MODE_3_LENGTH*g.boost {
-		g.step(video.MODE_3_LENGTH * g.boost)
+	for g.cycles <= g.video.NextLength*g.boost {
+		g.step(g.video.NextLength * g.boost)
 	}
 	g.video.EndMode()
 	g.cycles = 0
 
 	// HBlank mode0
-	for g.cycles <= video.MODE_0_LENGTH*g.boost {
-		g.step(video.MODE_0_LENGTH * g.boost)
+	for g.cycles <= g.video.NextLength*g.boost {
+		g.step(g.video.NextLength * g.boost)
 	}
 	g.video.EndMode()
 	g.cycles = 0

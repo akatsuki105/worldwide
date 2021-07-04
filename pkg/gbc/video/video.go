@@ -250,8 +250,10 @@ func (g *Video) endMode0() {
 	oldStat := g.Stat
 	if g.Ly < VERTICAL_PIXELS {
 		g.setMode(2)
+		g.NextLength = MODE_2_LENGTH
 	} else {
 		g.setMode(1)
+		g.NextLength = HORIZONTAL_LENGTH
 		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		}
@@ -285,6 +287,7 @@ func (g *Video) endMode1() {
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
+		g.NextLength = MODE_2_LENGTH
 	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
 		g.NextLength = HORIZONTAL_LENGTH - 8
@@ -310,6 +313,7 @@ func (g *Video) endMode2() {
 	oldStat := g.Stat
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
+	g.NextLength = MODE_3_LENGTH
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -322,6 +326,7 @@ func (g *Video) endMode3() {
 	oldStat := g.Stat
 	g.ProcessDots(0)
 	g.setMode(0)
+	g.NextLength = MODE_0_LENGTH
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
