@@ -223,9 +223,22 @@ func (g *Video) ProcessDots(cyclesLate uint32) {
 	g.Renderer.drawRange(oldX, g.X, g.Ly)
 }
 
+func (g *Video) EndMode() {
+	switch g.Mode() {
+	case 0:
+		g.endMode0()
+	case 1:
+		g.endMode1()
+	case 2:
+		g.endMode2()
+	case 3:
+		g.endMode3()
+	}
+}
+
 // mode0 = HBlank
 // 204 cycles
-func (g *Video) EndMode0() {
+func (g *Video) endMode0() {
 	if g.frameskipCounter <= 0 {
 		g.Renderer.finishScanline(g.Ly)
 	}
@@ -260,7 +273,7 @@ func (g *Video) EndMode0() {
 }
 
 // mode1 = VBlank
-func (g *Video) EndMode1() {
+func (g *Video) endMode1() {
 	if !util.Bit(g.LCDC, Enable) {
 		return
 	}
@@ -293,7 +306,7 @@ func (g *Video) EndMode1() {
 
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 80 cycles
-func (g *Video) EndMode2() {
+func (g *Video) endMode2() {
 	oldStat := g.Stat
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
@@ -305,7 +318,7 @@ func (g *Video) EndMode2() {
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
-func (g *Video) EndMode3() {
+func (g *Video) endMode3() {
 	oldStat := g.Stat
 	g.ProcessDots(0)
 	g.setMode(0)

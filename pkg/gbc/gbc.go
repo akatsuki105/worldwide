@@ -284,21 +284,21 @@ func (g *GBC) execScanline() {
 	for g.cycles <= video.MODE_2_LENGTH*g.boost {
 		g.step(video.MODE_2_LENGTH * g.boost)
 	}
-	g.video.EndMode2()
+	g.video.EndMode()
 	g.cycles = 0
 
 	// LCD Driver mode3
 	for g.cycles <= video.MODE_3_LENGTH*g.boost {
 		g.step(video.MODE_3_LENGTH * g.boost)
 	}
-	g.video.EndMode3()
+	g.video.EndMode()
 	g.cycles = 0
 
 	// HBlank mode0
 	for g.cycles <= video.MODE_0_LENGTH*g.boost {
 		g.step(video.MODE_0_LENGTH * g.boost)
 	}
-	g.video.EndMode0()
+	g.video.EndMode()
 	g.cycles = 0
 }
 
@@ -308,7 +308,7 @@ func (g *GBC) execVBlank() {
 		for g.cycles < g.video.NextLength*g.boost {
 			g.step(g.video.NextLength * g.boost)
 		}
-		g.video.EndMode1()
+		g.video.EndMode()
 		g.cycles = 0
 
 		if g.video.Mode() == 2 {
