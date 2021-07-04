@@ -5,13 +5,19 @@ import (
 	"gbc/pkg/gbc"
 	"io/ioutil"
 	"os"
+	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
+var (
+	second = time.NewTicker(time.Second)
+)
+
 type Emulator struct {
-	GBC *gbc.GBC
-	Rom string
+	GBC   *gbc.GBC
+	Rom   string
+	frame int
 }
 
 // GameBoy save data is SRAM core dump
@@ -108,7 +114,18 @@ func (e *Emulator) LoadSav() {
 
 func (e *Emulator) Update() error {
 	defer e.GBC.PanicHandler("update", true)
-	return e.GBC.Update()
+	err := e.GBC.Update()
+
+	select {
+	case <-second.C:
+		oldFrame := e.frame
+		e.frame = e.GBC.Frame()
+		fps := e.frame - oldFrame
+		ebiten.SetWindowTitle(fmt.Sprintf("%dfps", fps))
+	default:
+	}
+
+	return err
 }
 
 func (e *Emulator) Draw(screen *ebiten.Image) {

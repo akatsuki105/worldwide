@@ -5,7 +5,6 @@ import (
 	"math"
 	"os"
 	"runtime"
-	"time"
 
 	"gbc/pkg/emulator/config"
 	"gbc/pkg/emulator/joypad"
@@ -14,13 +13,6 @@ import (
 	"gbc/pkg/gbc/rtc"
 	"gbc/pkg/gbc/video"
 	"gbc/pkg/util"
-)
-
-var (
-	frames     = 0
-	second     = time.Tick(time.Second)
-	skipRender bool
-	fps        = 0
 )
 
 // ROMBank - 0x4000-0x7fff
@@ -328,15 +320,9 @@ func (g *GBC) execVBlank() {
 
 // 1 frame
 func (g *GBC) Update() error {
-	if frames == 0 {
-		g.Debug.monitor.GBC.Reset()
-	}
-	if frames%3 == 0 {
+	if g.Frame()%3 == 0 {
 		g.handleJoypad()
 	}
-
-	frames++
-	g.Debug.monitor.GBC.Reset()
 
 	p, b := &g.Debug.pause, &g.Debug.Break
 	if p.Delay() {
@@ -345,8 +331,6 @@ func (g *GBC) Update() error {
 	if p.On() || b.On() {
 		return nil
 	}
-
-	skipRender = (g.Config.Display.FPS30) && (frames%2 == 1)
 
 	// 0-143
 	for y := 0; y < video.VERTICAL_PIXELS; y++ {
@@ -357,14 +341,6 @@ func (g *GBC) Update() error {
 	g.execVBlank()
 
 	g.video.UpdateFrameCount()
-	if g.Debug.Enable {
-		select {
-		case <-second:
-			fps = frames
-			frames = 0
-		default:
-		}
-	}
 	return nil
 }
 
@@ -427,4 +403,8 @@ func (g *GBC) handleJoypad() {
 			}
 		}
 	}
+}
+
+func (g *GBC) Frame() int {
+	return g.video.FrameCounter
 }

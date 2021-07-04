@@ -41,7 +41,7 @@ type Video struct {
 	dmgPalette [12]uint16
 	Palette    [64]Color
 
-	frameCounter, frameskip, frameskipCounter int
+	FrameCounter, frameskip, frameskipCounter int
 	updateIRQs                                func()
 
 	NextLength int
@@ -77,7 +77,7 @@ func New(io *[0x100]byte, updateIRQs func()) *Video {
 func (g *Video) Reset() {
 	g.Ly, g.X = 0, 0
 	g.Stat = 1
-	g.frameCounter, g.frameskipCounter = 0, 0
+	g.FrameCounter, g.frameskipCounter = 0, 0
 
 	g.SwitchBank(0)
 	for i := 0; i < len(g.VRAM.Buffer); i++ {
@@ -321,7 +321,7 @@ func (g *Video) UpdateFrameCount() {
 		g.Renderer.finishFrame()
 		g.frameskipCounter = g.frameskip
 	}
-	g.frameCounter++
+	g.FrameCounter++
 }
 
 func (g *Video) Mode() byte {
