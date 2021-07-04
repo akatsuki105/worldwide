@@ -134,11 +134,5 @@ func (e *Emulator) Draw(screen *ebiten.Image) {
 }
 
 func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	if e.GBC.Debug.Enable {
-		return 1270, 740
-	}
-	if e.GBC.Config.Display.HQ2x {
-		return 160 * 2, 144 * 2
-	}
 	return 160, 144
 }
