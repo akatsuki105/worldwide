@@ -24,7 +24,7 @@ type Renderer struct {
 	palette [64 * 3]Color
 
 	// DMG -> basically, 0 or 1 or 2 or 3
-	// CGB -> always 0
+	// CGB -> ???
 	lookup [64 * 3]byte
 
 	scy, scx, wy, wx, currentWy, currentWx byte

@@ -429,6 +429,7 @@ func ei(g *GBC, _, _ int) {
 	HALT := byte(0x76)
 	if next == HALT {
 		g.Reg.IME = true
+		g.updateIRQs()
 		g.Reg.PC++
 		return
 	}
