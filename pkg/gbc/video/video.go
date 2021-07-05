@@ -333,6 +333,7 @@ func (g *Video) endMode3() {
 	}
 }
 
+// _updateFrameCount
 func (g *Video) UpdateFrameCount() {
 	g.frameskipCounter--
 	if g.frameskipCounter < 0 {
