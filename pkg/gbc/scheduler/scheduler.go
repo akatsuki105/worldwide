@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -39,28 +40,42 @@ func (s *Scheduler) ScheduleEvent(name EventName, callback func(), after uint64)
 				name:     name,
 				callback: callback,
 				when:     when,
-				next:     event,
 			}
 			return
 		}
-		if event.next == nil {
+
+		if when < event.when {
+			if previous == nil {
+				// new <- event
+				newEvent := &Event{
+					name:     name,
+					callback: callback,
+					when:     when,
+					next:     event,
+				}
+				s.root = newEvent
+				return
+			}
+			if previous.when <= when {
+				// previous <- new <- event
+				newEvent := &Event{
+					name:     name,
+					callback: callback,
+					when:     when,
+					next:     event,
+				}
+				previous.next = newEvent
+				return
+			}
+		}
+
+		if event.next == nil && event.when <= when {
 			// last executed
 			event.next = &Event{
 				name:     name,
 				callback: callback,
 				when:     when,
 			}
-			return
-		}
-		if when < event.when {
-			// previous <- new <- event
-			newEvent := &Event{
-				name:     name,
-				callback: callback,
-				when:     when,
-				next:     event,
-			}
-			previous.next = newEvent
 			return
 		}
 		previous = event
@@ -145,4 +160,14 @@ func (s *Scheduler) Until(name EventName) uint64 {
 		}
 		event = event.next
 	}
+}
+
+func (s *Scheduler) String() string {
+	result := ""
+	event := s.root
+	for event != nil {
+		result += fmt.Sprintf("%s:%d->", event.name, event.when)
+		event = event.next
+	}
+	return result
 }

@@ -1,123 +1,121 @@
 package gbc
 
 import (
+	"gbc/pkg/gbc/scheduler"
 	"gbc/pkg/util"
+	"math"
 )
 
-type TIMAReload struct {
-	flag  bool
-	value byte
-	after bool // ref: [B] in https://gbdev.io/pandocs/#timer-overflow-behaviour
+const (
+	GB_DMG_DIV_PERIOD = 16
+)
+
+type GBTimer struct {
+	p           *GBC
+	internalDiv uint32
+	nextDiv     uint32
+	timaPeriod  uint32
 }
 
-type Timer struct {
-	tac int    // use in normal timer
-	div int    // use in div timer
-	sys uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
-	TIMAReload
-	ResetAll bool
-	TAC      struct {
-		Change bool
-		Old    byte
+func NewTimer(p *GBC) *GBTimer {
+	t := &GBTimer{
+		p: p,
+	}
+	t.reset()
+	return t
+}
+
+// GBTimerReset
+func (t *GBTimer) reset() {
+	t.nextDiv = GB_DMG_DIV_PERIOD * 2
+	t.timaPeriod = 1024 >> 4
+}
+
+// mTimingTick
+func (t *GBTimer) tick(cycles uint32) {
+	t.p.scheduler.Add(uint64(cycles))
+
+	for {
+		if t.p.scheduler.Next() >= t.p.scheduler.Cycle() {
+			break
+		}
+		t.p.scheduler.DoEvent()
 	}
 }
 
-func (g *GBC) clearTimerFlag() {
-	g.storeIO(IFIO, g.loadIO(IFIO)&0xfb)
+// _GBTimerIRQ
+func (t *GBTimer) irq() {
+	t.p.IO[TIMAIO-0xff00] = t.p.IO[TMAIO-0xff00]
+	t.p.IO[IFIO-0xff00] = util.SetBit8(t.p.IO[IFIO-0xff00], 2, true)
+	t.p.updateIRQs()
 }
 
-func (g *GBC) updateTimer(cycle int) {
-	for i := 0; i < cycle; i++ {
-		g.tick()
-	}
-	g.Sound.Buffer(4*cycle, util.Bool2Int(g.doubleSpeed)+1)
-}
+// _GBTimerDivIncrement
+func (t *GBTimer) divIncrement() {
+	tMultiplier := 2 - util.Bool2U32(t.p.doubleSpeed)
+	for t.nextDiv >= GB_DMG_DIV_PERIOD*tMultiplier {
+		t.nextDiv -= GB_DMG_DIV_PERIOD * tMultiplier
 
-// 0: 4096Hz (1024/4 cycle), 1: 262144Hz (16/4 cycle), 2: 65536Hz (64/4 cycle), 3: 16384Hz (256/4 cycle)
-var clocks = [4]int{1024 / 4, 16 / 4, 64 / 4, 256 / 4}
-
-func (g *GBC) tick() {
-	tac := g.IO[TACIO-0xff00]
-	tickFlag := false
-
-	if g.timer.ResetAll {
-		g.timer.ResetAll = false
-		tickFlag = g.resetTimer()
-	}
-	if g.timer.TAC.Change && !tickFlag {
-		g.timer.TAC.Change = false
-		oldTAC, newTAC := g.timer.TAC.Old, g.IO[TACIO-0xff00]
-		oldClock, newClock := uint16(clocks[oldTAC&0b11]), uint16(clocks[newTAC&0b11])
-		oldEnable, newEnable := oldTAC&0b100 > 0, newTAC&0b100 > 0
-		if oldEnable {
-			if newEnable {
-				tickFlag = g.timer.sys&(oldClock/2) > 0
-			} else {
-				tickFlag = g.timer.sys&(oldClock/2) > 0 && g.timer.sys&(newClock/2) == 0
+		if t.timaPeriod > 0 && (t.internalDiv&(t.timaPeriod-1)) == (t.timaPeriod-1) {
+			t.p.IO[TIMAIO-0xff00]++
+			if t.p.IO[TIMAIO-0xff00] == 0 {
+				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, uint64(7*tMultiplier))
 			}
 		}
-	}
 
-	// lag occurs in di, ei
-	if g.IMESwitch.Working {
-		g.IMESwitch.Count--
-		if g.IMESwitch.Count == 0 {
-			g.Reg.IME = g.IMESwitch.Value
-			g.IMESwitch.Working = false
-		}
-	}
-
-	g.scheduler.Add(4)
-	g.timer.sys++ // 16 bit system counter
-	g.timer.div++
-	if g.timer.div >= 64 {
-		g.IO[DIVIO-0xff00]++
-		g.timer.div -= 64
-	}
-
-	if util.Bit(tac, 2) {
-		g.timer.tac++
-		if g.timer.tac >= clocks[tac&0b11] {
-			g.timer.tac -= clocks[tac&0b11]
-			tickFlag = true
-		}
-	}
-
-	g.timer.TIMAReload.after = false
-	if g.timer.TIMAReload.flag {
-		g.timer.TIMAReload.flag = false
-		g.IO[TIMAIO-0xff00] = g.timer.TIMAReload.value
-		g.timer.TIMAReload.after = true
-		g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 2, true)
-		g.updateIRQs() // ref: https://gbdev.io/pandocs/#timer-overflow-behaviour
-	}
-
-	if tickFlag {
-		TIMABefore := g.IO[TIMAIO-0xff00]
-		TIMAAfter := TIMABefore + 1
-		if TIMAAfter < TIMABefore { // overflow occurs
-			g.timer.TIMAReload = TIMAReload{
-				flag:  true,
-				value: uint8(g.IO[TMAIO-0xff00]),
-				after: false,
-			}
-			g.IO[TIMAIO-0xff00] = 0
-		} else {
-			g.IO[TIMAIO-0xff00] = TIMAAfter
-		}
+		t.internalDiv++
+		t.p.IO[DIVIO-0xff00] = byte(t.internalDiv >> 4)
 	}
 }
 
-func (g *GBC) resetTimer() bool {
-	g.timer.sys, g.timer.div, g.IO[DIVIO-0xff00] = 0, 0, 0
+// _GBTimerUpdate
+func (t *GBTimer) update() {
+	t.divIncrement()
 
-	old := g.timer.tac
-	g.timer.tac = 0
-
-	tickFlag := false
-	tac := g.IO[TACIO-0xff00]
-	if util.Bit(tac, 2) {
-		tickFlag = old >= (clocks[tac&0b11] / 2) // ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tim00_div_trigger.s
+	// Batch div increments
+	divsToGo := 16 - (t.internalDiv & 15)
+	timaToGo := uint32(math.MaxUint32)
+	if t.timaPeriod > 0 {
+		timaToGo = t.timaPeriod - (t.internalDiv & (t.timaPeriod - 1))
 	}
-	return tickFlag
+	if timaToGo < divsToGo {
+		divsToGo = timaToGo
+	}
+	t.nextDiv = GB_DMG_DIV_PERIOD * divsToGo * (2 - util.Bool2U32(t.p.doubleSpeed))
+	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
+}
+
+// GBTimerDivReset
+func (t *GBTimer) divReset() {
+	t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
+	t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
+	t.divIncrement()
+	tMultiplier := 2 - util.Bool2U64(t.p.doubleSpeed)
+	if ((t.internalDiv << 1) | (t.nextDiv>>((4-util.Bool2U32(t.p.doubleSpeed))&1))&t.timaPeriod) > 0 {
+		t.p.IO[TIMAIO-0xff00]++
+		if t.p.IO[TIMAIO-0xff00] == 0 {
+			t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 7*tMultiplier)
+		}
+	}
+	t.p.IO[DIVIO-0xff00] = 0
+	t.internalDiv = 0
+	t.nextDiv = GB_DMG_DIV_PERIOD * (2 - util.Bool2U32(t.p.doubleSpeed))
+	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
+}
+
+func (t *GBTimer) updateTAC(tac byte) byte {
+	if util.Bit(tac, 2) {
+		t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
+		t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
+		t.divIncrement()
+
+		timaLt := [4]uint32{1024 >> 4, 16 >> 4, 64 >> 4, 256 >> 4}
+		t.timaPeriod = timaLt[tac&0x3]
+
+		t.nextDiv += GB_DMG_DIV_PERIOD * (2 - util.Bool2U32(t.p.doubleSpeed))
+		t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
+	} else {
+		t.timaPeriod = 0
+	}
+	return tac
 }

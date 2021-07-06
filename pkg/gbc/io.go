@@ -63,39 +63,26 @@ func (g *GBC) loadIO(addr uint16) (value byte) {
 }
 
 func (g *GBC) storeIO(addr uint16, value byte) {
-	defer func() {
-		g.IO[byte(addr)] = value
-	}()
-
 	switch {
 	case addr == JOYPADIO:
 		g.joypad.P1 = value
 
 	case addr == DIVIO:
-		g.timer.ResetAll = true
+		g.timer.divReset()
+		return
 
 	case addr == TIMAIO:
-		if g.timer.TIMAReload.flag {
-			g.timer.TIMAReload.flag = false
-			g.IO[TIMAIO-0xff00] = value
-		} else if g.timer.TIMAReload.after {
-			g.IO[TIMAIO-0xff00] = g.timer.TIMAReload.value
-		} else {
-			g.IO[TIMAIO-0xff00] = value
+		if value > 0 && g.scheduler.Until(scheduler.TimerIRQ) > (2-util.Bool2U64(g.doubleSpeed)) {
+			g.scheduler.DescheduleEvent(scheduler.TimerIRQ)
+		}
+		if g.scheduler.Until(scheduler.TimerIRQ) == util.Bool2U64(g.doubleSpeed)-2 {
+			return
 		}
 
 	case addr == TMAIO:
-		if g.timer.TIMAReload.flag {
-			g.timer.TIMAReload.value = value
-		} else if g.timer.TIMAReload.after {
-			g.IO[TIMAIO-0xff00] = value
-		}
-		g.IO[TMAIO-0xff00] = value
 
 	case addr == TACIO:
-		g.timer.TAC.Change = true
-		g.timer.TAC.Old = g.IO[TACIO-0xff00]
-		g.IO[TACIO-0xff00] = value
+		value = g.timer.updateTAC(value)
 
 	case addr == IFIO:
 		g.IO[IFIO-0xff00] = value | 0xe0 // IF[4-7] always set
@@ -189,4 +176,6 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.IO[IFIO-0xff00] = value | 0xE0
 		g.updateIRQs()
 	}
+
+	g.IO[byte(addr)] = value
 }

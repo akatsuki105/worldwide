@@ -57,7 +57,7 @@ type GBC struct {
 	joypad    joypad.Joypad
 	halt      bool
 	Config    *config.Config
-	timer     Timer
+	timer     *GBTimer
 	ROMBank
 	RAMBank
 	WRAMBank
@@ -190,6 +190,8 @@ func (g *GBC) Init(debug bool, test bool) {
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
+	g.timer = NewTimer(g)
+	g.scheduler.ScheduleEvent(scheduler.TimerUpdate, g.timer.update, 0)
 
 	g.resetRegister()
 	g.resetIO()
@@ -278,7 +280,7 @@ func (g *GBC) step() {
 		}
 	}
 
-	g.updateTimer(cycle)
+	g.timer.tick(uint32(cycle) * 4)
 }
 
 func (g *GBC) execScanline() {

@@ -27,6 +27,14 @@ func (g *GBC) setLCDSTATFlag(b bool) {
 	g.storeIO(IFIO, g.loadIO(IFIO)&0xfd)
 }
 
+func (g *GBC) setTimerFlag(b bool) {
+	if b {
+		g.storeIO(IFIO, g.loadIO(IFIO)|0x04)
+		return
+	}
+	g.storeIO(IFIO, g.loadIO(IFIO)&0xfb)
+}
+
 func (g *GBC) setSerialFlag(b bool) {
 	if b {
 		g.storeIO(IFIO, g.loadIO(IFIO)|0x08)
@@ -50,7 +58,7 @@ func (g *GBC) setJoypadFlag(b bool) {
 // ------------ trigger --------------------
 
 func (g *GBC) triggerInterrupt() {
-	g.updateTimer(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
+	g.timer.tick(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
 	g.pushPC()
 }
 
@@ -67,7 +75,7 @@ func (g *GBC) triggerLCDC() {
 }
 
 func (g *GBC) triggerTimer() {
-	g.clearTimerFlag()
+	g.setTimerFlag(false)
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0050
 }
