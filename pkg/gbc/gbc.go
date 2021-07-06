@@ -278,16 +278,6 @@ func (g *GBC) step() {
 	g.timer.tick(uint32(cycle))
 }
 
-func (g *GBC) execScanline() {
-	for {
-		g.step()
-		mode := g.video.Mode()
-		if mode == 1 || mode == 2 {
-			return
-		}
-	}
-}
-
 // VBlank
 func (g *GBC) execVBlank() {
 	for {
@@ -301,7 +291,6 @@ func (g *GBC) execVBlank() {
 
 // 1 frame
 func (g *GBC) Update() error {
-	fmt.Println(g.scheduler.Cycle(), g.halt, ": ", g.scheduler)
 	if g.Frame()%3 == 0 {
 		g.handleJoypad()
 	}
@@ -315,8 +304,15 @@ func (g *GBC) Update() error {
 	}
 
 	// 0-143
-	for y := 0; y < video.VERTICAL_PIXELS; y++ {
-		g.execScanline()
+	for {
+		g.step()
+		mode := g.video.Mode()
+		if mode == 2 {
+			continue
+		}
+		if mode == 1 {
+			break
+		}
 	}
 
 	// 143-154
