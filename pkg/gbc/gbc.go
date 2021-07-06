@@ -270,7 +270,7 @@ func (g *GBC) step() {
 				panic(errMsg)
 			}
 		}
-		cycle *= 4
+		cycle *= (4 >> uint32(util.Bool2U64(g.doubleSpeed)))
 	} else {
 		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
 	}
