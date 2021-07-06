@@ -98,14 +98,15 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		g.IO[IFIO-0xff00] = value | 0xe0 // IF[4-7] always set
 
 	case addr == DMAIO: // dma transfer
-		start := uint16(g.Reg.R[A]) << 8
-		if g.timer.OAMDMA.ptr > 0 {
-			g.timer.OAMDMA.restart = start
-			g.timer.OAMDMA.reptr = 160 + 2 // lag
-		} else {
-			g.timer.OAMDMA.start = start
-			g.timer.OAMDMA.ptr = 160 + 2 // lag
+		base := uint16(value) << 8
+		if base >= 0xe000 {
+			base &= 0xdfff
 		}
+		g.scheduler.DescheduleEvent("oamdma")
+		g.scheduler.ScheduleEvent("oamdma", g.DMAService, 8*(2-util.Bool2U64(g.doubleSpeed)))
+		g.dma.src = base
+		g.dma.dest = 0xFE00
+		g.dma.remaining = 0xa0
 
 	case addr >= 0xff10 && addr <= 0xff26: // sound io
 		g.Sound.Write(addr, value)

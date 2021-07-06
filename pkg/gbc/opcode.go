@@ -281,10 +281,10 @@ func stop(g *GBC, _, _ int) {
 	if util.Bit(KEY1, 0) {
 		if util.Bit(KEY1, 7) {
 			KEY1 = 0x00
-			g.boost = 1
+			g.doubleSpeed = false
 		} else {
 			KEY1 = 0x80
-			g.boost = 2
+			g.doubleSpeed = true
 		}
 		g.Store8(KEY1IO, KEY1)
 	}

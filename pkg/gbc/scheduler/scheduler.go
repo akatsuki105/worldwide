@@ -101,6 +101,29 @@ func (s *Scheduler) ScheduleEventAbsolute(name string, callback func(), when uin
 	}
 }
 
+func (s *Scheduler) DescheduleEvent(name string) {
+	var previous *Event = nil
+	event := s.root
+	for {
+		if event == nil {
+			return
+		}
+
+		if event.name == name {
+			if previous == nil {
+				s.root = nil
+				return
+			} else {
+				previous.next = event.next
+				return
+			}
+		}
+
+		previous = event
+		event = event.next
+	}
+}
+
 func (s *Scheduler) DoEvent() {
 	event := s.root
 	if event == nil {

@@ -34,6 +34,11 @@ type WRAMBank struct {
 	bank [8][0x1000]byte
 }
 
+type Dma struct {
+	src, dest uint16
+	remaining int
+}
+
 const (
 	NoIRQ = iota
 	VBlankIRQ
@@ -57,16 +62,17 @@ type GBC struct {
 	ROMBank
 	RAMBank
 	WRAMBank
-	bankMode uint
-	Sound    apu.APU
-	video    *video.Video
-	RTC      rtc.RTC
-	boost    int // 1 or 2
+	bankMode    uint
+	Sound       apu.APU
+	video       *video.Video
+	RTC         rtc.RTC
+	doubleSpeed bool
 	IMESwitch
 	Debug      Debug
 	model      util.GBModel
 	irqPending int
 	scheduler  *scheduler.Scheduler
+	dma        Dma
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -192,7 +198,7 @@ func (g *GBC) Init(debug bool, test bool) {
 	g.ROMBank.ptr, g.WRAMBank.ptr = 1, 1
 
 	g.Config = config.Init()
-	g.boost = 1
+	g.doubleSpeed = false
 
 	// Init APU
 	g.Sound.Init(!test)
@@ -402,4 +408,19 @@ func (g *GBC) handleJoypad() {
 
 func (g *GBC) Frame() int {
 	return g.video.FrameCounter
+}
+
+// _GBMemoryDMAService
+func (g *GBC) DMAService() {
+	remaining := g.dma.remaining
+	g.dma.remaining = 0
+	b := g.Load8(g.dma.src)
+	g.Store8(g.dma.dest, b)
+	g.dma.src++
+	g.dma.dest++
+	g.dma.remaining = remaining - 1
+	if g.dma.remaining > 0 {
+		after := 4 * (2 - util.Bool2U64(g.doubleSpeed))
+		g.scheduler.ScheduleEvent("oamdma", g.DMAService, after)
+	}
 }

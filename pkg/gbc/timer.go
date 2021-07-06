@@ -14,18 +14,12 @@ type Timer struct {
 	tac int    // use in normal timer
 	div int    // use in div timer
 	sys uint16 // 16 bit system counter. ref: https://gbdev.io/pandocs/Timer_Obscure_Behaviour.html
-	OAMDMA
 	TIMAReload
 	ResetAll bool
 	TAC      struct {
 		Change bool
 		Old    byte
 	}
-}
-
-type OAMDMA struct {
-	start, ptr     uint16
-	restart, reptr uint16 // OAM DMA is requested in OAM DMA
 }
 
 func (g *GBC) clearTimerFlag() {
@@ -36,7 +30,7 @@ func (g *GBC) updateTimer(cycle int) {
 	for i := 0; i < cycle; i++ {
 		g.tick()
 	}
-	g.Sound.Buffer(4*cycle, g.boost)
+	g.Sound.Buffer(4*cycle, util.Bool2Int(g.doubleSpeed)+1)
 }
 
 // 0: 4096Hz (1024/4 cycle), 1: 262144Hz (16/4 cycle), 2: 65536Hz (64/4 cycle), 3: 16384Hz (256/4 cycle)
@@ -111,25 +105,6 @@ func (g *GBC) tick() {
 			g.IO[TIMAIO-0xff00] = 0
 		} else {
 			g.IO[TIMAIO-0xff00] = TIMAAfter
-		}
-	}
-
-	// OAMDMA
-	if g.timer.OAMDMA.ptr > 0 {
-		if g.timer.OAMDMA.ptr == 160 {
-			g.Store8(0xfe00+uint16(g.timer.OAMDMA.ptr)-1, g.Load8(g.timer.OAMDMA.start+uint16(g.timer.OAMDMA.ptr)-1))
-			g.Store8(OAM, 0xff)
-		} else if g.timer.OAMDMA.ptr < 160 {
-			g.Store8(0xfe00+uint16(g.timer.OAMDMA.ptr)-1, g.Load8(g.timer.OAMDMA.start+uint16(g.timer.OAMDMA.ptr)-1))
-		}
-
-		g.timer.OAMDMA.ptr--          // increment timer.OAMDMA count
-		if g.timer.OAMDMA.reptr > 0 { // if next OAM is requested, increment that one too
-			g.timer.OAMDMA.reptr--
-			if g.timer.OAMDMA.reptr == 160 {
-				g.timer.OAMDMA.start = g.timer.OAMDMA.restart
-				g.timer.OAMDMA.ptr, g.timer.OAMDMA.reptr = 160, 0
-			}
 		}
 	}
 }

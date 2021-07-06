@@ -50,7 +50,7 @@ func (g *GBC) debugIOMap() string {
 	DIV := g.Load8(DIVIO)
 	LY, LYC := g.Load8(LYIO), g.Load8(LYCIO)
 	IE, IF, IME := g.Load8(IEIO), g.Load8(IFIO), util.Bool2Int(g.Reg.IME)
-	spd, rom := g.boost/2, g.ROMBank.ptr
+	spd, rom := util.Bool2Int(g.doubleSpeed), g.ROMBank.ptr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x
 DIV: %02x
