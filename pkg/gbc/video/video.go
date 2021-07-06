@@ -280,16 +280,16 @@ func (g *Video) EndMode1() {
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
-		g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH)
+		defer g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH)
 	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
-		g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-8)
+		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-8)
 	case VERTICAL_TOTAL_PIXELS - 1:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		g.scheduleEvent(scheduler.EndMode1, g.EndMode1, 8)
+		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, 8)
 	default:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH)
+		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH)
 	}
 
 	oldStat := g.Stat

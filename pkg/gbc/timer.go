@@ -36,7 +36,7 @@ func (t *GBTimer) tick(cycles uint32) {
 	t.p.scheduler.Add(uint64(cycles))
 
 	for {
-		if t.p.scheduler.Next() >= t.p.scheduler.Cycle() {
+		if t.p.scheduler.Next() > t.p.scheduler.Cycle() {
 			break
 		}
 		t.p.scheduler.DoEvent()

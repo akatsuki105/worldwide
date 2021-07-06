@@ -273,9 +273,6 @@ func (g *GBC) step() {
 		cycle *= 4
 	} else {
 		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
-		if cycle == 0 {
-			return
-		}
 	}
 
 	g.timer.tick(uint32(cycle))
@@ -304,6 +301,7 @@ func (g *GBC) execVBlank() {
 
 // 1 frame
 func (g *GBC) Update() error {
+	fmt.Println(g.scheduler.Cycle(), g.halt, ": ", g.scheduler)
 	if g.Frame()%3 == 0 {
 		g.handleJoypad()
 	}
