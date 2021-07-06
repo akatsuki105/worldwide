@@ -213,7 +213,7 @@ func (g *GBC) Init(debug bool, test bool) {
 		g.Debug.Break.ParseBreakpoints(g.Config.Debug.BreakPoints)
 	}
 
-	g.scheduler.ScheduleEvent("endMode2", g.video.EndMode2, video.MODE_2_LENGTH)
+	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.video.EndMode2, video.MODE_2_LENGTH)
 }
 
 // Exec 1cycle
@@ -276,14 +276,6 @@ func (g *GBC) step() {
 		}
 		if cycle == 0 {
 			return
-		}
-		if !g.Reg.IME { // ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
-			if pending := g.IO[IEIO-0xff00]&g.IO[IFIO-0xff00] > 0; pending {
-				g.halt = false
-			}
-		}
-		if pending {
-			g.pend()
 		}
 	}
 
@@ -421,6 +413,6 @@ func (g *GBC) DMAService() {
 	g.dma.remaining = remaining - 1
 	if g.dma.remaining > 0 {
 		after := 4 * (2 - util.Bool2U64(g.doubleSpeed))
-		g.scheduler.ScheduleEvent("oamdma", g.DMAService, after)
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.DMAService, after)
 	}
 }

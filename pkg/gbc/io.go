@@ -1,6 +1,9 @@
 package gbc
 
-import "gbc/pkg/util"
+import (
+	"gbc/pkg/gbc/scheduler"
+	"gbc/pkg/util"
+)
 
 func (g *GBC) resetIO() {
 	model := g.video.Renderer.Model
@@ -102,8 +105,8 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 		if base >= 0xe000 {
 			base &= 0xdfff
 		}
-		g.scheduler.DescheduleEvent("oamdma")
-		g.scheduler.ScheduleEvent("oamdma", g.DMAService, 8*(2-util.Bool2U64(g.doubleSpeed)))
+		g.scheduler.DescheduleEvent(scheduler.OAMDMA)
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.DMAService, 8*(2-util.Bool2U64(g.doubleSpeed)))
 		g.dma.src = base
 		g.dma.dest = 0xFE00
 		g.dma.remaining = 0xa0

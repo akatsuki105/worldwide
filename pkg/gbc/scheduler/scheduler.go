@@ -29,7 +29,7 @@ func (s *Scheduler) Next() uint64 {
 	return s.root.when
 }
 
-func (s *Scheduler) ScheduleEvent(name string, callback func(), after uint64) {
+func (s *Scheduler) ScheduleEvent(name EventName, callback func(), after uint64) {
 	when := s.cycles + after
 	var previous *Event = nil
 	event := s.root
@@ -68,7 +68,7 @@ func (s *Scheduler) ScheduleEvent(name string, callback func(), after uint64) {
 	}
 }
 
-func (s *Scheduler) ScheduleEventAbsolute(name string, callback func(), when uint64) {
+func (s *Scheduler) ScheduleEventAbsolute(name EventName, callback func(), when uint64) {
 	var previous *Event = nil
 	event := s.root
 	for {
@@ -101,7 +101,7 @@ func (s *Scheduler) ScheduleEventAbsolute(name string, callback func(), when uin
 	}
 }
 
-func (s *Scheduler) DescheduleEvent(name string) {
+func (s *Scheduler) DescheduleEvent(name EventName) {
 	var previous *Event = nil
 	event := s.root
 	for {
