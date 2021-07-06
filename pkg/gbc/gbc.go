@@ -270,29 +270,23 @@ func (g *GBC) step() {
 				panic(errMsg)
 			}
 		}
+		cycle *= 4
 	} else {
-		cycle = int(g.scheduler.Next()-g.scheduler.Cycle()) / 4
-		if cycle > 16 { // make sound seemless
-			cycle = 16
-		}
+		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
 		if cycle == 0 {
 			return
 		}
 	}
 
-	g.timer.tick(uint32(cycle) * 4)
+	g.timer.tick(uint32(cycle))
 }
 
 func (g *GBC) execScanline() {
 	for {
-		if g.scheduler.Cycle() < g.scheduler.Next() {
-			g.step()
-		} else {
-			g.scheduler.DoEvent()
-			mode := g.video.Mode()
-			if mode == 1 || mode == 2 {
-				return
-			}
+		g.step()
+		mode := g.video.Mode()
+		if mode == 1 || mode == 2 {
+			return
 		}
 	}
 }
@@ -300,14 +294,10 @@ func (g *GBC) execScanline() {
 // VBlank
 func (g *GBC) execVBlank() {
 	for {
-		if g.scheduler.Cycle() < g.scheduler.Next() {
-			g.step()
-		} else {
-			g.scheduler.DoEvent()
-			mode := g.video.Mode()
-			if mode == 2 {
-				return
-			}
+		g.step()
+		mode := g.video.Mode()
+		if mode == 2 {
+			return
 		}
 	}
 }

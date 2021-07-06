@@ -3,13 +3,13 @@ package scheduler
 type EventName string
 
 const (
-	TimerUpdate EventName = "timerupdate"
-	TimerIRQ    EventName = "timerirq"
-	OAMDMA      EventName = "oamdma"
-	EndMode0    EventName = "endMode0"
-	EndMode1    EventName = "endMode1"
-	EndMode2    EventName = "endMode2"
-	EndMode3    EventName = "endMode3"
+	TimerUpdate EventName = "TimerUpdate"
+	TimerIRQ    EventName = "TimerIRQ"
+	OAMDMA      EventName = "Oamdma"
+	EndMode0    EventName = "EndMode0"
+	EndMode1    EventName = "EndMode1"
+	EndMode2    EventName = "EndMode2"
+	EndMode3    EventName = "EndMode3"
 )
 
 type Event struct {

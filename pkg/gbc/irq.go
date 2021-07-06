@@ -58,7 +58,7 @@ func (g *GBC) setJoypadFlag(b bool) {
 // ------------ trigger --------------------
 
 func (g *GBC) triggerInterrupt() {
-	g.timer.tick(5) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
+	g.timer.tick(5 * 4) // https://gbdev.gg8.se/wiki/articles/Interrupts#InterruptServiceRoutine
 	g.pushPC()
 }
 
