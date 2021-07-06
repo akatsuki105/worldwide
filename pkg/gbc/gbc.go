@@ -211,7 +211,7 @@ func (g *GBC) Init(debug bool, test bool) {
 }
 
 // Exec 1cycle
-func (g *GBC) step(max int) {
+func (g *GBC) step() {
 	PC := g.Reg.PC
 	bytecode := g.Load8(PC)
 	opcode := opcodes[bytecode]
@@ -264,7 +264,7 @@ func (g *GBC) step(max int) {
 			}
 		}
 	} else {
-		cycle = (max) / 4
+		cycle = int(g.scheduler.Next()-g.scheduler.Cycle()) / 4
 		if cycle > 16 { // make sound seemless
 			cycle = 16
 		}
@@ -287,7 +287,7 @@ func (g *GBC) step(max int) {
 func (g *GBC) execScanline() {
 	for {
 		if g.scheduler.Cycle() < g.scheduler.Next() {
-			g.step(int(g.scheduler.Next() - g.scheduler.Cycle()))
+			g.step()
 		} else {
 			g.scheduler.DoEvent()
 			mode := g.video.Mode()
@@ -302,7 +302,7 @@ func (g *GBC) execScanline() {
 func (g *GBC) execVBlank() {
 	for {
 		if g.scheduler.Cycle() < g.scheduler.Next() {
-			g.step(int(g.scheduler.Next() - g.scheduler.Cycle()))
+			g.step()
 		} else {
 			g.scheduler.DoEvent()
 			mode := g.video.Mode()
