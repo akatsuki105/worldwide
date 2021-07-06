@@ -250,28 +250,11 @@ func jrncc(g *GBC, cc, _ int) {
 	}
 }
 
-var pending bool
-
 func halt(g *GBC, _, _ int) {
 	g.Reg.PC++
-	g.halt = true
-
-	// ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
-	if !g.Reg.IME {
-		IE, IF := g.IO[IEIO-0xff00], g.IO[IFIO-0xff00]
-		pending = IE&IF != 0
+	if g.IO[IEIO-0xff00]&g.IO[IFIO-0xff00]&0x1f == 0 {
+		g.halt = true
 	}
-}
-
-func (g *GBC) pend() {
-	// Some pending
-	g.halt = false
-	PC := g.Reg.PC
-	g.step()
-	g.Reg.PC = PC
-
-	// IME turns on due to EI delay.
-	g.halt = g.Reg.IME
 }
 
 // stop GBC
@@ -424,23 +407,9 @@ func di(g *GBC, _, _ int) {
 
 // EI Enable Interrupt
 func ei(g *GBC, _, _ int) {
-	// ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
-	next := g.Load8(g.Reg.PC + 1) // next opcode
-	HALT := byte(0x76)
-	if next == HALT {
-		g.Reg.IME = true
-		g.updateIRQs()
-		g.Reg.PC++
-		return
-	}
-
-	if !g.IMESwitch.Working {
-		g.IMESwitch = IMESwitch{
-			Count:   2,
-			Value:   true,
-			Working: true,
-		}
-	}
+	// TODO ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
+	g.Reg.IME = true
+	g.updateIRQs()
 	g.Reg.PC++
 }
 
