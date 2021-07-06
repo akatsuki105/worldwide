@@ -69,14 +69,12 @@ func (g *GBC) DebugExec(frame int, output string) error {
 		for y := 0; y < 144; y++ {
 			// g.execScanline()
 		}
-		g.execVBlank()
 	}
 
 	// 最後の1frameは背景データを生成する
 	for y := 0; y < 144; y++ {
 		// g.execScanline()
 	}
-	g.execVBlank()
 	screen := g.video.Display()
 
 	file, err := os.Create(output)

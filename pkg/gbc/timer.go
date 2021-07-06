@@ -10,15 +10,15 @@ const (
 	GB_DMG_DIV_PERIOD = 16
 )
 
-type GBTimer struct {
+type Timer struct {
 	p           *GBC
 	internalDiv uint32
 	nextDiv     uint32
 	timaPeriod  uint32
 }
 
-func NewTimer(p *GBC) *GBTimer {
-	t := &GBTimer{
+func NewTimer(p *GBC) *Timer {
+	t := &Timer{
 		p: p,
 	}
 	t.reset()
@@ -26,13 +26,13 @@ func NewTimer(p *GBC) *GBTimer {
 }
 
 // GBTimerReset
-func (t *GBTimer) reset() {
+func (t *Timer) reset() {
 	t.nextDiv = GB_DMG_DIV_PERIOD * 2
 	t.timaPeriod = 1024 >> 4
 }
 
 // mTimingTick
-func (t *GBTimer) tick(cycles uint32) {
+func (t *Timer) tick(cycles uint32) {
 	t.p.Sound.Buffer(int(cycles), 1+util.Bool2Int(t.p.doubleSpeed))
 	t.p.scheduler.Add(uint64(cycles))
 	for {
@@ -44,7 +44,7 @@ func (t *GBTimer) tick(cycles uint32) {
 }
 
 // _GBTimerIRQ
-func (t *GBTimer) irq() {
+func (t *Timer) irq() {
 	t.p.IO[TIMAIO-0xff00] = t.p.IO[TMAIO-0xff00]
 	t.p.IO[IFIO-0xff00] = util.SetBit8(t.p.IO[IFIO-0xff00], 2, true)
 	t.p.updateIRQs()
@@ -52,7 +52,7 @@ func (t *GBTimer) irq() {
 
 // _GBTimerDivIncrement
 // 1/16384 sec or 1/32768 sec
-func (t *GBTimer) divIncrement() {
+func (t *Timer) divIncrement() {
 	tMultiplier := 2 - util.Bool2U32(t.p.doubleSpeed)
 	for t.nextDiv >= GB_DMG_DIV_PERIOD*tMultiplier {
 		t.nextDiv -= GB_DMG_DIV_PERIOD * tMultiplier
@@ -72,7 +72,7 @@ func (t *GBTimer) divIncrement() {
 
 // _GBTimerUpdate (system count)
 // 1/16384 sec or 1/32768 sec
-func (t *GBTimer) update() {
+func (t *Timer) update() {
 	t.divIncrement()
 
 	// Batch div increments
@@ -90,7 +90,7 @@ func (t *GBTimer) update() {
 
 // GBTimerDivReset
 // triggered on writing DIV
-func (t *GBTimer) divReset() {
+func (t *Timer) divReset() {
 	t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 	t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
 	t.divIncrement()
@@ -109,7 +109,7 @@ func (t *GBTimer) divReset() {
 }
 
 // triggerd on writing TAC
-func (t *GBTimer) updateTAC(tac byte) byte {
+func (t *Timer) updateTAC(tac byte) byte {
 	if util.Bit(tac, 2) {
 		t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 		t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)

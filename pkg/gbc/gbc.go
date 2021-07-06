@@ -57,7 +57,7 @@ type GBC struct {
 	joypad    joypad.Joypad
 	halt      bool
 	Config    *config.Config
-	timer     *GBTimer
+	timer     *Timer
 	ROMBank
 	RAMBank
 	WRAMBank
@@ -266,29 +266,10 @@ func (g *GBC) step() {
 	g.timer.tick(uint32(cycle))
 }
 
-// VBlank
-func (g *GBC) execVBlank() {
-	for {
-		g.step()
-		mode := g.video.Mode()
-		if mode == 2 {
-			return
-		}
-	}
-}
-
 // 1 frame
 func (g *GBC) Update() error {
 	if g.Frame()%3 == 0 {
 		g.handleJoypad()
-	}
-
-	p, b := &g.Debug.pause, &g.Debug.Break
-	if p.Delay() {
-		p.DecrementDelay()
-	}
-	if p.On() || b.On() {
-		return nil
 	}
 
 	// 0-143
@@ -303,8 +284,14 @@ func (g *GBC) Update() error {
 		}
 	}
 
-	// 143-154
-	g.execVBlank()
+	// 143-154 (VBlank)
+	for {
+		g.step()
+		mode := g.video.Mode()
+		if mode == 2 {
+			break
+		}
+	}
 
 	g.video.UpdateFrameCount()
 	return nil
