@@ -44,7 +44,7 @@ type Video struct {
 	FrameCounter, frameskip, frameskipCounter int
 	updateIRQs                                func()
 
-	NextLength int
+	scheduleEvent func(name string, callback func(), after uint64)
 }
 
 var (
@@ -60,12 +60,13 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte, updateIRQs func()) *Video {
+func New(io *[0x100]byte, updateIRQs func(), scheduleEvent func(name string, callback func(), after uint64)) *Video {
 	g := &Video{
-		io:         io,
-		Oam:        NewOAM(),
-		dmgPalette: defaultDmgPalette,
-		updateIRQs: updateIRQs,
+		io:            io,
+		Oam:           NewOAM(),
+		dmgPalette:    defaultDmgPalette,
+		updateIRQs:    updateIRQs,
+		scheduleEvent: scheduleEvent,
 	}
 
 	g.Debug.On = false
@@ -223,22 +224,9 @@ func (g *Video) ProcessDots(cyclesLate uint32) {
 	g.Renderer.drawRange(oldX, g.X, g.Ly)
 }
 
-func (g *Video) EndMode() {
-	switch g.Mode() {
-	case 0:
-		g.endMode0()
-	case 1:
-		g.endMode1()
-	case 2:
-		g.endMode2()
-	case 3:
-		g.endMode3()
-	}
-}
-
 // mode0 = HBlank
 // 204 cycles
-func (g *Video) endMode0() {
+func (g *Video) EndMode0() {
 	if g.frameskipCounter <= 0 {
 		g.Renderer.finishScanline(g.Ly)
 	}
@@ -250,10 +238,10 @@ func (g *Video) endMode0() {
 	oldStat := g.Stat
 	if g.Ly < VERTICAL_PIXELS {
 		g.setMode(2)
-		g.NextLength = MODE_2_LENGTH
+		g.scheduleEvent("endMode2", g.EndMode2, MODE_2_LENGTH)
 	} else {
 		g.setMode(1)
-		g.NextLength = HORIZONTAL_LENGTH
+		g.scheduleEvent("endMode1", g.EndMode1, HORIZONTAL_LENGTH)
 		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		}
@@ -275,8 +263,12 @@ func (g *Video) endMode0() {
 }
 
 // mode1 = VBlank
-func (g *Video) endMode1() {
+func (g *Video) EndMode1() {
 	if !util.Bit(g.LCDC, Enable) {
+		g.Ly = 0
+		g.io[GB_REG_LY] = byte(g.Ly)
+		g.setMode(2)
+		g.scheduleEvent("endMode2", g.EndMode2, MODE_2_LENGTH)
 		return
 	}
 
@@ -287,16 +279,16 @@ func (g *Video) endMode1() {
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
-		g.NextLength = MODE_2_LENGTH
+		g.scheduleEvent("endMode2", g.EndMode2, MODE_2_LENGTH)
 	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
-		g.NextLength = HORIZONTAL_LENGTH - 8
+		g.scheduleEvent("endMode1", g.EndMode1, HORIZONTAL_LENGTH-8)
 	case VERTICAL_TOTAL_PIXELS - 1:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		g.NextLength = 8
+		g.scheduleEvent("endMode1", g.EndMode1, 8)
 	default:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		g.NextLength = HORIZONTAL_LENGTH
+		g.scheduleEvent("endMode1", g.EndMode1, HORIZONTAL_LENGTH)
 	}
 
 	oldStat := g.Stat
@@ -309,11 +301,11 @@ func (g *Video) endMode1() {
 
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 80 cycles
-func (g *Video) endMode2() {
+func (g *Video) EndMode2() {
 	oldStat := g.Stat
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
-	g.NextLength = MODE_3_LENGTH
+	g.scheduleEvent("endMode3", g.EndMode3, MODE_3_LENGTH)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -322,11 +314,11 @@ func (g *Video) endMode2() {
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
-func (g *Video) endMode3() {
+func (g *Video) EndMode3() {
 	oldStat := g.Stat
 	g.ProcessDots(0)
 	g.setMode(0)
-	g.NextLength = MODE_0_LENGTH
+	g.scheduleEvent("endMode0", g.EndMode0, MODE_0_LENGTH)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()

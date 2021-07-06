@@ -1,6 +1,8 @@
 package scheduler
 
-import "math"
+import (
+	"math"
+)
 
 // Scheduler manages system event
 type Scheduler struct {
@@ -32,6 +34,15 @@ func (s *Scheduler) ScheduleEvent(name string, callback func(), after uint64) {
 	var previous *Event = nil
 	event := s.root
 	for {
+		if event == nil {
+			s.root = &Event{
+				name:     name,
+				callback: callback,
+				when:     when,
+				next:     event,
+			}
+			return
+		}
 		if event.next == nil {
 			// last executed
 			event.next = &Event{
@@ -49,11 +60,7 @@ func (s *Scheduler) ScheduleEvent(name string, callback func(), after uint64) {
 				when:     when,
 				next:     event,
 			}
-			if previous == nil {
-				s.root = newEvent
-			} else {
-				previous.next = newEvent
-			}
+			previous.next = newEvent
 			return
 		}
 		previous = event
@@ -92,4 +99,13 @@ func (s *Scheduler) ScheduleEventAbsolute(name string, callback func(), when uin
 		previous = event
 		event = event.next
 	}
+}
+
+func (s *Scheduler) DoEvent() {
+	event := s.root
+	if event == nil {
+		return
+	}
+	s.root = event.next
+	event.callback()
 }

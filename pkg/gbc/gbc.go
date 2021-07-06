@@ -11,6 +11,7 @@ import (
 	"gbc/pkg/gbc/apu"
 	"gbc/pkg/gbc/cart"
 	"gbc/pkg/gbc/rtc"
+	"gbc/pkg/gbc/scheduler"
 	"gbc/pkg/gbc/video"
 	"gbc/pkg/util"
 )
@@ -65,6 +66,7 @@ type GBC struct {
 	Debug      Debug
 	model      util.GBModel
 	irqPending int
+	scheduler  *scheduler.Scheduler
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -178,7 +180,8 @@ func (g *GBC) resetRegister() {
 
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
-	g.video = video.New(&g.IO, func() { g.updateIRQs() })
+	g.scheduler = scheduler.New()
+	g.video = video.New(&g.IO, g.updateIRQs, g.scheduler.ScheduleEvent)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
@@ -203,6 +206,8 @@ func (g *GBC) Init(debug bool, test bool) {
 		g.Debug.history.SetFlag(g.Config.Debug.History)
 		g.Debug.Break.ParseBreakpoints(g.Config.Debug.BreakPoints)
 	}
+
+	g.scheduler.ScheduleEvent("endMode2", g.video.EndMode2, video.MODE_2_LENGTH)
 }
 
 // Exec 1cycle
@@ -259,7 +264,7 @@ func (g *GBC) step(max int) {
 			}
 		}
 	} else {
-		cycle = (max - g.cycles) / 4
+		cycle = (max) / 4
 		if cycle > 16 { // make sound seemless
 			cycle = 16
 		}
@@ -280,42 +285,32 @@ func (g *GBC) step(max int) {
 }
 
 func (g *GBC) execScanline() {
-	// OAM mode2
-	for g.cycles <= g.video.NextLength*g.boost {
-		g.step(g.video.NextLength * g.boost)
+	for {
+		if g.scheduler.Cycle() < g.scheduler.Next() {
+			g.step(int(g.scheduler.Next() - g.scheduler.Cycle()))
+		} else {
+			g.scheduler.DoEvent()
+			mode := g.video.Mode()
+			if mode == 1 || mode == 2 {
+				return
+			}
+		}
 	}
-	g.video.EndMode()
-	g.cycles = 0
-
-	// LCD Driver mode3
-	for g.cycles <= g.video.NextLength*g.boost {
-		g.step(g.video.NextLength * g.boost)
-	}
-	g.video.EndMode()
-	g.cycles = 0
-
-	// HBlank mode0
-	for g.cycles <= g.video.NextLength*g.boost {
-		g.step(g.video.NextLength * g.boost)
-	}
-	g.video.EndMode()
-	g.cycles = 0
 }
 
 // VBlank
 func (g *GBC) execVBlank() {
 	for {
-		for g.cycles < g.video.NextLength*g.boost {
-			g.step(g.video.NextLength * g.boost)
-		}
-		g.video.EndMode()
-		g.cycles = 0
-
-		if g.video.Mode() == 2 {
-			break
+		if g.scheduler.Cycle() < g.scheduler.Next() {
+			g.step(int(g.scheduler.Next() - g.scheduler.Cycle()))
+		} else {
+			g.scheduler.DoEvent()
+			mode := g.video.Mode()
+			if mode == 2 {
+				return
+			}
 		}
 	}
-	g.cycles = 0
 }
 
 // 1 frame
