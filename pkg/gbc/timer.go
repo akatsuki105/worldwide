@@ -51,6 +51,7 @@ func (t *GBTimer) irq() {
 }
 
 // _GBTimerDivIncrement
+// 1/16384 sec or 1/32768 sec
 func (t *GBTimer) divIncrement() {
 	tMultiplier := 2 - util.Bool2U32(t.p.doubleSpeed)
 	for t.nextDiv >= GB_DMG_DIV_PERIOD*tMultiplier {
@@ -59,6 +60,7 @@ func (t *GBTimer) divIncrement() {
 		if t.timaPeriod > 0 && (t.internalDiv&(t.timaPeriod-1)) == (t.timaPeriod-1) {
 			t.p.IO[TIMAIO-0xff00]++
 			if t.p.IO[TIMAIO-0xff00] == 0 {
+				// overflow
 				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, uint64(7*tMultiplier))
 			}
 		}
@@ -68,7 +70,8 @@ func (t *GBTimer) divIncrement() {
 	}
 }
 
-// _GBTimerUpdate
+// _GBTimerUpdate (system count)
+// 1/16384 sec or 1/32768 sec
 func (t *GBTimer) update() {
 	t.divIncrement()
 
@@ -86,6 +89,7 @@ func (t *GBTimer) update() {
 }
 
 // GBTimerDivReset
+// triggered on writing DIV
 func (t *GBTimer) divReset() {
 	t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 	t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
@@ -97,12 +101,14 @@ func (t *GBTimer) divReset() {
 			t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 7*tMultiplier)
 		}
 	}
+
 	t.p.IO[DIVIO-0xff00] = 0
 	t.internalDiv = 0
-	t.nextDiv = GB_DMG_DIV_PERIOD * (2 - util.Bool2U32(t.p.doubleSpeed))
+	t.nextDiv = GB_DMG_DIV_PERIOD * (2 - util.Bool2U32(t.p.doubleSpeed)) // 16 or 32 -> 1/16384 sec or 1/32768 sec
 	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
 }
 
+// triggerd on writing TAC
 func (t *GBTimer) updateTAC(tac byte) byte {
 	if util.Bit(tac, 2) {
 		t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))

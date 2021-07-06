@@ -79,8 +79,6 @@ func (g *GBC) storeIO(addr uint16, value byte) {
 			return
 		}
 
-	case addr == TMAIO:
-
 	case addr == TACIO:
 		value = g.timer.updateTAC(value)
 
