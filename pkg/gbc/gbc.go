@@ -16,6 +16,8 @@ import (
 	"gbc/pkg/util"
 )
 
+var irqVec = [5]uint16{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}
+
 // ROMBank - 0x4000-0x7fff
 type ROMBank struct {
 	ptr  uint8
@@ -229,7 +231,7 @@ func (g *GBC) step() {
 			g.irqPending = 0
 			g.Reg.IME = false
 			g.updateIRQs()
-			[5]func(){g.triggerVBlank, g.triggerLCDC, g.triggerTimer, g.triggerSerial, g.triggerJoypad}[oldIrqPending-1]()
+			g.triggerIRQ(int(oldIrqPending - 1))
 			return
 		} else if handler != nil {
 			handler(g, operand1, operand2)
@@ -340,10 +342,7 @@ func (g *GBC) updateIRQs() {
 	}
 }
 
-func (g *GBC) Draw() []uint8 {
-	display := g.video.Display()
-	return display.Pix
-}
+func (g *GBC) Draw() []uint8 { return g.video.Display().Pix }
 
 func (g *GBC) handleJoypad() {
 	pad := g.Config.Joypad
@@ -358,9 +357,7 @@ func (g *GBC) handleJoypad() {
 	}
 }
 
-func (g *GBC) Frame() int {
-	return g.video.FrameCounter
-}
+func (g *GBC) Frame() int { return g.video.FrameCounter }
 
 // _GBMemoryDMAService
 func (g *GBC) DMAService() {
@@ -375,4 +372,10 @@ func (g *GBC) DMAService() {
 		after := 4 * (2 - util.Bool2U64(g.doubleSpeed))
 		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.DMAService, after)
 	}
+}
+
+func (g *GBC) triggerIRQ(idx int) {
+	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], idx, false)
+	g.pushPC()
+	g.Reg.PC = irqVec[idx]
 }
