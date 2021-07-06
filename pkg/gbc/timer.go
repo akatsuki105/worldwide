@@ -67,7 +67,6 @@ func (g *GBC) tick() {
 		}
 	}
 
-	g.cycles += 4
 	g.scheduler.Add(4)
 	g.timer.sys++ // 16 bit system counter
 	g.timer.div++

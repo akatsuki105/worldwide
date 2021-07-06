@@ -66,6 +66,12 @@ func Bool2Int(b bool) int {
 	}
 	return 0
 }
+func Bool2U32(b bool) uint32 {
+	if b {
+		return 1
+	}
+	return 0
+}
 func Bool2U64(b bool) uint64 {
 	if b {
 		return 1

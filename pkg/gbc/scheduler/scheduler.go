@@ -132,3 +132,17 @@ func (s *Scheduler) DoEvent() {
 	s.root = event.next
 	event.callback()
 }
+
+func (s *Scheduler) Until(name EventName) uint64 {
+	event := s.root
+	for {
+		if event == nil {
+			return math.MaxUint64
+		}
+
+		if event.name == name {
+			return event.when - s.cycles
+		}
+		event = event.next
+	}
+}

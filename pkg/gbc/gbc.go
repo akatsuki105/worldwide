@@ -57,7 +57,6 @@ type GBC struct {
 	joypad    joypad.Joypad
 	halt      bool
 	Config    *config.Config
-	cycles    int
 	timer     Timer
 	ROMBank
 	RAMBank
