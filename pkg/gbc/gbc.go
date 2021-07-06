@@ -229,18 +229,7 @@ func (g *GBC) step() {
 			g.irqPending = 0
 			g.Reg.IME = false
 			g.updateIRQs()
-			switch oldIrqPending {
-			case VBlankIRQ:
-				g.triggerVBlank()
-			case LCDCIRQ:
-				g.triggerLCDC()
-			case TimerIRQ:
-				g.triggerTimer()
-			case SerialIRQ:
-				g.triggerSerial()
-			case JoypadIRQ:
-				g.triggerJoypad()
-			}
+			[5]func(){g.triggerVBlank, g.triggerLCDC, g.triggerTimer, g.triggerSerial, g.triggerJoypad}[oldIrqPending-1]()
 			return
 		} else if handler != nil {
 			handler(g, operand1, operand2)
