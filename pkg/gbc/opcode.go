@@ -400,9 +400,6 @@ func callncc(g *GBC, cc, _ int) {
 func di(g *GBC, _, _ int) {
 	g.Reg.IME = false
 	g.Reg.PC++
-	if g.IMESwitch.Working && g.IMESwitch.Value {
-		g.IMESwitch.Working = false // https://gbdev.gg8.se/wiki/articles/Interrupts 『The effect of EI is delayed by one instruction. This means that EI followed immediately by DI does not allow interrupts between the EI and the DI.』
-	}
 }
 
 // EI Enable Interrupt

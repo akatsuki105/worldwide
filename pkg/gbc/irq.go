@@ -2,59 +2,6 @@ package gbc
 
 import "gbc/pkg/util"
 
-// IMESwitch - ${Count}サイクル後にIMEを${Value}の値に切り替える ${Working}=falseのときは無効
-type IMESwitch struct {
-	Count   uint
-	Value   bool
-	Working bool
-}
-
-// ------------ VBlank --------------------
-
-func (g *GBC) setVBlankFlag(b bool) {
-	if b {
-		g.storeIO(IFIO, g.loadIO(IFIO)|0x01)
-		return
-	}
-	g.storeIO(IFIO, g.loadIO(IFIO)&0xfe)
-}
-
-func (g *GBC) setLCDSTATFlag(b bool) {
-	if b {
-		g.storeIO(IFIO, g.loadIO(IFIO)|0x02)
-		return
-	}
-	g.storeIO(IFIO, g.loadIO(IFIO)&0xfd)
-}
-
-func (g *GBC) setTimerFlag(b bool) {
-	if b {
-		g.storeIO(IFIO, g.loadIO(IFIO)|0x04)
-		return
-	}
-	g.storeIO(IFIO, g.loadIO(IFIO)&0xfb)
-}
-
-func (g *GBC) setSerialFlag(b bool) {
-	if b {
-		g.storeIO(IFIO, g.loadIO(IFIO)|0x08)
-		return
-	}
-	g.storeIO(IFIO, g.loadIO(IFIO)&0xf7)
-}
-
-func (g *GBC) getJoypadEnable() bool {
-	return util.Bit(g.loadIO(IEIO), 4)
-}
-
-func (g *GBC) setJoypadFlag(b bool) {
-	if b {
-		g.storeIO(IFIO, g.loadIO(IFIO)|0x10)
-		return
-	}
-	g.storeIO(IFIO, g.loadIO(IFIO)&0xef)
-}
-
 // ------------ trigger --------------------
 
 func (g *GBC) triggerInterrupt() {
@@ -62,31 +9,31 @@ func (g *GBC) triggerInterrupt() {
 }
 
 func (g *GBC) triggerVBlank() {
-	g.setVBlankFlag(false)
+	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 0, false)
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0040
 }
 
 func (g *GBC) triggerLCDC() {
-	g.setLCDSTATFlag(false)
+	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 1, false)
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0048
 }
 
 func (g *GBC) triggerTimer() {
-	g.setTimerFlag(false)
+	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 2, false)
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0050
 }
 
 func (g *GBC) triggerSerial() {
-	g.setSerialFlag(false)
+	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 3, false)
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0058
 }
 
 func (g *GBC) triggerJoypad() {
-	g.setJoypadFlag(false)
+	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 4, false)
 	g.triggerInterrupt()
 	g.Reg.PC = 0x0060
 }

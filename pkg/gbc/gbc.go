@@ -66,12 +66,11 @@ type GBC struct {
 	video       *video.Video
 	RTC         rtc.RTC
 	doubleSpeed bool
-	IMESwitch
-	Debug      Debug
-	model      util.GBModel
-	irqPending int
-	scheduler  *scheduler.Scheduler
-	dma        Dma
+	Debug       Debug
+	model       util.GBModel
+	irqPending  int
+	scheduler   *scheduler.Scheduler
+	dma         Dma
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -376,8 +375,8 @@ func (g *GBC) handleJoypad() {
 	if result != 0 {
 		switch result {
 		case joypad.Pressed: // Joypad Interrupt
-			if g.Reg.IME && g.getJoypadEnable() {
-				g.setJoypadFlag(true)
+			if g.Reg.IME && util.Bit(g.loadIO(IEIO), 4) {
+				g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 4, true)
 			}
 		}
 	}
