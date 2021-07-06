@@ -55,11 +55,9 @@ func (g *GBC) triggerInterrupt() {
 }
 
 func (g *GBC) triggerVBlank() {
-	if util.Bit(g.loadIO(LCDCIO), 7) {
-		g.setVBlankFlag(false)
-		g.triggerInterrupt()
-		g.Reg.PC = 0x0040
-	}
+	g.setVBlankFlag(false)
+	g.triggerInterrupt()
+	g.Reg.PC = 0x0040
 }
 
 func (g *GBC) triggerLCDC() {

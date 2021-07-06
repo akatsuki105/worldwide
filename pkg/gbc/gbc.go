@@ -275,7 +275,7 @@ func (g *GBC) step() {
 			cycle = 16
 		}
 		if cycle == 0 {
-			cycle++
+			return
 		}
 		if !g.Reg.IME { // ref: https://rednex.github.io/rgbds/gbz80.7.html#HALT
 			if pending := g.IO[IEIO-0xff00]&g.IO[IFIO-0xff00] > 0; pending {
