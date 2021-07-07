@@ -44,8 +44,9 @@ type Video struct {
 	FrameCounter, frameskip, frameskipCounter int
 	updateIRQs                                func()
 
-	scheduleEvent func(name scheduler.EventName, callback func(), after uint64)
-	hdma          func()
+	scheduleEvent   func(name scheduler.EventName, callback func(), after uint64)
+	descheduleEvent func(name scheduler.EventName)
+	hdma            func()
 }
 
 var (
@@ -61,14 +62,15 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name scheduler.EventName, callback func(), after uint64)) *Video {
+func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name scheduler.EventName, callback func(), after uint64), descheduleEvent func(name scheduler.EventName)) *Video {
 	g := &Video{
-		io:            io,
-		Oam:           NewOAM(),
-		dmgPalette:    defaultDmgPalette,
-		updateIRQs:    updateIRQs,
-		scheduleEvent: scheduleEvent,
-		hdma:          hdma,
+		io:              io,
+		Oam:             NewOAM(),
+		dmgPalette:      defaultDmgPalette,
+		updateIRQs:      updateIRQs,
+		scheduleEvent:   scheduleEvent,
+		descheduleEvent: descheduleEvent,
+		hdma:            hdma,
 	}
 
 	g.Debug.On = false
@@ -238,12 +240,16 @@ func (g *Video) EndMode0() {
 	g.io[GB_REG_LY] = byte(g.Ly)
 
 	oldStat := g.Stat
+	name, callback, after := scheduler.EndMode2, g.EndMode2, uint64(MODE_2_LENGTH)
 	if g.Ly < VERTICAL_PIXELS {
 		g.setMode(2)
-		g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH)
 	} else {
 		g.setMode(1)
-		g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH)
+		name, callback, after = scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH
+
+		g.descheduleEvent(scheduler.UpdateFrame)
+		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, 0)
+
 		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		}
@@ -262,6 +268,7 @@ func (g *Video) EndMode0() {
 	}
 
 	g.updateIRQs()
+	g.scheduleEvent(name, callback, after)
 }
 
 // mode1 = VBlank
@@ -329,7 +336,11 @@ func (g *Video) EndMode3() {
 }
 
 // _updateFrameCount
-func (g *Video) UpdateFrameCount() {
+func (g *Video) updateFrameCount() {
+	if !util.Bit(g.LCDC, Enable) {
+		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
+	}
+
 	g.frameskipCounter--
 	if g.frameskipCounter < 0 {
 		g.Renderer.finishFrame()
@@ -359,12 +370,17 @@ func (g *Video) WriteLCDC(value byte) {
 			g.updateIRQs()
 		}
 		g.Renderer.writePalette(0, g.Palette[0])
+
+		g.descheduleEvent(scheduler.UpdateFrame)
 	}
 	if util.Bit(g.LCDC, Enable) && !util.Bit(value, Enable) {
 		g.setMode(0)
 		g.Ly = 0
 		g.io[GB_REG_LY] = 0
 		g.Renderer.writePalette(0, Color(g.dmgPalette[0]))
+
+		g.descheduleEvent(scheduler.UpdateFrame)
+		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
 	}
 }
 

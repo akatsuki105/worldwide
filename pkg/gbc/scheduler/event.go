@@ -11,6 +11,7 @@ const (
 	EndMode1    EventName = "EndMode1"
 	EndMode2    EventName = "EndMode2"
 	EndMode3    EventName = "EndMode3"
+	UpdateFrame EventName = "UpdateFrame"
 )
 
 type Event struct {

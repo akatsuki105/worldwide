@@ -198,7 +198,7 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 		joypad:    joypad.New(j),
 	}
 
-	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent)
+	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent, g.scheduler.DescheduleEvent)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
@@ -277,32 +277,14 @@ func (g *GBC) step() {
 
 // 1 frame
 func (g *GBC) Update() error {
-	if g.Frame()%3 == 0 {
+	frame := g.Frame()
+	if frame%3 == 0 {
 		g.handleJoypad()
 	}
 
-	// 0-143
-	for {
+	for frame == g.video.FrameCounter {
 		g.step()
-		mode := g.video.Mode()
-		if mode == 2 {
-			continue
-		}
-		if mode == 1 {
-			break
-		}
 	}
-
-	// 143-154 (VBlank)
-	for {
-		g.step()
-		mode := g.video.Mode()
-		if mode == 2 {
-			break
-		}
-	}
-
-	g.video.UpdateFrameCount()
 	return nil
 }
 
