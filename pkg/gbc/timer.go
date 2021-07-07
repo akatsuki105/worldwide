@@ -45,8 +45,8 @@ func (t *Timer) tick(cycles uint32) {
 
 // _GBTimerIRQ
 func (t *Timer) irq() {
-	t.p.IO[TIMAIO-0xff00] = t.p.IO[TMAIO-0xff00]
-	t.p.IO[IFIO-0xff00] = util.SetBit8(t.p.IO[IFIO-0xff00], 2, true)
+	t.p.IO[TIMAIO] = t.p.IO[TMAIO]
+	t.p.IO[IFIO] = util.SetBit8(t.p.IO[IFIO], 2, true)
 	t.p.updateIRQs()
 }
 
@@ -58,15 +58,15 @@ func (t *Timer) divIncrement() {
 		t.nextDiv -= GB_DMG_DIV_PERIOD * tMultiplier
 
 		if t.timaPeriod > 0 && (t.internalDiv&(t.timaPeriod-1)) == (t.timaPeriod-1) {
-			t.p.IO[TIMAIO-0xff00]++
-			if t.p.IO[TIMAIO-0xff00] == 0 {
+			t.p.IO[TIMAIO]++
+			if t.p.IO[TIMAIO] == 0 {
 				// overflow
 				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, uint64(7*tMultiplier))
 			}
 		}
 
 		t.internalDiv++
-		t.p.IO[DIVIO-0xff00] = byte(t.internalDiv >> 4)
+		t.p.IO[DIVIO] = byte(t.internalDiv >> 4)
 	}
 }
 
@@ -96,13 +96,13 @@ func (t *Timer) divReset() {
 	t.divIncrement()
 	tMultiplier := 2 - util.Bool2U64(t.p.doubleSpeed)
 	if ((t.internalDiv << 1) | (t.nextDiv>>((4-util.Bool2U32(t.p.doubleSpeed))&1))&t.timaPeriod) > 0 {
-		t.p.IO[TIMAIO-0xff00]++
-		if t.p.IO[TIMAIO-0xff00] == 0 {
+		t.p.IO[TIMAIO]++
+		if t.p.IO[TIMAIO] == 0 {
 			t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 7*tMultiplier)
 		}
 	}
 
-	t.p.IO[DIVIO-0xff00] = 0
+	t.p.IO[DIVIO] = 0
 	t.internalDiv = 0
 	t.nextDiv = GB_DMG_DIV_PERIOD * (2 - util.Bool2U32(t.p.doubleSpeed)) // 16 or 32 -> 1/16384 sec or 1/32768 sec
 	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))

@@ -46,10 +46,10 @@ PC: %02x:%04x  SP: %04x`, A, F, B, C, D, E, H, L, bank, PC, g.Reg.SP)
 }
 
 func (g *GBC) debugIOMap() string {
-	LCDC, STAT := g.Load8(LCDCIO), g.Load8(LCDSTATIO)
-	DIV := g.Load8(DIVIO)
-	LY, LYC := g.Load8(LYIO), g.Load8(LYCIO)
-	IE, IF, IME := g.Load8(IEIO), g.Load8(IFIO), util.Bool2Int(g.Reg.IME)
+	LCDC, STAT := g.loadIO(LCDCIO), g.loadIO(LCDSTATIO)
+	DIV := g.loadIO(DIVIO)
+	LY, LYC := g.loadIO(LYIO), g.loadIO(LYCIO)
+	IE, IF, IME := g.loadIO(IEIO), g.loadIO(IFIO), util.Bool2Int(g.Reg.IME)
 	spd, rom := util.Bool2Int(g.doubleSpeed), g.ROMBank.ptr
 	return fmt.Sprintf(`IO
 LCDC: %02x   STAT: %02x

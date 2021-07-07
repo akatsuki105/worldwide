@@ -319,7 +319,7 @@ func (g *GBC) setModel(m util.GBModel) {
 }
 
 func (g *GBC) updateIRQs() {
-	irqs := g.IO[IEIO-0xff00] & g.IO[IFIO-0xff00] & 0x1f
+	irqs := g.IO[IEIO] & g.IO[IFIO] & 0x1f
 	if irqs == 0 {
 		g.irqPending = 0
 		return
@@ -351,7 +351,7 @@ func (g *GBC) handleJoypad() {
 		switch result {
 		case joypad.Pressed: // Joypad Interrupt
 			if g.Reg.IME && util.Bit(g.loadIO(IEIO), 4) {
-				g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], 4, true)
+				g.IO[IFIO] = util.SetBit8(g.IO[IFIO], 4, true)
 			}
 		}
 	}
@@ -375,7 +375,7 @@ func (g *GBC) DMAService() {
 }
 
 func (g *GBC) triggerIRQ(idx int) {
-	g.IO[IFIO-0xff00] = util.SetBit8(g.IO[IFIO-0xff00], idx, false)
+	g.IO[IFIO] = util.SetBit8(g.IO[IFIO], idx, false)
 	g.pushPC()
 	g.Reg.PC = irqVec[idx]
 }

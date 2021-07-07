@@ -57,7 +57,7 @@ func op0xfa(g *GBC, operand1, operand2 int) {
 // LD A,(FF00+C)
 func op0xf2(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.Reg.R[C])
-	g.Reg.R[A] = g.loadIO(addr)
+	g.Reg.R[A] = g.loadIO(byte(addr))
 	g.Reg.PC++ // mistake?(https://www.pastraiser.com/g/gameboy/gameboy_opcodes.html)
 }
 
@@ -140,7 +140,7 @@ func LDH(g *GBC, operand1, operand2 int) {
 	if operand1 == OP_A && operand2 == OP_a8_PAREN { // LD A,($FF00+a8)
 		addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
 		g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.doubleSpeed)))
-		value := g.loadIO(addr)
+		value := g.loadIO(byte(addr))
 
 		g.Reg.R[A] = value
 		g.Reg.PC += 2
@@ -148,7 +148,7 @@ func LDH(g *GBC, operand1, operand2 int) {
 	} else if operand1 == OP_a8_PAREN && operand2 == OP_A { // LD ($FF00+a8),A
 		addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
 		g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.doubleSpeed)))
-		g.storeIO(addr, g.Reg.R[A])
+		g.storeIO(byte(addr), g.Reg.R[A])
 		g.Reg.PC += 2
 		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.doubleSpeed)))
 	} else {
@@ -252,7 +252,7 @@ func jrncc(g *GBC, cc, _ int) {
 
 func halt(g *GBC, _, _ int) {
 	g.Reg.PC++
-	if g.IO[IEIO-0xff00]&g.IO[IFIO-0xff00]&0x1f == 0 {
+	if g.IO[IEIO]&g.IO[IFIO]&0x1f == 0 {
 		g.halt = true
 	}
 }
@@ -260,7 +260,7 @@ func halt(g *GBC, _, _ int) {
 // stop GBC
 func stop(g *GBC, _, _ int) {
 	g.Reg.PC += 2
-	KEY1 := g.Load8(KEY1IO)
+	KEY1 := g.loadIO(KEY1IO)
 	if util.Bit(KEY1, 0) {
 		if util.Bit(KEY1, 7) {
 			KEY1 = 0x00
@@ -269,7 +269,7 @@ func stop(g *GBC, _, _ int) {
 			KEY1 = 0x80
 			g.doubleSpeed = true
 		}
-		g.Store8(KEY1IO, KEY1)
+		g.storeIO(KEY1IO, KEY1)
 	}
 }
 

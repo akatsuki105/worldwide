@@ -138,19 +138,19 @@ var squareLimits = map[byte]float64{
 }
 
 // Read returns a value from the APU.
-func (a *APU) Read(address uint16) byte {
-	if address >= 0xFF30 {
-		return a.waveformRAM[address-0xFF30]
+func (a *APU) Read(offset byte) byte {
+	if offset >= 0x30 {
+		return a.waveformRAM[offset-0x30]
 	}
 	// TODO: we should modify the sound memory as we're sampling
-	return a.memory[address-0xFF00] & soundMask[address-0xFF10]
+	return a.memory[offset-0x00] & soundMask[offset-0x10]
 }
 
 // Write a value to the APU registers.
-func (a *APU) Write(address uint16, value byte) {
-	a.memory[address-0xFF00] = value
+func (a *APU) Write(offset byte, value byte) {
+	a.memory[offset] = value
 
-	switch address {
+	switch uint16(offset) + 0xff00 {
 	// Channel 1
 	case 0xFF10:
 		// -PPP NSSS Sweep period, negate, shift
@@ -310,8 +310,8 @@ func (a *APU) Write(address uint16, value byte) {
 }
 
 // WriteWaveform writes a value to the waveform ram.
-func (a *APU) WriteWaveform(address uint16, value byte) {
-	soundIndex := (address - 0xFF30) * 2
+func (a *APU) WriteWaveform(offset byte, value byte) {
+	soundIndex := (offset - 0x30) * 2
 	a.waveformRAM[soundIndex] = (value >> 4) & 0xF * 0x11
 	a.waveformRAM[soundIndex+1] = value & 0xF * 0x11
 }

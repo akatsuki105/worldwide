@@ -22,7 +22,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case addr >= 0xfe00 && addr <= 0xfe9f:
 		value = g.video.Oam.Get(addr - 0xfe00)
 	case addr >= 0xff00:
-		value = g.loadIO(addr)
+		value = g.loadIO(byte(addr))
 	default:
 		value = g.RAM[addr]
 	}
@@ -111,7 +111,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 		case addr >= 0xfe00 && addr <= 0xfe9f:
 			g.video.Oam.Set(addr-0xfe00, value)
 		case addr >= 0xff00:
-			g.storeIO(addr, value)
+			g.storeIO(byte(addr), value)
 		default:
 			g.RAM[addr] = value
 		}
@@ -126,8 +126,8 @@ func (g *GBC) switchROMBank(newROMBankPtr uint8) {
 }
 
 func (g *GBC) doVRAMDMATransfer(length int) {
-	from := (uint16(g.IO[HDMA1IO-0xff00])<<8 | uint16(g.IO[HDMA2IO-0xff00])) & 0xfff0
-	to := ((uint16(g.IO[HDMA3IO-0xff00])<<8 | uint16(g.IO[HDMA4IO-0xff00])) & 0x1ff0) + 0x8000
+	from := (uint16(g.IO[HDMA1IO])<<8 | uint16(g.IO[HDMA2IO])) & 0xfff0
+	to := ((uint16(g.IO[HDMA3IO])<<8 | uint16(g.IO[HDMA4IO])) & 0x1ff0) + 0x8000
 
 	for i := 0; i < length; i++ {
 		value := g.Load8(from)
@@ -136,6 +136,6 @@ func (g *GBC) doVRAMDMATransfer(length int) {
 		to++
 	}
 
-	g.IO[HDMA1IO-0xff00], g.IO[HDMA2IO-0xff00] = byte(from>>8), byte(from)
-	g.IO[HDMA3IO-0xff00], g.IO[HDMA4IO-0xff00] = byte(to>>8), byte(to&0xf0)
+	g.IO[HDMA1IO], g.IO[HDMA2IO] = byte(from>>8), byte(from)
+	g.IO[HDMA3IO], g.IO[HDMA4IO] = byte(to>>8), byte(to&0xf0)
 }

@@ -1,40 +1,7 @@
 package gbc
 
 const (
-	OAM       uint16 = 0xfe00
-	JOYPADIO  uint16 = 0xff00
-	SBIO      uint16 = 0xff01
-	SCIO      uint16 = 0xff02
-	DIVIO     uint16 = 0xff04
-	TIMAIO    uint16 = 0xff05
-	TMAIO     uint16 = 0xff06
-	TACIO     uint16 = 0xff07
-	IFIO      uint16 = 0xff0f
-	LCDCIO    uint16 = 0xff40
-	LCDSTATIO uint16 = 0xff41
-	SCYIO     uint16 = 0xff42
-	SCXIO     uint16 = 0xff43
-	LYIO      uint16 = 0xff44
-	LYCIO     uint16 = 0xff45
-	DMAIO     uint16 = 0xff46
-	BGPIO     uint16 = 0xff47
-	OBP0IO    uint16 = 0xff48
-	OBP1IO    uint16 = 0xff49
-	WYIO      uint16 = 0xff4a
-	WXIO      uint16 = 0xff4b
-	KEY1IO    uint16 = 0xff4d
-	VBKIO     uint16 = 0xff4f
-	HDMA1IO   uint16 = 0xff51
-	HDMA2IO   uint16 = 0xff52
-	HDMA3IO   uint16 = 0xff53
-	HDMA4IO   uint16 = 0xff54
-	HDMA5IO   uint16 = 0xff55
-	BCPSIO    uint16 = 0xff68
-	BCPDIO    uint16 = 0xff69
-	OCPSIO    uint16 = 0xff6a
-	OCPDIO    uint16 = 0xff6b
-	SVBKIO    uint16 = 0xff70
-	IEIO      uint16 = 0xffff
+	OAM uint16 = 0xfe00
 )
 
 const (
