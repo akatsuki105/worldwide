@@ -126,7 +126,7 @@ func (s *Scheduler) DescheduleEvent(name EventName) {
 
 		if event.name == name {
 			if previous == nil {
-				s.root = nil
+				s.root = event.next
 				return
 			} else {
 				previous.next = event.next
