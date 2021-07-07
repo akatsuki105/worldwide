@@ -61,7 +61,7 @@ func (t *Timer) divIncrement() {
 			t.p.IO[TIMAIO]++
 			if t.p.IO[TIMAIO] == 0 {
 				// overflow
-				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, uint64(7*tMultiplier))
+				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 0)
 			}
 		}
 
@@ -94,11 +94,10 @@ func (t *Timer) divReset() {
 	t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 	t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
 	t.divIncrement()
-	tMultiplier := 1 - util.Bool2U64(t.p.doubleSpeed)
 	if ((t.internalDiv << 1) | (t.nextDiv>>((4-util.Bool2U32(t.p.doubleSpeed))&1))&t.timaPeriod) > 0 {
 		t.p.IO[TIMAIO]++
 		if t.p.IO[TIMAIO] == 0 {
-			t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 7*tMultiplier)
+			t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 0)
 		}
 	}
 
