@@ -123,6 +123,8 @@ func (g *GBC) storeIO(offset byte, value byte) {
 
 	case offset == IFIO:
 		g.IO[IFIO] = value | 0xe0 // IF[4-7] always set
+		g.updateIRQs()
+		return
 
 	case offset == DMAIO: // dma transfer
 		base := uint16(value) << 8
@@ -193,9 +195,7 @@ func (g *GBC) storeIO(offset byte, value byte) {
 	case offset == IEIO:
 		g.IO[IEIO] = value
 		g.updateIRQs()
-	case offset == IFIO:
-		g.IO[IFIO] = value | 0xE0
-		g.updateIRQs()
+		return
 	}
 
 	g.IO[offset] = value
