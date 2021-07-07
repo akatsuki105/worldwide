@@ -44,23 +44,19 @@ func Run() int {
 	cur, _ := os.Getwd()
 
 	romDir := filepath.Dir(romPath)
-	emu := &emulator.Emulator{
-		GBC: &gbc.GBC{},
-		Rom: romDir,
-	}
-
 	romData, err := readROM(romPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ROM Error: %s\n", err)
 		return ExitCodeError
 	}
 
-	emu.GBC.Cartridge.Parse(romData)
-	emu.GBC.TransferROM(romData)
+	emu := &emulator.Emulator{
+		GBC: gbc.New(romData),
+		Rom: romDir,
+	}
 
 	test := *outputScreen != ""
 	os.Chdir(cur)
-	emu.GBC.Init(*debug, test)
 	defer func() {
 		os.Chdir(cur)
 	}()
@@ -72,7 +68,7 @@ func Run() int {
 	}
 
 	ebiten.SetWindowResizable(true)
-	ebiten.SetWindowTitle("Worldwide")
+	ebiten.SetWindowTitle("60fps")
 
 	if *debug {
 		ebiten.SetWindowSize(1270, 740)

@@ -193,8 +193,10 @@ func (g *GBC) resetRegister() {
 	g.Reg.PC, g.Reg.SP = 0x0100, 0xfffe
 }
 
-// Init g and ram
-func (g *GBC) Init(debug bool, test bool) {
+func New(romData []byte) *GBC {
+	g := &GBC{}
+	g.Cartridge.Parse(romData)
+
 	g.scheduler = scheduler.New()
 	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent)
 	if g.Cartridge.IsCGB {
@@ -212,19 +214,16 @@ func (g *GBC) Init(debug bool, test bool) {
 	g.doubleSpeed = false
 
 	// Init APU
-	g.Sound.Init(!test)
+	g.Sound.Init(true)
 
 	// Init RTC
 	go g.RTC.Init()
 
-	g.Debug.Enable = debug
-	if debug {
-		g.Config.Display.HQ2x, g.Config.Display.FPS30 = false, true
-		g.Debug.history.SetFlag(g.Config.Debug.History)
-		g.Debug.Break.ParseBreakpoints(g.Config.Debug.BreakPoints)
-	}
-
+	g.Debug.Enable = false
 	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.video.EndMode2, video.MODE_2_LENGTH)
+
+	g.TransferROM(romData)
+	return g
 }
 
 // Exec 1cycle
