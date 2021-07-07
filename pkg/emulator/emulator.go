@@ -20,6 +20,13 @@ type Emulator struct {
 	frame int
 }
 
+func New(romData []byte, j [8](func() bool), romDir string) *Emulator {
+	return &Emulator{
+		GBC: gbc.New(romData, j),
+		Rom: romDir,
+	}
+}
+
 // GameBoy save data is SRAM core dump
 func (e *Emulator) WriteSav() {
 	g := e.GBC

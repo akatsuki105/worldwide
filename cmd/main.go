@@ -10,9 +10,8 @@ import (
 
 	"gbc/pkg/emulator"
 	"gbc/pkg/emulator/joypad"
-	"gbc/pkg/gbc"
 
-	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var version string
@@ -50,10 +49,7 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	emu := &emulator.Emulator{
-		GBC: gbc.New(romData, joypad.Handler),
-		Rom: romDir,
-	}
+	emu := emulator.New(romData, joypad.Handler, romDir)
 
 	os.Chdir(cur)
 	defer func() {
