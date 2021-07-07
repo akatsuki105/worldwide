@@ -262,8 +262,7 @@ func stop(g *GBC, _, _ int) {
 	g.Reg.PC += 2
 	if g.model >= util.GB_MODEL_CGB && util.Bit(g.IO[KEY1IO], 0) {
 		g.doubleSpeed = !g.doubleSpeed
-		g.IO[KEY1IO] = 0
-		g.IO[KEY1IO] |= byte(util.Bool2Int(g.doubleSpeed)) << 7
+		g.IO[KEY1IO] = byte(util.Bool2Int(g.doubleSpeed)) << 7
 	} else {
 		sleep := ^(g.loadIO(JOYPIO) & 0x30)
 		if sleep > 0 {
