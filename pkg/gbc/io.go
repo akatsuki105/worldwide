@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	JOYPADIO  byte = 0x00
+	JOYPIO    byte = 0x00
 	SBIO      byte = 0x01
 	SCIO      byte = 0x02
 	DIVIO     byte = 0x04
@@ -85,7 +85,7 @@ func (g *GBC) resetIO() {
 
 func (g *GBC) loadIO(offset byte) (value byte) {
 	switch offset {
-	case JOYPADIO:
+	case JOYPIO:
 		value = g.joypad.Output()
 	case LCDCIO:
 		value = g.video.LCDC
@@ -103,7 +103,7 @@ func (g *GBC) loadIO(offset byte) (value byte) {
 
 func (g *GBC) storeIO(offset byte, value byte) {
 	switch {
-	case offset == JOYPADIO:
+	case offset == JOYPIO:
 		g.joypad.P1 = value
 
 	case offset == DIVIO:
