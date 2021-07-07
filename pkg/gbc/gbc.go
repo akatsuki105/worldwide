@@ -62,7 +62,7 @@ type GBC struct {
 	Reg       Register
 	RAM       [0x10000]byte
 	IO        [0x100]byte // 0xff00-0xffff
-	Cartridge cart.Cartridge
+	Cartridge *cart.Cartridge
 	joypad    joypad.Joypad
 	halt      bool
 	Config    *config.Config
@@ -71,7 +71,7 @@ type GBC struct {
 	RAMBank
 	WRAMBank
 	bankMode    uint
-	Sound       apu.APU
+	sound       *apu.APU
 	video       *video.Video
 	RTC         rtc.RTC
 	doubleSpeed bool
@@ -194,14 +194,16 @@ func (g *GBC) resetRegister() {
 }
 
 func New(romData []byte) *GBC {
-	g := &GBC{}
-	g.Cartridge.Parse(romData)
+	g := &GBC{
+		Cartridge: cart.New(romData),
+		scheduler: scheduler.New(),
+	}
 
-	g.scheduler = scheduler.New()
 	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
+
 	g.timer = NewTimer(g)
 	g.scheduler.ScheduleEvent(scheduler.TimerUpdate, g.timer.update, 0)
 
@@ -210,16 +212,14 @@ func New(romData []byte) *GBC {
 
 	g.ROMBank.ptr, g.WRAMBank.ptr = 1, 1
 
-	g.Config = config.Init()
-	g.doubleSpeed = false
+	g.Config = config.New()
 
 	// Init APU
-	g.Sound.Init(true)
+	g.sound = apu.New(true)
 
 	// Init RTC
 	go g.RTC.Init()
 
-	g.Debug.Enable = false
 	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.video.EndMode2, video.MODE_2_LENGTH)
 
 	g.TransferROM(romData)

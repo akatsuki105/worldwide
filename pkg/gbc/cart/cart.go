@@ -18,7 +18,8 @@ type Cartridge struct {
 }
 
 // Parse - load cartridge info from byte slice
-func (cart *Cartridge) Parse(rom []byte) {
+func New(rom []byte) *Cartridge {
+	cart := &Cartridge{}
 	var titleBuf []byte
 	for i := 0x0134; i < 0x0143; i++ {
 		if rom[i] == 0 {
@@ -33,4 +34,5 @@ func (cart *Cartridge) Parse(rom []byte) {
 	cart.RAMSize = uint8(rom[0x0149])
 
 	cart.Debug = cart.newDebug()
+	return cart
 }

@@ -55,7 +55,7 @@ type Debug struct {
 	History     bool     `toml:"history"`
 }
 
-func Init() *Config {
+func New() *Config {
 	cfg := &Config{}
 
 	// load config

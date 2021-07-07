@@ -93,7 +93,7 @@ func (g *GBC) loadIO(offset byte) (value byte) {
 		value = g.video.Stat
 	default:
 		if (offset >= 0x10 && offset <= 0x26) || (offset >= 0x30 && offset <= 0x3f) {
-			value = g.Sound.Read(offset)
+			value = g.sound.Read(offset)
 		} else {
 			value = g.IO[offset]
 		}
@@ -136,9 +136,9 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		g.dma.remaining = 0xa0
 
 	case offset >= 0x10 && offset <= 0x26: // sound io
-		g.Sound.Write(offset, value)
+		g.sound.Write(offset, value)
 	case offset >= 0x30 && offset <= 0x3f: // sound io
-		g.Sound.WriteWaveform(offset, value)
+		g.sound.WriteWaveform(offset, value)
 
 	case offset == LCDCIO:
 		g.video.ProcessDots(0)

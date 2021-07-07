@@ -43,7 +43,8 @@ type APU struct {
 }
 
 // Init the sound emulation for a Gameboy.
-func (a *APU) Init(sound bool) {
+func New(sound bool) *APU {
+	a := &APU{}
 	a.playing = sound
 	a.waveformRAM = make([]byte, 0x20)
 	a.audioBuffer = make(chan [2]byte, streamLen)
@@ -72,6 +73,8 @@ func (a *APU) Init(sound bool) {
 		a.player = context.NewPlayer()
 		a.playSound(bufferSeconds)
 	}
+
+	return a
 }
 
 // Starts a goroutine which plays the sound
