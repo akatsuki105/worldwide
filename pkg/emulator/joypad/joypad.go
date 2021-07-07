@@ -38,139 +38,128 @@ func (pad *Joypad) Output() byte {
 }
 
 // Input joypad
-func (pad *Joypad) Input(padA, padB, padStart, padSelect uint, threshold float64) (result int) {
+func (pad *Joypad) Input() bool {
+	pressed := false
 
 	// A
-	if btnA(padA) {
+	if btnA() {
+		old := pad.Button[0]
 		pad.Button[0] = true
-		result = Pressed
+		if !old && pad.Button[0] {
+			pressed = true
+		}
 	} else {
 		pad.Button[0] = false
 	}
 
 	// B
-	if btnB(padB) {
+	if btnB() {
+		old := pad.Button[1]
 		pad.Button[1] = true
-		result = Pressed
+		if !old && pad.Button[1] {
+			pressed = true
+		}
 	} else {
 		pad.Button[1] = false
 	}
 
 	// select
-	if btnSelect(padSelect) {
+	if btnSelect() {
+		old := pad.Button[2]
 		pad.Button[2] = true
-		result = Pressed
+		if !old && pad.Button[2] {
+			pressed = true
+		}
 	} else {
 		pad.Button[2] = false
 	}
 
 	// start
-	if btnStart(padStart) {
+	if btnStart() {
+		old := pad.Button[3]
 		pad.Button[3] = true
-		result = Pressed
+		if !old && pad.Button[3] {
+			pressed = true
+		}
 	} else {
 		pad.Button[3] = false
 	}
 
 	// right
-	if keyRight(threshold) {
+	if keyRight() {
+		old := pad.Direction[0]
 		pad.Direction[0] = true
-		result = Pressed
+		if !old && pad.Direction[0] {
+			pressed = true
+		}
 	} else {
 		pad.Direction[0] = false
 	}
 
 	// left
-	if keyLeft(threshold) {
+	if keyLeft() {
+		old := pad.Direction[1]
 		pad.Direction[1] = true
-		result = Pressed
+		if !old && pad.Direction[1] {
+			pressed = true
+		}
 	} else {
 		pad.Direction[1] = false
 	}
 
 	// up
-	if keyUp(threshold) {
+	if keyUp() {
+		old := pad.Direction[2]
 		pad.Direction[2] = true
-		result = Pressed
+		if !old && pad.Direction[2] {
+			pressed = true
+		}
 	} else {
 		pad.Direction[2] = false
 	}
 
 	// down
-	if keyDown(threshold) {
+	if keyDown() {
+		old := pad.Direction[3]
 		pad.Direction[3] = true
-		result = Pressed
+		if !old && pad.Direction[3] {
+			pressed = true
+		}
 	} else {
 		pad.Direction[3] = false
 	}
 
-	if btnPause() {
-		result = Pause
-	}
-
-	return result
+	return pressed
 }
 
-func btnA(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyX) || ebiten.IsKeyPressed(ebiten.KeyS)
+func btnA() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyX)
 }
 
-func btnB(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyZ) || ebiten.IsKeyPressed(ebiten.KeyA)
+func btnB() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyZ)
 }
 
-func btnStart(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyEnter)
+func btnStart() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyEnter)
 }
 
-func btnSelect(pad uint) bool {
-	return ebiten.IsGamepadButtonPressed(0, ebiten.GamepadButton(pad)) || ebiten.IsKeyPressed(ebiten.KeyShift)
+func btnSelect() bool {
+	return ebiten.IsKeyPressed(ebiten.KeyBackspace)
 }
 
-func keyUp(threshold float64) bool {
-	if threshold > 0 && ebiten.GamepadAxis(0, 1) > threshold {
-		return true
-	}
-	if threshold < 0 && ebiten.GamepadAxis(0, 1) < threshold {
-		return true
-	}
-
+func keyUp() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyUp)
 }
 
-func keyDown(threshold float64) bool {
-	if threshold > 0 && -ebiten.GamepadAxis(0, 1) > threshold {
-		return true
-	}
-	if threshold < 0 && -ebiten.GamepadAxis(0, 1) < threshold {
-		return true
-	}
-
+func keyDown() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyDown)
 }
 
-func keyRight(threshold float64) bool {
-	if threshold > 0 && ebiten.GamepadAxis(0, 0) > threshold {
-		return true
-	}
-	if threshold < 0 && ebiten.GamepadAxis(0, 0) > -threshold {
-		return true
-	}
-
+func keyRight() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyRight)
 }
 
-func keyLeft(threshold float64) bool {
-	if threshold > 0 && ebiten.GamepadAxis(0, 0) < -threshold {
-		return true
-	}
-	if threshold < 0 && ebiten.GamepadAxis(0, 0) < threshold {
-		return true
-	}
-
+func keyLeft() bool {
 	return ebiten.IsKeyPressed(ebiten.KeyLeft)
-}
-
-func btnPause() bool {
-	return ebiten.IsKeyPressed(ebiten.KeyP)
 }

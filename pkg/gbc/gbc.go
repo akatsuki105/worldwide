@@ -353,14 +353,10 @@ func (g *GBC) updateIRQs() {
 func (g *GBC) Draw() []uint8 { return g.video.Display().Pix }
 
 func (g *GBC) handleJoypad() {
-	pad := g.Config.Joypad
-	result := g.joypad.Input(pad.A, pad.B, pad.Start, pad.Select, pad.Threshold)
-	if result != 0 {
-		switch result {
-		case joypad.Pressed: // Joypad Interrupt
-			if g.Reg.IME && util.Bit(g.loadIO(IEIO), 4) {
-				g.IO[IFIO] = util.SetBit8(g.IO[IFIO], 4, true)
-			}
+	pressed := g.joypad.Input()
+	if pressed {
+		if g.Reg.IME && util.Bit(g.loadIO(IEIO), 4) {
+			g.IO[IFIO] = util.SetBit8(g.IO[IFIO], 4, true)
 		}
 	}
 }
