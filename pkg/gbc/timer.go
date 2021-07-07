@@ -104,7 +104,7 @@ func (t *Timer) divReset() {
 
 	t.p.IO[DIVIO] = 0
 	t.internalDiv = 0
-	t.nextDiv = GB_DMG_DIV_PERIOD >> util.Bool2U32(t.p.doubleSpeed) // 16 or 32 -> 1/16384 sec or 1/32768 sec
+	t.nextDiv = GB_DMG_DIV_PERIOD >> util.Bool2U32(t.p.doubleSpeed) // 16 or 8 -> 1/16384 sec or 1/32768 sec
 	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
 }
 
