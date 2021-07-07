@@ -45,11 +45,11 @@ const (
 func (g *GBC) resetIO() {
 	model := g.video.Renderer.Model
 
-	g.IO[DIVIO] = 0x1e
+	g.storeIO(DIVIO, 0x1e)
 	g.IO[TIMAIO] = 0x00
-	g.IO[TMAIO] = 0x00
-	g.IO[TACIO] = 0xf8
-	g.IO[IFIO] = 0xe1
+	g.storeIO(TMAIO, 0x00)
+	g.storeIO(TACIO, 0xf8)
+	g.storeIO(IFIO, 0xe1)
 	g.IO[0x10] = 0x80
 	g.IO[0x11] = 0xbf
 	g.IO[0x12] = 0xf3
