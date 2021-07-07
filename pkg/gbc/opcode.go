@@ -260,16 +260,15 @@ func halt(g *GBC, _, _ int) {
 // stop GBC
 func stop(g *GBC, _, _ int) {
 	g.Reg.PC += 2
-	KEY1 := g.loadIO(KEY1IO)
-	if util.Bit(KEY1, 0) {
-		if util.Bit(KEY1, 7) {
-			KEY1 = 0x00
-			g.doubleSpeed = false
-		} else {
-			KEY1 = 0x80
-			g.doubleSpeed = true
+	if g.model >= util.GB_MODEL_CGB && util.Bit(g.IO[KEY1IO], 0) {
+		g.doubleSpeed = !g.doubleSpeed
+		g.IO[KEY1IO] = 0
+		g.IO[KEY1IO] |= byte(util.Bool2Int(g.doubleSpeed)) << 7
+	} else {
+		sleep := ^(g.loadIO(JOYPIO) & 0x30)
+		if sleep > 0 {
+			fmt.Println("TODO: impl sleep on stop")
 		}
-		g.storeIO(KEY1IO, KEY1)
 	}
 }
 
