@@ -83,17 +83,19 @@ func (g *GBC) resetIO() {
 }
 
 func (g *GBC) loadIO(offset byte) (value byte) {
-	switch {
-	case offset == JOYPADIO:
+	switch offset {
+	case JOYPADIO:
 		value = g.joypad.Output()
-	case (offset >= 0x10 && offset <= 0x26) || (offset >= 0x30 && offset <= 0x3f): // sound IO
-		value = g.Sound.Read(offset)
-	case offset == LCDCIO:
+	case LCDCIO:
 		value = g.video.LCDC
-	case offset == LCDSTATIO:
+	case LCDSTATIO:
 		value = g.video.Stat
 	default:
-		value = g.IO[offset]
+		if (offset >= 0x10 && offset <= 0x26) || (offset >= 0x30 && offset <= 0x3f) {
+			value = g.Sound.Read(offset)
+		} else {
+			value = g.IO[offset]
+		}
 	}
 	return value
 }
