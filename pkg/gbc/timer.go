@@ -33,7 +33,7 @@ func (t *Timer) reset() {
 
 // mTimingTick
 func (t *Timer) tick(cycles uint32) {
-	t.p.Sound.Buffer(int(cycles), 1+util.Bool2Int(t.p.doubleSpeed))
+	t.p.Sound.Buffer(int(cycles))
 	t.p.scheduler.Add(uint64(cycles))
 	for {
 		if t.p.scheduler.Next() > t.p.scheduler.Cycle() {

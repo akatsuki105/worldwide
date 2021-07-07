@@ -98,11 +98,11 @@ func (a *APU) playSound(bufferSeconds int) {
 	}()
 }
 
-func (a *APU) Buffer(cpuTicks int, speed int) {
+func (a *APU) Buffer(cpuTicks int) {
 	if !a.playing {
 		return
 	}
-	a.tickCounter += float64(cpuTicks) / float64(speed)
+	a.tickCounter += float64(cpuTicks)
 	if a.tickCounter < cpuTicksPerSample {
 		return
 	}
