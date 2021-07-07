@@ -374,11 +374,13 @@ func (g *Video) WriteLCDC(value byte) {
 		g.descheduleEvent(scheduler.UpdateFrame)
 	}
 	if util.Bit(g.LCDC, Enable) && !util.Bit(value, Enable) {
+		modeEventName := [4]scheduler.EventName{scheduler.EndMode0, scheduler.EndMode1, scheduler.EndMode2, scheduler.EndMode3}[g.Mode()]
 		g.setMode(0)
 		g.Ly = 0
 		g.io[GB_REG_LY] = 0
 		g.Renderer.writePalette(0, Color(g.dmgPalette[0]))
 
+		g.descheduleEvent(modeEventName)
 		g.descheduleEvent(scheduler.UpdateFrame)
 		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
 	}
