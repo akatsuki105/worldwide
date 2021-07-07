@@ -29,9 +29,8 @@ func main() {
 // Run program
 func Run() int {
 	var (
-		showVersion  = flag.Bool("v", false, "show version")
-		debug        = flag.Bool("debug", false, "enable debug mode")
-		outputScreen = flag.String("test", "", "only CPU works and output screen map file")
+		showVersion = flag.Bool("v", false, "show version")
+		debug       = flag.Bool("debug", false, "enable debug mode")
 	)
 
 	flag.Parse()
@@ -56,17 +55,10 @@ func Run() int {
 		Rom: romDir,
 	}
 
-	test := *outputScreen != ""
 	os.Chdir(cur)
 	defer func() {
 		os.Chdir(cur)
 	}()
-
-	if test {
-		sec := 60
-		emu.GBC.DebugExec(30*sec, *outputScreen)
-		return ExitCodeOK
-	}
 
 	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowTitle("60fps")

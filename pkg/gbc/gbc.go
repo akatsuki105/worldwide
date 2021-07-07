@@ -30,7 +30,7 @@ type RAMBank struct {
 	Bank [16][0x2000]byte
 }
 
-// WRAMBank - 0xd000-0xdfff ゲームボーイカラーのみ
+// WRAMBank - 0xd000-0xdfff bank used on GBC only
 type WRAMBank struct {
 	ptr  uint8
 	bank [8][0x1000]byte
@@ -44,7 +44,6 @@ type Dma struct {
 type Hdma struct {
 	enable    bool
 	src, dest uint16
-	next      uint32
 	remaining int
 }
 
@@ -75,7 +74,6 @@ type GBC struct {
 	video       *video.Video
 	RTC         rtc.RTC
 	doubleSpeed bool
-	Debug       Debug
 	model       util.GBModel
 	irqPending  int
 	scheduler   *scheduler.Scheduler
