@@ -201,6 +201,7 @@ func (g *GBC) storeIO(offset byte, value byte) {
 	g.IO[offset] = value
 }
 
+// GBMemoryWriteHDMA5
 func (g *GBC) writeHDMA5(value byte) byte {
 	g.hdma.src = uint16(g.IO[HDMA1IO]) << 8
 	g.hdma.src |= uint16(g.IO[HDMA2IO])
