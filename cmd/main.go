@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"gbc/pkg/emulator"
+	"gbc/pkg/emulator/joypad"
 	"gbc/pkg/gbc"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
@@ -51,7 +52,7 @@ func Run() int {
 	}
 
 	emu := &emulator.Emulator{
-		GBC: gbc.New(romData),
+		GBC: gbc.New(romData, joypad.Handler),
 		Rom: romDir,
 	}
 

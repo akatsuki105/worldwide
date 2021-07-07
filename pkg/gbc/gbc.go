@@ -7,9 +7,9 @@ import (
 	"runtime"
 
 	"gbc/pkg/emulator/config"
-	"gbc/pkg/emulator/joypad"
 	"gbc/pkg/gbc/apu"
 	"gbc/pkg/gbc/cart"
+	"gbc/pkg/gbc/joypad"
 	"gbc/pkg/gbc/rtc"
 	"gbc/pkg/gbc/scheduler"
 	"gbc/pkg/gbc/video"
@@ -63,7 +63,7 @@ type GBC struct {
 	RAM       [0x10000]byte
 	IO        [0x100]byte // 0xff00-0xffff
 	Cartridge *cart.Cartridge
-	joypad    joypad.Joypad
+	joypad    *joypad.Joypad
 	halt      bool
 	Config    *config.Config
 	timer     *Timer
@@ -193,10 +193,11 @@ func (g *GBC) resetRegister() {
 	g.Reg.PC, g.Reg.SP = 0x0100, 0xfffe
 }
 
-func New(romData []byte) *GBC {
+func New(romData []byte, j [8](func() bool)) *GBC {
 	g := &GBC{
 		Cartridge: cart.New(romData),
 		scheduler: scheduler.New(),
+		joypad:    joypad.New(j),
 	}
 
 	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent)
