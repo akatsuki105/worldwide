@@ -44,13 +44,11 @@ func (g *GBC) Store8(addr uint16, value byte) {
 				newROMBankPtr := (upper2 << 5) | lower5
 				g.switchROMBank(newROMBankPtr)
 			case cart.MBC3:
-				if g.video.HBlankDMALength == 0 {
-					newROMBankPtr := value & 0x7f
-					if newROMBankPtr == 0 {
-						newROMBankPtr++
-					}
-					g.switchROMBank(newROMBankPtr)
+				newROMBankPtr := value & 0x7f
+				if newROMBankPtr == 0 {
+					newROMBankPtr++
 				}
+				g.switchROMBank(newROMBankPtr)
 			case cart.MBC5:
 				if addr < 0x3000 { // lower 8bit
 					g.switchROMBank(value)
@@ -70,7 +68,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 				}
 			case cart.MBC3:
 				switch {
-				case value <= 0x07 && g.video.HBlankDMALength == 0:
+				case value <= 0x07:
 					g.RTC.Mapped = 0
 					g.RAMBank.ptr = value
 				case value >= 0x08 && value <= 0x0c:

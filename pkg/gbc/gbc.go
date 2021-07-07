@@ -41,6 +41,13 @@ type Dma struct {
 	remaining int
 }
 
+type Hdma struct {
+	enable    bool
+	src, dest uint16
+	next      uint32
+	remaining int
+}
+
 const (
 	NoIRQ = iota
 	VBlankIRQ
@@ -73,6 +80,8 @@ type GBC struct {
 	irqPending  int
 	scheduler   *scheduler.Scheduler
 	dma         Dma
+	hdma        Hdma
+	cpuBlocked  bool
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -187,7 +196,7 @@ func (g *GBC) resetRegister() {
 // Init g and ram
 func (g *GBC) Init(debug bool, test bool) {
 	g.scheduler = scheduler.New()
-	g.video = video.New(&g.IO, g.updateIRQs, g.scheduler.ScheduleEvent)
+	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
@@ -360,7 +369,7 @@ func (g *GBC) handleJoypad() {
 func (g *GBC) Frame() int { return g.video.FrameCounter }
 
 // _GBMemoryDMAService
-func (g *GBC) DMAService() {
+func (g *GBC) dmaService() {
 	remaining := g.dma.remaining
 	g.dma.remaining = 0
 	b := g.Load8(g.dma.src)
@@ -370,7 +379,39 @@ func (g *GBC) DMAService() {
 	g.dma.remaining = remaining - 1
 	if g.dma.remaining > 0 {
 		after := 4 * (2 - util.Bool2U64(g.doubleSpeed))
-		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.DMAService, after)
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, after)
+	}
+}
+
+// _GBMemoryHDMAService
+func (g *GBC) hdmaService() {
+	g.cpuBlocked = true
+
+	b := g.Load8(g.hdma.src)
+	g.Store8(g.hdma.dest, b)
+
+	g.hdma.src++
+	g.hdma.dest++
+	g.hdma.remaining--
+
+	if g.hdma.remaining > 0 {
+		g.scheduler.DescheduleEvent(scheduler.HDMA)
+		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 4)
+		return
+	}
+
+	g.cpuBlocked = false
+	g.IO[HDMA1IO] = byte(g.hdma.src >> 8)
+	g.IO[HDMA2IO] = byte(g.hdma.src)
+	g.IO[HDMA3IO] = byte(g.hdma.dest >> 8)
+	g.IO[HDMA4IO] = byte(g.hdma.dest)
+	if g.hdma.enable {
+		g.IO[HDMA5IO]--
+		if g.IO[HDMA5IO] == 0xff {
+			g.hdma.enable = false
+		}
+	} else {
+		g.IO[HDMA5IO] = 0xff
 	}
 }
 
@@ -378,4 +419,13 @@ func (g *GBC) triggerIRQ(idx int) {
 	g.IO[IFIO] = util.SetBit8(g.IO[IFIO], idx, false)
 	g.pushPC()
 	g.Reg.PC = irqVec[idx]
+}
+
+func (g *GBC) hdmaMode3() {
+	if g.video.Ly < video.VERTICAL_PIXELS && g.hdma.enable && g.IO[HDMA5IO] != 0xff {
+		g.hdma.remaining = 0x10
+		g.cpuBlocked = true
+		g.scheduler.DescheduleEvent(scheduler.HDMA)
+		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 0)
+	}
 }

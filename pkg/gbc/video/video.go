@@ -23,8 +23,7 @@ type VRAM struct {
 type Video struct {
 	LCDC byte // LCD Control
 	VRAM
-	io              *[0x100]byte
-	HBlankDMALength int
+	io *[0x100]byte
 	Debug
 
 	X, Ly int
@@ -46,6 +45,7 @@ type Video struct {
 	updateIRQs                                func()
 
 	scheduleEvent func(name scheduler.EventName, callback func(), after uint64)
+	hdma          func()
 }
 
 var (
@@ -61,13 +61,14 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte, updateIRQs func(), scheduleEvent func(name scheduler.EventName, callback func(), after uint64)) *Video {
+func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name scheduler.EventName, callback func(), after uint64)) *Video {
 	g := &Video{
 		io:            io,
 		Oam:           NewOAM(),
 		dmgPalette:    defaultDmgPalette,
 		updateIRQs:    updateIRQs,
 		scheduleEvent: scheduleEvent,
+		hdma:          hdma,
 	}
 
 	g.Debug.On = false
@@ -318,6 +319,7 @@ func (g *Video) EndMode2() {
 func (g *Video) EndMode3() {
 	oldStat := g.Stat
 	g.ProcessDots(0)
+	g.hdma()
 	g.setMode(0)
 	g.scheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {

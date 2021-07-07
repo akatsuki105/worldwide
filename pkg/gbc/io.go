@@ -2,6 +2,7 @@ package gbc
 
 import (
 	"gbc/pkg/gbc/scheduler"
+	"gbc/pkg/gbc/video"
 	"gbc/pkg/util"
 )
 
@@ -129,7 +130,7 @@ func (g *GBC) storeIO(offset byte, value byte) {
 			base &= 0xdfff
 		}
 		g.scheduler.DescheduleEvent(scheduler.OAMDMA)
-		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.DMAService, 8*(2-util.Bool2U64(g.doubleSpeed)))
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, 8*(2-util.Bool2U64(g.doubleSpeed)))
 		g.dma.src = base
 		g.dma.dest = 0xFE00
 		g.dma.remaining = 0xa0
@@ -164,23 +165,7 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		g.video.SwitchBank(value)
 
 	case offset == HDMA5IO:
-		HDMA5 := value
-		mode := HDMA5 >> 7 // transfer mode
-		if g.video.HBlankDMALength > 0 && mode == 0 {
-			g.video.HBlankDMALength = 0
-			g.IO[HDMA5IO] |= 0x80
-		} else {
-			length := (int(HDMA5&0x7f) + 1) * 16 // transfer size
-
-			switch mode {
-			case 0: // generic dma
-				g.doVRAMDMATransfer(length)
-				g.IO[HDMA5IO] = 0xff // complete
-			case 1: // hblank dma
-				g.video.HBlankDMALength = int(HDMA5&0x7f) + 1
-				g.IO[HDMA5IO] &= 0x7f
-			}
-		}
+		value = g.writeHDMA5(value)
 
 	case offset == BCPSIO:
 		g.video.BcpIndex = int(value & 0x3f)
@@ -214,4 +199,31 @@ func (g *GBC) storeIO(offset byte, value byte) {
 	}
 
 	g.IO[offset] = value
+}
+
+func (g *GBC) writeHDMA5(value byte) byte {
+	g.hdma.src = uint16(g.IO[HDMA1IO]) << 8
+	g.hdma.src |= uint16(g.IO[HDMA2IO])
+	g.hdma.dest = uint16(g.IO[HDMA3IO]) << 8
+	g.hdma.dest |= uint16(g.IO[HDMA4IO])
+	g.hdma.src &= 0xfff0
+
+	g.hdma.dest &= 0x1ff0
+	g.hdma.dest |= 0x8000
+	wasHdma := g.hdma.enable
+	g.hdma.enable = value&0x80 > 0
+
+	if (!wasHdma && !g.hdma.enable) || (util.Bit(g.video.LCDC, video.Enable) && g.video.Mode() == 0) {
+		if g.hdma.enable {
+			g.hdma.remaining = 0x10
+		} else {
+			g.hdma.remaining = int(((value & 0x7F) + 1) * 0x10)
+		}
+		g.cpuBlocked = true
+		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 0)
+	} else if g.hdma.enable && !util.Bit(g.video.LCDC, video.Enable) {
+		return 0x80 | byte((value+1)&0x7f)
+	}
+
+	return value & 0x7f
 }
