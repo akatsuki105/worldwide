@@ -336,9 +336,8 @@ func (g *GBC) Draw() []uint8 { return g.video.Display().Pix }
 func (g *GBC) handleJoypad() {
 	pressed := g.joypad.Input()
 	if pressed {
-		if g.Reg.IME && util.Bit(g.loadIO(IEIO), 4) {
-			g.IO[IFIO] = util.SetBit8(g.IO[IFIO], 4, true)
-		}
+		g.IO[IFIO] = util.SetBit8(g.IO[IFIO], 4, true)
+		g.updateIRQs()
 	}
 }
 

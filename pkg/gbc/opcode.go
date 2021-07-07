@@ -2,6 +2,7 @@ package gbc
 
 import (
 	"fmt"
+	"gbc/pkg/gbc/scheduler"
 	"gbc/pkg/util"
 )
 
@@ -364,7 +365,10 @@ func retncc(g *GBC, cc, _ int) {
 // Return Interrupt
 func reti(g *GBC, operand1, operand2 int) {
 	g.popPC()
-	g.Reg.IME = true
+	g.scheduler.ScheduleEvent(scheduler.EiPending, func() {
+		g.Reg.IME = true
+		g.updateIRQs()
+	}, 4*(1+util.Bool2U64(g.doubleSpeed)))
 }
 
 func call(g *GBC, _, _ int) {
@@ -397,15 +401,19 @@ func callncc(g *GBC, cc, _ int) {
 // DI Disable Interrupt
 func di(g *GBC, _, _ int) {
 	g.Reg.IME = false
+	g.updateIRQs()
 	g.Reg.PC++
 }
 
 // EI Enable Interrupt
 func ei(g *GBC, _, _ int) {
 	// TODO ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
-	g.Reg.IME = true
-	g.updateIRQs()
 	g.Reg.PC++
+	g.scheduler.DescheduleEvent(scheduler.EiPending)
+	g.scheduler.ScheduleEvent(scheduler.EiPending, func() {
+		g.Reg.IME = true
+		g.updateIRQs()
+	}, 4*(1+util.Bool2U64(g.doubleSpeed)))
 }
 
 // CP Compare
