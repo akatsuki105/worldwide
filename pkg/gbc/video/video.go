@@ -349,7 +349,6 @@ func (g *Video) setMode(mode byte) {
 // GBVideoWriteLCDC
 func (g *Video) WriteLCDC(value byte) {
 	if !util.Bit(g.LCDC, Enable) && util.Bit(value, Enable) {
-		g.setMode(2)
 		g.Ly = 0
 		g.io[GB_REG_LY] = 0
 		oldStat := g.Stat

@@ -156,7 +156,6 @@ func (g *GBC) storeIO(offset byte, value byte) {
 	case offset == SCYIO || offset == SCXIO || offset == WYIO || offset == WXIO:
 		g.video.ProcessDots(0)
 		value = g.video.Renderer.WriteVideoRegister(offset, value)
-		g.IO[offset] = value
 
 	case offset == BGPIO || offset == OBP0IO || offset == OBP1IO:
 		g.video.ProcessDots(0)
