@@ -60,8 +60,8 @@ func (t *Timer) divIncrement() {
 		if t.timaPeriod > 0 && (t.internalDiv&(t.timaPeriod-1)) == (t.timaPeriod-1) {
 			t.p.IO[TIMAIO]++
 			if t.p.IO[TIMAIO] == 0 {
-				// overflow
-				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 0)
+				// overflow(4 cycles delay https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tima_reload.s)
+				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 4)
 			}
 		}
 
@@ -95,12 +95,6 @@ func (t *Timer) divReset() {
 	t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 	t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
 	t.divIncrement()
-	if ((t.internalDiv << 1) | (t.nextDiv>>((4-util.Bool2U32(t.p.doubleSpeed))&1))&t.timaPeriod) > 0 {
-		t.p.IO[TIMAIO]++
-		if t.p.IO[TIMAIO] == 0 {
-			t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 0)
-		}
-	}
 
 	t.p.IO[DIVIO] = 0
 	t.internalDiv = 0
