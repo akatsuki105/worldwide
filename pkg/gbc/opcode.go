@@ -368,7 +368,7 @@ func reti(g *GBC, operand1, operand2 int) {
 	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
 		g.Reg.IME = true
 		g.updateIRQs()
-	}, 4*(1+util.Bool2U64(g.doubleSpeed)))
+	}, 4>>util.Bool2U64(g.doubleSpeed))
 }
 
 func call(g *GBC, _, _ int) {
@@ -413,7 +413,7 @@ func ei(g *GBC, _, _ int) {
 	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
 		g.Reg.IME = true
 		g.updateIRQs()
-	}, 4*(1+util.Bool2U64(g.doubleSpeed)))
+	}, 4>>util.Bool2U64(g.doubleSpeed))
 }
 
 // CP Compare

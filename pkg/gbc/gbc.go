@@ -392,6 +392,7 @@ func (g *GBC) hdmaService(cyclesLate uint64) {
 
 func (g *GBC) triggerIRQ(idx int) {
 	g.IO[IFIO] = util.SetBit8(g.IO[IFIO], idx, false)
+	g.timer.tick(13)
 	g.pushPC()
 	g.Reg.PC = irqVec[idx]
 }
