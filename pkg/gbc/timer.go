@@ -44,7 +44,7 @@ func (t *Timer) tick(cycles uint32) {
 }
 
 // _GBTimerIRQ
-func (t *Timer) irq() {
+func (t *Timer) irq(cyclesLate uint64) {
 	t.p.IO[TIMAIO] = t.p.IO[TMAIO]
 	t.p.IO[IFIO] = util.SetBit8(t.p.IO[IFIO], 2, true)
 	t.p.updateIRQs()
@@ -72,8 +72,9 @@ func (t *Timer) divIncrement() {
 
 // _GBTimerUpdate (system count)
 // 1/16384 sec or 1/32768 sec
-func (t *Timer) update() {
+func (t *Timer) update(cyclesLate uint64) {
 	t.divIncrement()
+	t.nextDiv += uint32(cyclesLate)
 
 	// Batch div increments
 	divsToGo := 16 - (t.internalDiv & 15)
@@ -85,7 +86,7 @@ func (t *Timer) update() {
 		divsToGo = timaToGo
 	}
 	t.nextDiv = (GB_DMG_DIV_PERIOD * divsToGo) >> util.Bool2U32(t.p.doubleSpeed)
-	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
+	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv)-cyclesLate)
 }
 
 // GBTimerDivReset

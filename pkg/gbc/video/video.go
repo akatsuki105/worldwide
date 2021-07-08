@@ -44,7 +44,7 @@ type Video struct {
 	FrameCounter, frameskip, frameskipCounter int
 	updateIRQs                                func()
 
-	scheduleEvent   func(name scheduler.EventName, callback func(), after uint64)
+	scheduleEvent   func(name scheduler.EventName, callback func(cyclesLate uint64), after uint64)
 	descheduleEvent func(name scheduler.EventName)
 	hdma            func()
 }
@@ -62,7 +62,7 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name scheduler.EventName, callback func(), after uint64), descheduleEvent func(name scheduler.EventName)) *Video {
+func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name scheduler.EventName, callback func(cyclesLate uint64), after uint64), descheduleEvent func(name scheduler.EventName)) *Video {
 	g := &Video{
 		io:              io,
 		Oam:             NewOAM(),
@@ -230,7 +230,7 @@ func (g *Video) ProcessDots(cyclesLate uint32) {
 
 // mode0 = HBlank
 // 204 cycles
-func (g *Video) EndMode0() {
+func (g *Video) EndMode0(cyclesLate uint64) {
 	if g.frameskipCounter <= 0 {
 		g.Renderer.finishScanline(g.Ly)
 	}
@@ -272,7 +272,7 @@ func (g *Video) EndMode0() {
 }
 
 // mode1 = VBlank
-func (g *Video) EndMode1() {
+func (g *Video) EndMode1(cyclesLate uint64) {
 	if !util.Bit(g.LCDC, Enable) {
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
@@ -310,7 +310,7 @@ func (g *Video) EndMode1() {
 
 // mode2 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 80 cycles
-func (g *Video) EndMode2() {
+func (g *Video) EndMode2(cyclesLate uint64) {
 	oldStat := g.Stat
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
@@ -323,7 +323,7 @@ func (g *Video) EndMode2() {
 
 // mode3 = [mode0 -> mode2 -> mode3] -> [mode0 -> mode2 -> mode3] -> ...
 // 172 cycles
-func (g *Video) EndMode3() {
+func (g *Video) EndMode3(cyclesLate uint64) {
 	oldStat := g.Stat
 	g.ProcessDots(0)
 	g.hdma()
@@ -336,7 +336,7 @@ func (g *Video) EndMode3() {
 }
 
 // _updateFrameCount
-func (g *Video) updateFrameCount() {
+func (g *Video) updateFrameCount(cyclesLate uint64) {
 	if !util.Bit(g.LCDC, Enable) {
 		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
 	}

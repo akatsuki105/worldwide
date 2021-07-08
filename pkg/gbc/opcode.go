@@ -365,7 +365,7 @@ func retncc(g *GBC, cc, _ int) {
 // Return Interrupt
 func reti(g *GBC, operand1, operand2 int) {
 	g.popPC()
-	g.scheduler.ScheduleEvent(scheduler.EiPending, func() {
+	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
 		g.Reg.IME = true
 		g.updateIRQs()
 	}, 4*(1+util.Bool2U64(g.doubleSpeed)))
@@ -410,7 +410,7 @@ func ei(g *GBC, _, _ int) {
 	// TODO ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
 	g.Reg.PC++
 	g.scheduler.DescheduleEvent(scheduler.EiPending)
-	g.scheduler.ScheduleEvent(scheduler.EiPending, func() {
+	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
 		g.Reg.IME = true
 		g.updateIRQs()
 	}, 4*(1+util.Bool2U64(g.doubleSpeed)))

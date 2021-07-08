@@ -344,7 +344,7 @@ func (g *GBC) handleJoypad() {
 func (g *GBC) Frame() int { return g.video.FrameCounter }
 
 // _GBMemoryDMAService
-func (g *GBC) dmaService() {
+func (g *GBC) dmaService(cyclesLate uint64) {
 	remaining := g.dma.remaining
 	g.dma.remaining = 0
 	b := g.Load8(g.dma.src)
@@ -359,7 +359,7 @@ func (g *GBC) dmaService() {
 }
 
 // _GBMemoryHDMAService
-func (g *GBC) hdmaService() {
+func (g *GBC) hdmaService(cyclesLate uint64) {
 	g.cpuBlocked = true
 
 	b := g.Load8(g.hdma.src)
