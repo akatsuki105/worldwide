@@ -268,7 +268,7 @@ func (g *Video) EndMode0(cyclesLate uint64) {
 	}
 
 	g.updateIRQs()
-	g.scheduleEvent(name, callback, after)
+	g.scheduleEvent(name, callback, after-cyclesLate)
 }
 
 // mode1 = VBlank
@@ -288,16 +288,16 @@ func (g *Video) EndMode1(cyclesLate uint64) {
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
-		defer g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH)
+		defer g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH-cyclesLate)
 	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
-		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-8)
+		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-8-cyclesLate)
 	case VERTICAL_TOTAL_PIXELS - 1:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, 8)
+		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, 8-cyclesLate)
 	default:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH)
+		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-cyclesLate)
 	}
 
 	oldStat := g.Stat
@@ -314,7 +314,7 @@ func (g *Video) EndMode2(cyclesLate uint64) {
 	oldStat := g.Stat
 	g.X = -(int(g.Renderer.scx) & 7)
 	g.setMode(3)
-	g.scheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH)
+	g.scheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -328,7 +328,7 @@ func (g *Video) EndMode3(cyclesLate uint64) {
 	g.ProcessDots(0)
 	g.hdma()
 	g.setMode(0)
-	g.scheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH)
+	g.scheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
