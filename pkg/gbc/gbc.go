@@ -71,7 +71,7 @@ type GBC struct {
 	WRAMBank
 	bankMode    uint
 	sound       *apu.APU
-	video       *video.Video
+	Video       *video.Video
 	RTC         rtc.RTC
 	doubleSpeed bool
 	model       util.GBModel
@@ -198,7 +198,7 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 		joypad:    joypad.New(j),
 	}
 
-	g.video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent, g.scheduler.DescheduleEvent)
+	g.Video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent, g.scheduler.DescheduleEvent)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
@@ -219,7 +219,7 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 	// Init RTC
 	go g.RTC.Init()
 
-	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.video.EndMode2, video.MODE_2_LENGTH)
+	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.Video.EndMode2, video.MODE_2_LENGTH)
 
 	g.TransferROM(romData)
 	return g
@@ -282,7 +282,7 @@ func (g *GBC) Update() error {
 		g.handleJoypad()
 	}
 
-	for frame == g.video.FrameCounter {
+	for frame == g.Video.FrameCounter {
 		g.step()
 	}
 	return nil
@@ -304,7 +304,7 @@ func (g *GBC) PanicHandler(place string, stack bool) {
 
 func (g *GBC) setModel(m util.GBModel) {
 	g.model = m
-	g.video.Renderer.Model = m
+	g.Video.Renderer.Model = m
 }
 
 func (g *GBC) updateIRQs() {
@@ -331,7 +331,7 @@ func (g *GBC) updateIRQs() {
 	}
 }
 
-func (g *GBC) Draw() []uint8 { return g.video.Display().Pix }
+func (g *GBC) Draw() []uint8 { return g.Video.Display().Pix }
 
 func (g *GBC) handleJoypad() {
 	pressed := g.joypad.Input()
@@ -341,7 +341,7 @@ func (g *GBC) handleJoypad() {
 	}
 }
 
-func (g *GBC) Frame() int { return g.video.FrameCounter }
+func (g *GBC) Frame() int { return g.Video.FrameCounter }
 
 // _GBMemoryDMAService
 func (g *GBC) dmaService(cyclesLate uint64) {
@@ -398,7 +398,7 @@ func (g *GBC) triggerIRQ(idx int) {
 }
 
 func (g *GBC) hdmaMode3() {
-	if g.video.Ly < video.VERTICAL_PIXELS && g.hdma.enable && g.IO[HDMA5IO] != 0xff {
+	if g.Video.Ly < video.VERTICAL_PIXELS && g.hdma.enable && g.IO[HDMA5IO] != 0xff {
 		g.hdma.remaining = 0x10
 		g.cpuBlocked = true
 		g.scheduler.DescheduleEvent(scheduler.HDMA)

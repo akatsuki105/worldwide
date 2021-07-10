@@ -43,7 +43,7 @@ const (
 )
 
 func (g *GBC) resetIO() {
-	model := g.video.Renderer.Model
+	model := g.Video.Renderer.Model
 
 	g.storeIO(DIVIO, 0x1e)
 	g.IO[TIMAIO] = 0x00
@@ -88,9 +88,9 @@ func (g *GBC) loadIO(offset byte) (value byte) {
 	case JOYPIO:
 		value = g.joypad.Output()
 	case LCDCIO:
-		value = g.video.LCDC
+		value = g.Video.LCDC
 	case LCDSTATIO:
-		value = g.video.Stat
+		value = g.Video.Stat
 	default:
 		if (offset >= 0x10 && offset <= 0x26) || (offset >= 0x30 && offset <= 0x3f) {
 			value = g.sound.Read(offset)
@@ -143,46 +143,46 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		g.sound.WriteWaveform(offset, value)
 
 	case offset == LCDCIO:
-		g.video.ProcessDots(0)
-		g.video.Renderer.WriteVideoRegister(offset, value)
-		g.video.WriteLCDC(value)
+		g.Video.ProcessDots(0)
+		g.Video.Renderer.WriteVideoRegister(offset, value)
+		g.Video.WriteLCDC(value)
 
 	case offset == LCDSTATIO:
-		g.video.WriteSTAT(value)
+		g.Video.WriteSTAT(value)
 
 	case offset == LYCIO:
-		g.video.WriteLYC(value)
+		g.Video.WriteLYC(value)
 
 	case offset == SCYIO || offset == SCXIO || offset == WYIO || offset == WXIO:
-		g.video.ProcessDots(0)
-		value = g.video.Renderer.WriteVideoRegister(offset, value)
+		g.Video.ProcessDots(0)
+		value = g.Video.Renderer.WriteVideoRegister(offset, value)
 
 	case offset == BGPIO || offset == OBP0IO || offset == OBP1IO:
-		g.video.ProcessDots(0)
-		g.video.WritePalette(offset, value)
+		g.Video.ProcessDots(0)
+		g.Video.WritePalette(offset, value)
 
 	// below case statements, gbc only
 	case offset == VBKIO: // switch vram bank
-		g.video.SwitchBank(value)
+		g.Video.SwitchBank(value)
 
 	case offset == HDMA5IO:
 		value = g.writeHDMA5(value)
 
 	case offset == BCPSIO:
-		g.video.BcpIndex = int(value & 0x3f)
-		g.video.BcpIncrement = int(value & 0x80)
-		g.IO[BCPDIO] = byte(g.video.Palette[g.video.BcpIndex>>1] >> (8 * (g.video.BcpIndex & 1)))
+		g.Video.BcpIndex = int(value & 0x3f)
+		g.Video.BcpIncrement = int(value & 0x80)
+		g.IO[BCPDIO] = byte(g.Video.Palette[g.Video.BcpIndex>>1] >> (8 * (g.Video.BcpIndex & 1)))
 
 	case offset == OCPSIO:
-		g.video.OcpIndex = int(value & 0x3f)
-		g.video.OcpIncrement = int(value & 0x80)
-		g.IO[OCPDIO] = byte(g.video.Palette[8*4+(g.video.OcpIndex>>1)] >> (8 * (g.video.OcpIndex & 1)))
+		g.Video.OcpIndex = int(value & 0x3f)
+		g.Video.OcpIncrement = int(value & 0x80)
+		g.IO[OCPDIO] = byte(g.Video.Palette[8*4+(g.Video.OcpIndex>>1)] >> (8 * (g.Video.OcpIndex & 1)))
 
 	case offset == BCPDIO || offset == OCPDIO:
-		if g.video.Mode() != 3 {
-			g.video.ProcessDots(0)
+		if g.Video.Mode() != 3 {
+			g.Video.ProcessDots(0)
 		}
-		g.video.WritePalette(offset, value)
+		g.Video.WritePalette(offset, value)
 
 	case offset == SVBKIO: // switch wram bank
 		newWRAMBankPtr := value & 0x07
@@ -213,7 +213,7 @@ func (g *GBC) writeHDMA5(value byte) byte {
 	wasHdma := g.hdma.enable
 	g.hdma.enable = value&0x80 > 0
 
-	if (!wasHdma && !g.hdma.enable) || (util.Bit(g.video.LCDC, video.Enable) && g.video.Mode() == 0) {
+	if (!wasHdma && !g.hdma.enable) || (util.Bit(g.Video.LCDC, video.Enable) && g.Video.Mode() == 0) {
 		if g.hdma.enable {
 			g.hdma.remaining = 0x10
 		} else {
@@ -221,7 +221,7 @@ func (g *GBC) writeHDMA5(value byte) byte {
 		}
 		g.cpuBlocked = true
 		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 0)
-	} else if g.hdma.enable && !util.Bit(g.video.LCDC, video.Enable) {
+	} else if g.hdma.enable && !util.Bit(g.Video.LCDC, video.Enable) {
 		return 0x80 | byte((value+1)&0x7f)
 	}
 

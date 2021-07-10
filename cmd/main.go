@@ -49,7 +49,7 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	emu := emulator.New(romData, joypad.Handler, romDir)
+	emu := emulator.New(romData, joypad.Handler, romDir, false)
 
 	os.Chdir(cur)
 	defer func() {

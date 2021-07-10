@@ -10,7 +10,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case addr >= 0x4000 && addr < 0x8000: // rom bank
 		value = g.ROMBank.bank[g.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000: // vram bank
-		value = g.video.VRAM.Buffer[addr-0x8000+(0x2000*g.video.VRAM.Bank)]
+		value = g.Video.VRAM.Buffer[addr-0x8000+(0x2000*g.Video.VRAM.Bank)]
 	case addr >= 0xa000 && addr < 0xc000: // rtc or ram bank
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))
@@ -20,7 +20,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
 		value = g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000]
 	case addr >= 0xfe00 && addr <= 0xfe9f:
-		value = g.video.Oam.Get(addr - 0xfe00)
+		value = g.Video.Oam.Get(addr - 0xfe00)
 	case addr >= 0xff00:
 		value = g.loadIO(byte(addr))
 	default:
@@ -97,7 +97,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 	} else {
 		switch {
 		case addr >= 0x8000 && addr < 0xa000: // vram
-			g.video.VRAM.Buffer[addr-0x8000+(0x2000*g.video.VRAM.Bank)] = value
+			g.Video.VRAM.Buffer[addr-0x8000+(0x2000*g.Video.VRAM.Bank)] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
 				g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000] = value
@@ -107,7 +107,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 		case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram
 			g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000] = value
 		case addr >= 0xfe00 && addr <= 0xfe9f:
-			g.video.Oam.Set(addr-0xfe00, value)
+			g.Video.Oam.Set(addr-0xfe00, value)
 		case addr >= 0xff00:
 			g.storeIO(byte(addr), value)
 		default:
