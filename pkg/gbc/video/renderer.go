@@ -338,7 +338,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 	}
 
 	x := 0
-	if ((startX + sx) & 7) != 0 {
+	if ((startX + sx) & 7) > 0 {
 		startX2 := startX + 8 - ((startX + sx) & 7)
 		for x := startX; x < startX2; x++ {
 			localData := vramIdx
@@ -376,7 +376,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 			}
 			tileDataLower := r.g.VRAM.Buffer[localData+(bgTile*8+localY)*2]
 			tileDataUpper := r.g.VRAM.Buffer[localData+(bgTile*8+localY)*2+1]
-			tileDataLower >>= bottomX
+			tileDataUpper >>= bottomX
 			tileDataLower >>= bottomX
 			r.row[x] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)
 		}
