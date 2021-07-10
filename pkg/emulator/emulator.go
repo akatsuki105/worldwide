@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"fmt"
+	"gbc/pkg/emulator/debug"
 	"gbc/pkg/gbc"
 	"io/ioutil"
 	"os"
@@ -15,15 +16,18 @@ var (
 )
 
 type Emulator struct {
-	GBC   *gbc.GBC
-	Rom   string
-	frame int
+	GBC      *gbc.GBC
+	Rom      string
+	debugger *debug.Debugger
+	frame    int
 }
 
 func New(romData []byte, j [8](func() bool), romDir string) *Emulator {
+	g := gbc.New(romData, j)
 	return &Emulator{
-		GBC: gbc.New(romData, j),
-		Rom: romDir,
+		GBC:      g,
+		Rom:      romDir,
+		debugger: debug.New(g),
 	}
 }
 
