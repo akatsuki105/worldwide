@@ -183,9 +183,10 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		if util.Bit(r.g.LCDC, Window) && wy == y && wx <= endX {
 			r.hasWindow = true
 		}
+		scx, scy := int(r.g.io[GB_REG_SCX]), int(r.g.io[GB_REG_SCY])
 		if util.Bit(r.g.LCDC, Window) && r.hasWindow && wx <= endX && !r.disableWIN {
 			if wx > 0 && !r.disableBG {
-				r.drawBackground(mapIdx, startX, wx, int(r.g.io[GB_REG_SCX]), int(r.g.io[GB_REG_SCY])+y, r.highlightBG)
+				r.drawBackground(mapIdx, startX, wx, scx, scy+y, r.highlightBG)
 			}
 
 			mapIdx = GB_BASE_MAP
@@ -194,7 +195,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			}
 			r.drawBackground(mapIdx, wx, endX, -wx, y-wy, r.highlightWIN)
 		} else if !r.disableBG {
-			r.drawBackground(mapIdx, startX, endX, int(r.g.io[GB_REG_SCX]), int(r.g.io[GB_REG_SCY])+y, r.highlightBG)
+			r.drawBackground(mapIdx, startX, endX, scx, scy+y, r.highlightBG)
 		}
 	} else if !r.disableBG {
 		for x := startX; x < endX; x++ {
