@@ -24,7 +24,6 @@ type Video struct {
 	LCDC byte // LCD Control
 	VRAM
 	io *[0x100]byte
-	Debug
 
 	X, Ly int
 	Stat  byte // LCD Status
@@ -73,7 +72,6 @@ func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name sched
 		hdma:            hdma,
 	}
 
-	g.Debug.On = false
 	g.Renderer = NewRenderer(g)
 	g.Reset()
 	return g

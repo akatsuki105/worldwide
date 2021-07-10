@@ -14,7 +14,6 @@ type Cartridge struct {
 	IsCGB                  bool // gameboy color ROM is true
 	Type, ROMSize, RAMSize uint8
 	MBC                    int
-	Debug                  *Debug
 }
 
 // Parse - load cartridge info from byte slice
@@ -32,7 +31,5 @@ func New(rom []byte) *Cartridge {
 	cart.Type = uint8(rom[0x0147])
 	cart.ROMSize = uint8(rom[0x0148])
 	cart.RAMSize = uint8(rom[0x0149])
-
-	cart.Debug = cart.newDebug()
 	return cart
 }
