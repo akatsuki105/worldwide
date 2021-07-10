@@ -36,12 +36,9 @@ type Renderer struct {
 	obj                 [MAX_LINE_OBJ]Sprite
 	objMax              int
 
-	objOffsetX, objOffsetY, offsetScx, offsetScy, offsetWx, offsetWy int16
-
 	sgbBorders    bool
 	sgbRenderMode int
 	sgbAttributes []byte
-	sgbTransfer   int
 }
 
 func NewRenderer(g *Video) *Renderer {
@@ -188,16 +185,16 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 		if util.Bit(r.g.LCDC, Window) && r.hasWindow && wx <= endX && !r.disableWIN {
 			if wx > 0 && !r.disableBG {
-				r.drawBackground(mapIdx, startX, wx, int(r.g.io[GB_REG_SCX])-int(r.offsetScx), int(r.g.io[GB_REG_SCY])+y-int(r.offsetScy), r.highlightBG)
+				r.drawBackground(mapIdx, startX, wx, int(r.g.io[GB_REG_SCX]), int(r.g.io[GB_REG_SCY])+y, r.highlightBG)
 			}
 
 			mapIdx = GB_BASE_MAP
 			if util.Bit(r.g.LCDC, WindowTileMap) {
 				mapIdx += GB_SIZE_MAP // 0x9c00
 			}
-			r.drawBackground(mapIdx, wx, endX, -wx-int(r.offsetWx), y-wy-int(r.offsetWy), r.highlightWIN)
+			r.drawBackground(mapIdx, wx, endX, -wx, y-wy, r.highlightWIN)
 		} else if !r.disableBG {
-			r.drawBackground(mapIdx, startX, endX, int(r.g.io[GB_REG_SCX])-int(r.offsetScx), int(r.g.io[GB_REG_SCY])+y-int(r.offsetScy), r.highlightBG)
+			r.drawBackground(mapIdx, startX, endX, int(r.g.io[GB_REG_SCX]), int(r.g.io[GB_REG_SCY])+y, r.highlightBG)
 		}
 	} else if !r.disableBG {
 		for x := startX; x < endX; x++ {
@@ -444,7 +441,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 
 // GBVideoSoftwareRendererDrawObj
 func (r *Renderer) drawObj(obj Sprite, startX, endX, y int) {
-	objX := int(obj.obj.x) + int(r.objOffsetX)
+	objX := int(obj.obj.x)
 	ix := objX - 8
 	if endX < ix || startX >= ix+8 {
 		return
@@ -461,7 +458,7 @@ func (r *Renderer) drawObj(obj Sprite, startX, endX, y int) {
 
 	vramIdx := 0x0
 	tileOffset, bottomY := 0, 0
-	objY := int(obj.obj.y) + int(r.objOffsetY)
+	objY := int(obj.obj.y)
 	if util.Bit(obj.obj.attr, ObjAttrYFlip) {
 		bottomY = 7 - ((y - objY - 16) & 7)
 		if util.Bit(r.g.LCDC, ObjSize) && y-objY < -8 {
