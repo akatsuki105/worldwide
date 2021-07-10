@@ -10,7 +10,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 	case addr >= 0x4000 && addr < 0x8000: // rom bank
 		value = g.ROMBank.bank[g.ROMBank.ptr][addr-0x4000]
 	case addr >= 0x8000 && addr < 0xa000: // vram bank
-		value = g.video.VRAM.Buffer[addr-0x8000+0x2000*g.video.VRAM.Bank]
+		value = g.video.VRAM.Buffer[addr-0x8000+(0x2000*g.video.VRAM.Bank)]
 	case addr >= 0xa000 && addr < 0xc000: // rtc or ram bank
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))

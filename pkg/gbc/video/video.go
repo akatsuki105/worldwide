@@ -16,7 +16,7 @@ var defaultDmgPalette = [12]uint16{0x7fff, 0x56b5, 0x294a, 0x0000, 0x7fff, 0x56b
 
 type VRAM struct {
 	Bank   uint16       // 0 or 1
-	Buffer [0x4000]byte // (0x8000-0x9fff)x2 (using bank on CGB)
+	Buffer [0x4000]byte // 0x4000 = (0x8000..0x9fff)x2 (using bank on CGB)
 }
 
 // Video processes graphics
