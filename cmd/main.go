@@ -29,7 +29,7 @@ func main() {
 func Run() int {
 	var (
 		showVersion = flag.Bool("v", false, "show version")
-		debug       = flag.Bool("debug", false, "enable debug mode")
+		isDebugMode = flag.Bool("d", false, "enable debug mode")
 	)
 
 	flag.Parse()
@@ -49,21 +49,12 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	emu := emulator.New(romData, joypad.Handler, romDir, false)
+	emu := emulator.New(romData, joypad.Handler, romDir, *isDebugMode)
 
 	os.Chdir(cur)
 	defer func() {
 		os.Chdir(cur)
 	}()
-
-	ebiten.SetWindowResizable(true)
-	ebiten.SetWindowTitle("60fps")
-
-	if *debug {
-		ebiten.SetWindowSize(1270, 740)
-	} else {
-		ebiten.SetWindowSize(160*2, 144*2)
-	}
 
 	emu.LoadSav()
 	if err := ebiten.RunGame(emu); err != nil {

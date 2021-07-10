@@ -53,7 +53,7 @@ func (t *Timer) irq(cyclesLate uint64) {
 // _GBTimerDivIncrement
 // 1/16384 sec or 1/32768 sec
 func (t *Timer) divIncrement() {
-	tMultiplier := util.Bool2U32(t.p.doubleSpeed)
+	tMultiplier := util.Bool2U32(t.p.DoubleSpeed)
 	for t.nextDiv >= GB_DMG_DIV_PERIOD>>tMultiplier {
 		t.nextDiv -= GB_DMG_DIV_PERIOD >> tMultiplier
 
@@ -85,7 +85,7 @@ func (t *Timer) update(cyclesLate uint64) {
 	if timaToGo < divsToGo {
 		divsToGo = timaToGo
 	}
-	t.nextDiv = (GB_DMG_DIV_PERIOD * divsToGo) >> util.Bool2U32(t.p.doubleSpeed)
+	t.nextDiv = (GB_DMG_DIV_PERIOD * divsToGo) >> util.Bool2U32(t.p.DoubleSpeed)
 	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv)-cyclesLate)
 }
 
@@ -98,7 +98,7 @@ func (t *Timer) divReset() {
 
 	t.p.IO[DIVIO] = 0
 	t.internalDiv = 0
-	t.nextDiv = GB_DMG_DIV_PERIOD >> util.Bool2U32(t.p.doubleSpeed) // 16 or 8 -> 1/16384 sec or 1/32768 sec
+	t.nextDiv = GB_DMG_DIV_PERIOD >> util.Bool2U32(t.p.DoubleSpeed) // 16 or 8 -> 1/16384 sec or 1/32768 sec
 	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
 }
 
@@ -112,7 +112,7 @@ func (t *Timer) updateTAC(tac byte) byte {
 		timaLt := [4]uint32{1024 >> 4, 16 >> 4, 64 >> 4, 256 >> 4}
 		t.timaPeriod = timaLt[tac&0x3]
 
-		t.nextDiv += GB_DMG_DIV_PERIOD >> util.Bool2U32(t.p.doubleSpeed)
+		t.nextDiv += GB_DMG_DIV_PERIOD >> util.Bool2U32(t.p.DoubleSpeed)
 		t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv))
 	} else {
 		t.timaPeriod = 0

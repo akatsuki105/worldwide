@@ -111,10 +111,10 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		return
 
 	case offset == TIMAIO:
-		if value > 0 && g.scheduler.Until(scheduler.TimerIRQ) > (2-util.Bool2U64(g.doubleSpeed)) {
+		if value > 0 && g.scheduler.Until(scheduler.TimerIRQ) > (2-util.Bool2U64(g.DoubleSpeed)) {
 			g.scheduler.DescheduleEvent(scheduler.TimerIRQ)
 		}
-		if g.scheduler.Until(scheduler.TimerIRQ) == util.Bool2U64(g.doubleSpeed)-2 {
+		if g.scheduler.Until(scheduler.TimerIRQ) == util.Bool2U64(g.DoubleSpeed)-2 {
 			return
 		}
 
@@ -132,7 +132,7 @@ func (g *GBC) storeIO(offset byte, value byte) {
 			base &= 0xdfff
 		}
 		g.scheduler.DescheduleEvent(scheduler.OAMDMA)
-		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, 8*(2-util.Bool2U64(g.doubleSpeed)))
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, 8*(2-util.Bool2U64(g.DoubleSpeed)))
 		g.dma.src = base
 		g.dma.dest = 0xFE00
 		g.dma.remaining = 0xa0

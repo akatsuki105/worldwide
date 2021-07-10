@@ -73,7 +73,7 @@ type GBC struct {
 	sound       *apu.APU
 	Video       *video.Video
 	RTC         rtc.RTC
-	doubleSpeed bool
+	DoubleSpeed bool
 	model       util.GBModel
 	irqPending  int
 	scheduler   *scheduler.Scheduler
@@ -267,7 +267,7 @@ func (g *GBC) step() {
 				panic(errMsg)
 			}
 		}
-		cycle *= (4 >> uint32(util.Bool2U64(g.doubleSpeed)))
+		cycle *= (4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 	} else {
 		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
 	}
@@ -353,7 +353,7 @@ func (g *GBC) dmaService(cyclesLate uint64) {
 	g.dma.dest++
 	g.dma.remaining = remaining - 1
 	if g.dma.remaining > 0 {
-		after := 4 * (2 - util.Bool2U64(g.doubleSpeed))
+		after := 4 * (2 - util.Bool2U64(g.DoubleSpeed))
 		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, after)
 	}
 }
