@@ -27,9 +27,9 @@ type Renderer struct {
 	// CGB -> ???
 	lookup [64 * 3]byte
 
-	scy, scx, wy, wx, currentWy, currentWx byte
-	lastY, lastX                           int
-	hasWindow                              bool
+	wy, wx, currentWy, currentWx byte
+	lastY, lastX                 int
+	hasWindow                    bool
 
 	lastHighlightAmount byte
 	Model               util.GBModel
@@ -97,10 +97,6 @@ func (r *Renderer) WriteVideoRegister(offset byte, value byte) byte {
 	case GB_REG_LCDC:
 		r.g.LCDC = value
 		r.updateWindow(wasWindow, r.inWindow(), wy)
-	case GB_REG_SCY:
-		r.scy = value
-	case GB_REG_SCX:
-		r.scx = value
 	case GB_REG_WY:
 		r.wy = value
 		r.updateWindow(wasWindow, r.inWindow(), wy)
@@ -192,7 +188,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 		if util.Bit(r.g.LCDC, Window) && r.hasWindow && wx <= endX && !r.disableWIN {
 			if wx > 0 && !r.disableBG {
-				r.drawBackground(mapIdx, startX, wx, int(r.scx)-int(r.offsetScx), int(r.scy)+y-int(r.offsetScy), r.highlightBG)
+				r.drawBackground(mapIdx, startX, wx, int(r.g.io[GB_REG_SCX])-int(r.offsetScx), int(r.g.io[GB_REG_SCY])+y-int(r.offsetScy), r.highlightBG)
 			}
 
 			mapIdx = GB_BASE_MAP
@@ -201,7 +197,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			}
 			r.drawBackground(mapIdx, wx, endX, -wx-int(r.offsetWx), y-wy-int(r.offsetWy), r.highlightWIN)
 		} else if !r.disableBG {
-			r.drawBackground(mapIdx, startX, endX, int(r.scx)-int(r.offsetScx), int(r.scy)+y-int(r.offsetScy), r.highlightBG)
+			r.drawBackground(mapIdx, startX, endX, int(r.g.io[GB_REG_SCX])-int(r.offsetScx), int(r.g.io[GB_REG_SCY])+y-int(r.offsetScy), r.highlightBG)
 		}
 	} else if !r.disableBG {
 		for x := startX; x < endX; x++ {

@@ -218,7 +218,7 @@ func (g *Video) SwitchBank(value byte) {
 }
 
 // GBVideoProcessDots
-func (g *Video) ProcessDots(cyclesLate uint32) {
+func (g *Video) ProcessDots(cyclesLate uint64) {
 	if g.Mode() != 3 {
 		return
 	}
@@ -312,7 +312,7 @@ func (g *Video) EndMode1(cyclesLate uint64) {
 // 80 cycles
 func (g *Video) EndMode2(cyclesLate uint64) {
 	oldStat := g.Stat
-	g.X = -(int(g.Renderer.scx) & 7)
+	g.X = -(int(g.io[GB_REG_SCX]) & 7)
 	g.setMode(3)
 	g.scheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
@@ -325,7 +325,7 @@ func (g *Video) EndMode2(cyclesLate uint64) {
 // 172 cycles
 func (g *Video) EndMode3(cyclesLate uint64) {
 	oldStat := g.Stat
-	g.ProcessDots(0)
+	g.ProcessDots(cyclesLate)
 	g.hdma()
 	g.setMode(0)
 	g.scheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH-cyclesLate)
