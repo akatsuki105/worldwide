@@ -186,7 +186,10 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		scx, scy := int(r.g.io[GB_REG_SCX]), int(r.g.io[GB_REG_SCY])
 		if util.Bit(r.g.LCDC, Window) && r.hasWindow && wx <= endX && !r.disableWIN {
 			if wx > 0 && !r.disableBG {
+				// bg -> window
 				r.drawBackground(mapIdx, startX, wx, scx, scy+y, r.highlightBG)
+
+				// fallthrough and draw window
 			}
 
 			mapIdx = GB_BASE_MAP
