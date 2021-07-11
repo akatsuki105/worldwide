@@ -113,10 +113,7 @@ func op0xf8(g *GBC, operand1, operand2 int) {
 	value := int32(g.Reg.SP) + int32(delta)
 	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
 	g.Reg.setHL(uint16(value))
-	g.setF(flagZ, false)
-	g.setF(flagN, false)
-	g.setF(flagC, util.Bit(carryBits, 8))
-	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setZNHC(false, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 	g.Reg.PC += 2
 }
 
@@ -277,10 +274,8 @@ func stop(g *GBC, _, _ int) {
 func xor8(g *GBC, _, r8 int) {
 	value := g.Reg.R[A] ^ g.Reg.R[r8]
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+
+	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -288,10 +283,8 @@ func xor8(g *GBC, _, r8 int) {
 func xoraHL(g *GBC, _, _ int) {
 	value := g.Reg.R[A] ^ g.Load8(g.Reg.HL())
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+
+	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -300,10 +293,8 @@ func xoru8(g *GBC, _, _ int) {
 	value := g.Reg.R[A] ^ g.Load8(g.Reg.PC+1)
 	g.Reg.PC++
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+
+	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -924,16 +915,14 @@ func subu8(g *GBC, _, _ int) {
 func rra(g *GBC, _, _ int) {
 	carry := g.f(flagC)
 	regA := g.Reg.R[A]
-	g.setF(flagC, util.Bit(regA, 0))
+	newCarry := util.Bit(regA, 0)
 	if carry {
 		regA = (1 << 7) | (regA >> 1)
 	} else {
 		regA = (0 << 7) | (regA >> 1)
 	}
 	g.Reg.R[A] = regA
-	g.setF(flagZ, false)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
+	g.setZNHC(false, false, false, newCarry)
 	g.Reg.PC++
 }
 
