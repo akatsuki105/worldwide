@@ -1051,26 +1051,41 @@ func adc8(g *GBC, _, op int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) ADC(_, op2 int) {
+// ADC A,(HL)
+func adcaHL(g *GBC, _, _ int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if g.f(flagC) {
 		carry = 1
 	}
 
-	switch op2 {
-	case OP_HL_PAREN:
-		data := g.Load8(g.Reg.HL())
-		value = data + carry + g.Reg.R[A]
-		value4 = (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
-		value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
-	case OP_d8:
-		data := g.d8Fetch()
-		value = data + carry + g.Reg.R[A]
-		value4 = (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
-		value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
-		g.Reg.PC++
+	data := g.Load8(g.Reg.HL())
+	value = data + carry + g.Reg.R[A]
+	value4 = (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
+	value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
+
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, false)
+	g.setF(flagH, util.Bit(value4, 4))
+	g.setF(flagC, util.Bit(value16, 8))
+	g.Reg.PC++
+}
+
+// ADC A,u8
+func adcu8(g *GBC, _, _ int) {
+	var carry, value, value4 byte
+	var value16 uint16
+	if g.f(flagC) {
+		carry = 1
 	}
+
+	data := g.d8Fetch()
+	value = data + carry + g.Reg.R[A]
+	value4 = (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
+	value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
+	g.Reg.PC++
+
 	g.Reg.R[A] = value
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, false)

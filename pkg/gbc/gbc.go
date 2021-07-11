@@ -248,8 +248,6 @@ func (g *GBC) step() {
 			handler(g, operand1, operand2)
 		} else {
 			switch instruction {
-			case INS_ADC:
-				g.ADC(operand1, operand2)
 			case INS_SBC:
 				g.SBC(operand1, operand2)
 			default:
