@@ -28,6 +28,9 @@ func (e *Emulator) drawDebugScreen() *ebiten.Image {
 	// tile view
 	e.drawDebugTileView(screen)
 
+	// sprite view
+	e.drawDebugSpriteView(screen)
+
 	return screen
 }
 
@@ -84,4 +87,25 @@ func (e *Emulator) drawDebugTileView(screen *ebiten.Image) {
 		}
 		wg.Wait()
 	}
+}
+
+func (e *Emulator) drawDebugSpriteView(screen *ebiten.Image) {
+	ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+
+	buffers := e.debugger.SprView()
+	var wg sync.WaitGroup
+	wg.Add(40)
+	for i := 0; i < 40; i++ {
+		go func(i int) {
+			x, y := i&0x7, i/8
+			sprView := ebiten.NewImage(8, 8)
+			sprView.ReplacePixels(buffers[i][:])
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(4, 4)
+			op.GeoM.Translate(float64(750+x*48), float64(340+y*48))
+			screen.DrawImage(sprView, op)
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
 }

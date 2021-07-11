@@ -16,15 +16,24 @@ type Renderer struct {
 	highlightAmount                   byte
 
 	// GBVideoSoftwareRenderer
+	// palette -> row -> Lookup -> outputBuffer
 	outputBuffer       [256 * 256]Color
 	outputBufferStride int
 
-	row [HORIZONTAL_PIXELS + 8]uint16 // basically, 0 or 1 or 2 or 3
+	// each element represents palette color
+	// x = 0 or 1 or 2 or 3
+	// x -> BGP or BGP0
+	// 1*4 + x -> BGP1
+	// 2*4 + x -> BGP2
+	// ...
+	// 7*4 + x -> BGP7
+	// 8*4 + x -> OBP0
+	// 9*4 + x -> OBP1
+	row [HORIZONTAL_PIXELS + 8]uint16
 
 	palette [64 * 3]Color
 
-	// DMG -> basically, 0 or 1 or 2 or 3
-	// CGB -> ???
+	// palette color(row element) ->
 	Lookup [64 * 3]byte
 
 	wy, wx, currentWy, currentWx byte
@@ -432,7 +441,7 @@ func (r *Renderer) drawBackground(mapIdx, startX, endX, sx, sy int, highlight bo
 
 		tileDataLower := r.g.VRAM.Buffer[localData+(bgTile*8+localY)*2]
 		tileDataUpper := r.g.VRAM.Buffer[localData+(bgTile*8+localY)*2+1]
-		r.row[x+7] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1) // DMG -> 0 or 1 or 2 or 3
+		r.row[x+7] = p | uint16((tileDataUpper&1)<<1) | uint16(tileDataLower&1)
 		r.row[x+6] = p | uint16(tileDataUpper&2) | uint16((tileDataLower&2)>>1)
 		r.row[x+5] = p | uint16((tileDataUpper&4)>>1) | uint16((tileDataLower&4)>>2)
 		r.row[x+4] = p | uint16((tileDataUpper&8)>>2) | uint16((tileDataLower&8)>>3)

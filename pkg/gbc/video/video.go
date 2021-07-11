@@ -7,12 +7,23 @@ import (
 	"image/color"
 )
 
-// DMG -> Palette[i] = 0~3
-//
-// CGB -> Palette[i] = Bit0-4(R) | Bit5-9(G) | Bit10-14(B)
+// uint16 = Bit0-4(R) | Bit5-9(G) | Bit10-14(B)
 type Color uint16
 
-var defaultDmgPalette = [12]uint16{0x7fff, 0x56b5, 0x294a, 0x0000, 0x7fff, 0x56b5, 0x294a, 0x0000, 0x7fff, 0x56b5, 0x294a, 0x0000}
+var defaultDmgPalette = [12]Color{
+	0x7fff, // -> 0b11111, 0b11111, 0b11111 (white)
+	0x56b5, // -> 0b10101, 0b10101, 0b10101 (light gray)
+	0x294a, // -> 0b01010, 0b01010, 0b01010 (dark gray)
+	0x0000, // -> 0b00000, 0b00000, 0b00000 (black)
+	0x7fff,
+	0x56b5,
+	0x294a,
+	0x0000,
+	0x7fff,
+	0x56b5,
+	0x294a,
+	0x0000,
+}
 
 type VRAM struct {
 	Bank   uint16       // 0 or 1
@@ -37,7 +48,7 @@ type Video struct {
 	// 0xff6a
 	OcpIndex, OcpIncrement int
 
-	dmgPalette [12]uint16
+	dmgPalette [12]Color
 	Palette    [64]Color
 
 	FrameCounter, frameskip, frameskipCounter int
