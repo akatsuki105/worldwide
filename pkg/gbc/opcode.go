@@ -928,15 +928,11 @@ func rra(g *GBC, _, _ int) {
 
 // ADC Add the value n8 plus the carry flag to A
 func adc8(g *GBC, _, op int) {
-	var carry, value, value4 byte
-	var value16 uint16
-	if g.f(flagC) {
-		carry = 1
-	}
+	carry := util.Bool2U8(g.f(flagC))
 
-	value = g.Reg.R[op] + carry + g.Reg.R[A]
-	value4 = (g.Reg.R[op] & 0b1111) + carry + (g.Reg.R[A] & 0b1111)
-	value16 = uint16(g.Reg.R[op]) + uint16(carry) + uint16(g.Reg.R[A])
+	value := g.Reg.R[op] + carry + g.Reg.R[A]
+	value4 := (g.Reg.R[op] & 0b1111) + carry + (g.Reg.R[A] & 0b1111)
+	value16 := uint16(g.Reg.R[op]) + uint16(carry) + uint16(g.Reg.R[A])
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
@@ -945,11 +941,9 @@ func adc8(g *GBC, _, op int) {
 
 // ADC A,(HL)
 func adcaHL(g *GBC, _, _ int) {
-	var carry, value, value4 byte
+	var value, value4 byte
 	var value16 uint16
-	if g.f(flagC) {
-		carry = 1
-	}
+	carry := util.Bool2U8(g.f(flagC))
 
 	data := g.Load8(g.Reg.HL())
 	value = data + carry + g.Reg.R[A]
@@ -963,16 +957,12 @@ func adcaHL(g *GBC, _, _ int) {
 
 // ADC A,u8
 func adcu8(g *GBC, _, _ int) {
-	var carry, value, value4 byte
-	var value16 uint16
-	if g.f(flagC) {
-		carry = 1
-	}
+	carry := util.Bool2U8(g.f(flagC))
 
 	data := g.d8Fetch()
-	value = data + carry + g.Reg.R[A]
-	value4 = (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
-	value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
+	value := data + carry + g.Reg.R[A]
+	value4 := (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
+	value16 := uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
 	g.Reg.PC++
 
 	g.Reg.R[A] = value
@@ -983,15 +973,11 @@ func adcu8(g *GBC, _, _ int) {
 // SBC Subtract the value n8 and the carry flag from A
 
 func sbc8(g *GBC, _, op int) {
-	var carry, value, value4 byte
-	var value16 uint16
-	if g.f(flagC) {
-		carry = 1
-	}
+	carry := util.Bool2U8(g.f(flagC))
 
-	value = g.Reg.R[A] - (g.Reg.R[op] + carry)
-	value4 = (g.Reg.R[A] & 0b1111) - ((g.Reg.R[op] & 0b1111) + carry)
-	value16 = uint16(g.Reg.R[A]) - (uint16(g.Reg.R[op]) + uint16(carry))
+	value := g.Reg.R[A] - (g.Reg.R[op] + carry)
+	value4 := (g.Reg.R[A] & 0b1111) - ((g.Reg.R[op] & 0b1111) + carry)
+	value16 := uint16(g.Reg.R[A]) - (uint16(g.Reg.R[op]) + uint16(carry))
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
@@ -1000,16 +986,12 @@ func sbc8(g *GBC, _, op int) {
 
 // SBC A,(HL)
 func sbcaHL(g *GBC, _, _ int) {
-	var carry, value, value4 byte
-	var value16 uint16
-	if g.f(flagC) {
-		carry = 1
-	}
+	carry := util.Bool2U8(g.f(flagC))
 
 	data := g.Load8(g.Reg.HL())
-	value = g.Reg.R[A] - (data + carry)
-	value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
-	value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
+	value := g.Reg.R[A] - (data + carry)
+	value4 := (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+	value16 := uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
 
 	g.Reg.R[A] = value
 
@@ -1019,16 +1001,12 @@ func sbcaHL(g *GBC, _, _ int) {
 
 // SBC A,u8
 func sbcu8(g *GBC, _, _ int) {
-	var carry, value, value4 byte
-	var value16 uint16
-	if g.f(flagC) {
-		carry = 1
-	}
+	carry := util.Bool2U8(g.f(flagC))
 
 	data := g.d8Fetch()
-	value = g.Reg.R[A] - (data + carry)
-	value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
-	value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
+	value := g.Reg.R[A] - (data + carry)
+	value4 := (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+	value16 := uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
 	g.Reg.PC++
 
 	g.Reg.R[A] = value
