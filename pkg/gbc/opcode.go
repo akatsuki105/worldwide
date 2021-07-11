@@ -430,19 +430,23 @@ func cp(g *GBC, _, r8 int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) CP(operand1, operand2 int) {
-	var value, carryBits byte
-	switch operand1 {
-	case OP_d8:
-		value = g.Reg.R[A] - g.d8Fetch()
-		carryBits = g.Reg.R[A] ^ g.d8Fetch() ^ value
-		g.setCSub(g.Reg.R[A], g.d8Fetch())
-		g.Reg.PC++
-	case OP_HL_PAREN:
-		value = g.Reg.R[A] - g.Load8(g.Reg.HL())
-		carryBits = g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
-		g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
-	}
+// CP A,(HL)
+func cpaHL(g *GBC, _, _ int) {
+	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
+	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
+	g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, true)
+	g.setF(flagH, util.Bit(carryBits, 4))
+	g.Reg.PC++
+}
+
+// CP A,u8
+func cpu8(g *GBC, _, _ int) {
+	value := g.Reg.R[A] - g.d8Fetch()
+	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
+	g.setCSub(g.Reg.R[A], g.d8Fetch())
+	g.Reg.PC++
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
