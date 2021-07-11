@@ -31,7 +31,7 @@ type Renderer struct {
 	// 9*4 + x -> OBP1
 	row [HORIZONTAL_PIXELS + 8]uint16
 
-	palette [64 * 3]Color
+	Palette [64 * 3]Color
 
 	// palette color(Renderer.row element) -> Renderer.palette index
 	Lookup [64 * 3]byte
@@ -147,17 +147,17 @@ func (r *Renderer) writePalette(index int, value Color) {
 	color := value
 	if r.Model&util.GB_MODEL_SGB != 0 {
 		if index < 0x10 && index != 0 && (index&3) == 0 {
-			color = r.palette[0]
+			color = r.Palette[0]
 		} else if index >= PAL_SGB_BORDER && (index&0xf) == 0 {
-			color = r.palette[0]
+			color = r.Palette[0]
 		} else if index > PAL_HIGHLIGHT && index < PAL_HIGHLIGHT_OBJ && (index&3) == 0 {
-			color = r.palette[PAL_HIGHLIGHT_BG]
+			color = r.Palette[PAL_HIGHLIGHT_BG]
 		}
 	}
 
-	r.palette[index] = color
+	r.Palette[index] = color
 	if index < PAL_SGB_BORDER && (index < PAL_OBJ || (index&3) != 0) {
-		r.palette[index+PAL_HIGHLIGHT] = color
+		r.Palette[index+PAL_HIGHLIGHT] = color
 	}
 }
 
@@ -231,7 +231,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			if i >= PAL_OBJ && i&3 == 0 {
 				continue
 			}
-			r.palette[i+PAL_HIGHLIGHT] = r.palette[i]
+			r.Palette[i+PAL_HIGHLIGHT] = r.Palette[i]
 		}
 	}
 
@@ -251,7 +251,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			p <<= 2
 		}
 		for ; x < ((startX+7) & ^7) && x < endX; x++ {
-			row[x] = r.palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
+			row[x] = r.Palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
 		}
 
 		for ; x+7 < (endX & ^7); x += 8 {
@@ -261,14 +261,14 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 				p &= 3
 				p <<= 2
 			}
-			row[x+0] = r.palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
-			row[x+1] = r.palette[p|int(r.Lookup[r.row[x+1]&OBJ_PRIO_MASK])]
-			row[x+2] = r.palette[p|int(r.Lookup[r.row[x+2]&OBJ_PRIO_MASK])]
-			row[x+3] = r.palette[p|int(r.Lookup[r.row[x+3]&OBJ_PRIO_MASK])]
-			row[x+4] = r.palette[p|int(r.Lookup[r.row[x+4]&OBJ_PRIO_MASK])]
-			row[x+5] = r.palette[p|int(r.Lookup[r.row[x+5]&OBJ_PRIO_MASK])]
-			row[x+6] = r.palette[p|int(r.Lookup[r.row[x+6]&OBJ_PRIO_MASK])]
-			row[x+7] = r.palette[p|int(r.Lookup[r.row[x+7]&OBJ_PRIO_MASK])]
+			row[x+0] = r.Palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
+			row[x+1] = r.Palette[p|int(r.Lookup[r.row[x+1]&OBJ_PRIO_MASK])]
+			row[x+2] = r.Palette[p|int(r.Lookup[r.row[x+2]&OBJ_PRIO_MASK])]
+			row[x+3] = r.Palette[p|int(r.Lookup[r.row[x+3]&OBJ_PRIO_MASK])]
+			row[x+4] = r.Palette[p|int(r.Lookup[r.row[x+4]&OBJ_PRIO_MASK])]
+			row[x+5] = r.Palette[p|int(r.Lookup[r.row[x+5]&OBJ_PRIO_MASK])]
+			row[x+6] = r.Palette[p|int(r.Lookup[r.row[x+6]&OBJ_PRIO_MASK])]
+			row[x+7] = r.Palette[p|int(r.Lookup[r.row[x+7]&OBJ_PRIO_MASK])]
 		}
 		if (r.Model & util.GB_MODEL_SGB) != 0 {
 			p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
@@ -277,7 +277,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			p <<= 2
 		}
 		for ; x < endX; x++ {
-			row[x] = r.palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
+			row[x] = r.Palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
 		}
 	case 2:
 		for ; x < ((startX+7) & ^7) && x < endX; x++ {
@@ -298,20 +298,20 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 		}
 	case 3:
 		for ; x < ((startX+7) & ^7) && x < endX; x++ {
-			row[x] = r.palette[0]
+			row[x] = r.Palette[0]
 		}
 		for ; x+7 < (endX & ^7); x += 8 {
-			row[x] = r.palette[0]
-			row[x+1] = r.palette[0]
-			row[x+2] = r.palette[0]
-			row[x+3] = r.palette[0]
-			row[x+4] = r.palette[0]
-			row[x+5] = r.palette[0]
-			row[x+6] = r.palette[0]
-			row[x+7] = r.palette[0]
+			row[x] = r.Palette[0]
+			row[x+1] = r.Palette[0]
+			row[x+2] = r.Palette[0]
+			row[x+3] = r.Palette[0]
+			row[x+4] = r.Palette[0]
+			row[x+5] = r.Palette[0]
+			row[x+6] = r.Palette[0]
+			row[x+7] = r.Palette[0]
 		}
 		for ; x < endX; x++ {
-			row[x] = r.palette[0]
+			row[x] = r.Palette[0]
 		}
 	}
 }
@@ -637,10 +637,10 @@ func (r *Renderer) clearScreen() {
 	for y := 0; y < VERTICAL_PIXELS; y++ {
 		row := r.outputBuffer[r.outputBufferStride*y:]
 		for x := 0; x < HORIZONTAL_PIXELS; x += 4 {
-			row[x+0] = r.palette[0]
-			row[x+1] = r.palette[0]
-			row[x+2] = r.palette[0]
-			row[x+3] = r.palette[0]
+			row[x+0] = r.Palette[0]
+			row[x+1] = r.Palette[0]
+			row[x+2] = r.Palette[0]
+			row[x+3] = r.Palette[0]
 		}
 	}
 }

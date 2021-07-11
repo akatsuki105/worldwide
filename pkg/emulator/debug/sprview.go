@@ -22,8 +22,9 @@ func (d *Debugger) SprView() [40][64 * 4]byte {
 
 			for x := 0; x < 8; x++ {
 				b := 7 - x
-				palIdx := uint16(((tileDataUpper>>b)&0b1)<<1) | uint16((tileDataLower>>b)&1)
-				p := d.g.Video.Renderer.Lookup[video.PAL_OBJ+palIdx+3*util.Bool2U16(util.Bit(attr, 4))] & 0b11111
+				palIdx := uint16(((tileDataUpper>>b)&0b1)<<1) | uint16((tileDataLower>>b)&1) // 0 or 1 or 2 or 3
+				base := video.PAL_OBJ + 4*util.Bool2U16(util.Bit(attr, 4))                   // 8*4 or 9*4
+				p := d.g.Video.Renderer.Palette[d.g.Video.Renderer.Lookup[base+palIdx]]
 				buffer[i][(y*8+x)*4], buffer[i][(y*8+x)*4+1], buffer[i][(y*8+x)*4+2] = byte((p&0b11111)*8), byte(((p>>5)&0b11111)*8), byte(((p>>10)&0b11111)*8)
 			}
 		}
