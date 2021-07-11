@@ -106,9 +106,7 @@ func (r *Register) setHL(value uint16) {
 
 // flag
 
-func (g *GBC) setCSub(dst, src byte) {
-	g.setF(flagC, dst < uint8(dst-src))
-}
+func subC(dst, src byte) bool { return dst < uint8(dst-src) }
 
 func (g *GBC) f(idx int) bool {
 	return g.Reg.R[F]&(1<<idx) != 0

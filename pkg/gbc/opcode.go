@@ -422,11 +422,12 @@ func ei(g *GBC, _, _ int) {
 func cp(g *GBC, _, r8 int) {
 	value := g.Reg.R[A] - g.Reg.R[r8]
 	carryBits := g.Reg.R[A] ^ g.Reg.R[r8] ^ value
-	g.setCSub(g.Reg.R[A], g.Reg.R[r8])
+	newCarry := subC(g.Reg.R[A], g.Reg.R[r8])
 
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, newCarry)
 	g.Reg.PC++
 }
 
@@ -434,10 +435,11 @@ func cp(g *GBC, _, r8 int) {
 func cpaHL(g *GBC, _, _ int) {
 	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
 	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
-	g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
+	newCarry := subC(g.Reg.R[A], g.Load8(g.Reg.HL()))
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, newCarry)
 	g.Reg.PC++
 }
 
@@ -445,11 +447,12 @@ func cpaHL(g *GBC, _, _ int) {
 func cpu8(g *GBC, _, _ int) {
 	value := g.Reg.R[A] - g.d8Fetch()
 	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
-	g.setCSub(g.Reg.R[A], g.d8Fetch())
+	newCarry := subC(g.Reg.R[A], g.d8Fetch())
 	g.Reg.PC++
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, newCarry)
 	g.Reg.PC++
 }
 
@@ -893,11 +896,12 @@ func pop(g *GBC, r0, r1 int) {
 func sub8(g *GBC, _, r8 int) {
 	value := g.Reg.R[A] - g.Reg.R[r8]
 	carryBits := g.Reg.R[A] ^ g.Reg.R[r8] ^ value
-	g.setCSub(g.Reg.R[A], g.Reg.R[r8])
+	newCarry := subC(g.Reg.R[A], g.Reg.R[r8])
 	g.Reg.R[A] = value
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, newCarry)
 	g.Reg.PC++
 }
 
@@ -905,11 +909,12 @@ func sub8(g *GBC, _, r8 int) {
 func subaHL(g *GBC, _, _ int) {
 	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
 	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
-	g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
+	newCarry := subC(g.Reg.R[A], g.Load8(g.Reg.HL()))
 	g.Reg.R[A] = value
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, newCarry)
 	g.Reg.PC++
 }
 
@@ -917,11 +922,12 @@ func subaHL(g *GBC, _, _ int) {
 func subu8(g *GBC, _, _ int) {
 	value := g.Reg.R[A] - g.d8Fetch()
 	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
-	g.setCSub(g.Reg.R[A], g.d8Fetch())
+	newCarry := subC(g.Reg.R[A], g.d8Fetch())
 	g.Reg.R[A] = value
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
 	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, newCarry)
 	g.Reg.PC += 2
 }
 
