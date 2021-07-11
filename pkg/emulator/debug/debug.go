@@ -9,14 +9,12 @@ import (
 type Debugger struct {
 	Enable bool
 	g      *gbc.GBC
-	cart   *Cartridge
 }
 
 func New(enable bool, g *gbc.GBC) *Debugger {
 	return &Debugger{
 		Enable: enable,
 		g:      g,
-		cart:   newCart(g),
 	}
 }
 
@@ -49,5 +47,10 @@ SPD: %02x`, LCDC, STAT, DIV, LY, LYC, IE, IF, IME, spd)
 }
 
 func (d *Debugger) Cartridge() string {
-	return fmt.Sprintf("%v", d.cart)
+	result := fmt.Sprintf(`Cartridge
+Title: %s
+Cartridge Type: %s
+ROM Size: %s
+RAM Size: %s`, d.g.Cartridge.Title, cartType[d.g.Cartridge.Type], rom[d.g.Cartridge.ROMSize], ram[d.g.Cartridge.RAMSize])
+	return result
 }
