@@ -10,11 +10,19 @@ func (d *Debugger) SprView() [40][64 * 4]byte {
 
 	for i := 0; i < 40; i++ {
 		for j := 0; j < 64; j++ {
+			buffer[i][j*4] = 0xff
+			buffer[i][j*4+1] = 0xff
+			buffer[i][j*4+2] = 0xff
 			buffer[i][j*4+3] = 0xff
 		}
 
-		objTile := int(d.g.Video.Oam.Buffer[4*i+2])
-		attr := d.g.Video.Oam.Buffer[4*i+3]
+		y := int(d.g.Video.Oam.Get(4 * uint16(i)))
+		if y <= 0 || y >= 160 {
+			continue
+		}
+
+		objTile := int(d.g.Video.Oam.Get(4*uint16(i) + 2))
+		attr := d.g.Video.Oam.Get(4*uint16(i) + 3)
 
 		for y := 0; y < 8; y++ {
 			tileDataLower := d.g.Video.VRAM.Buffer[(objTile*8+y)*2]

@@ -8,6 +8,13 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
+var DEBUG_BG = [3]byte{35, 27, 167}
+
+const (
+	DEBUG_BG_X = 1080
+	DEBUG_BG_Y = 740
+)
+
 func (e *Emulator) drawDebugScreen() *ebiten.Image {
 	screen := ebiten.NewImage(DEBUG_BG_X, DEBUG_BG_Y)
 	screen.Fill(color.RGBA{DEBUG_BG[0], DEBUG_BG[1], DEBUG_BG[2], 0xff})
@@ -53,6 +60,15 @@ func (e *Emulator) drawDebugTileView(screen *ebiten.Image) {
 
 	// each row has 16 tiles
 	for b := 0; b < 2; b++ {
+		if b == 1 && !e.GBC.Cartridge.IsCGB {
+			tileView := ebiten.NewImage(8*TILE_PER_ROW, 8*384/TILE_PER_ROW)
+			tileView.Fill(color.RGBA{0xff, 0xff, 0xff, 0xff})
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(10+280), float64(340))
+			screen.DrawImage(tileView, op)
+		}
+
 		var wg sync.WaitGroup
 		wg.Add(384 / TILE_PER_ROW)
 		for row := 0; row < 384/TILE_PER_ROW; row++ {
@@ -90,7 +106,8 @@ func (e *Emulator) drawDebugTileView(screen *ebiten.Image) {
 }
 
 func (e *Emulator) drawDebugSpriteView(screen *ebiten.Image) {
-	ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", 750, 320)
+	startX := 570
+	ebitenutil.DebugPrintAt(screen, "OAM (Y, X, tile, attr)", startX, 320)
 
 	buffers := e.debugger.SprView()
 	var wg sync.WaitGroup
@@ -102,7 +119,7 @@ func (e *Emulator) drawDebugSpriteView(screen *ebiten.Image) {
 			sprView.ReplacePixels(buffers[i][:])
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Scale(4, 4)
-			op.GeoM.Translate(float64(750+x*48), float64(340+y*48))
+			op.GeoM.Translate(float64(startX+x*48), float64(340+y*48))
 			screen.DrawImage(sprView, op)
 			wg.Done()
 		}(i)

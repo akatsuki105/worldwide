@@ -9,13 +9,6 @@ import (
 	ebiten "github.com/hajimehoshi/ebiten/v2"
 )
 
-var DEBUG_BG = [3]byte{35, 27, 167}
-
-const (
-	DEBUG_BG_X = 1270
-	DEBUG_BG_Y = 740
-)
-
 var (
 	second = time.NewTicker(time.Second)
 )
