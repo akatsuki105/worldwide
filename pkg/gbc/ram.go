@@ -15,7 +15,7 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))
 		} else {
-			value = g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000]
+			value = g.RAMBank.Buffer[g.RAMBank.bank][addr-0xa000]
 		}
 
 	case addr >= 0xc000 && addr < 0xd000:
@@ -69,20 +69,19 @@ func (g *GBC) Store8(addr uint16, value byte) {
 					newROMBankPtr := (upper2 << 5) | lower5
 					g.switchROMBank(newROMBankPtr)
 				} else if g.bankMode == 1 { // switch RAMptr
-					newRAMBankPtr := value
-					g.RAMBank.ptr = newRAMBankPtr
+					g.RAMBank.bank = value
 				}
 			case cart.MBC3:
 				switch {
 				case value <= 0x07:
 					g.RTC.Mapped = 0
-					g.RAMBank.ptr = value
+					g.RAMBank.bank = value
 				case value >= 0x08 && value <= 0x0c:
 					g.RTC.Mapped = uint(value)
 				}
 			case cart.MBC5:
 				// fmt.Println(value)
-				g.RAMBank.ptr = value & 0x0f
+				g.RAMBank.bank = value & 0x0f
 			}
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch g.Cartridge.MBC {
@@ -106,7 +105,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 			g.Video.VRAM.Buffer[addr-0x8000+(0x2000*g.Video.VRAM.Bank)] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
-				g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000] = value
+				g.RAMBank.Buffer[g.RAMBank.bank][addr-0xa000] = value
 			} else {
 				g.RTC.Write(byte(g.RTC.Mapped), value)
 			}

@@ -24,10 +24,10 @@ type ROMBank struct {
 	bank [256][0x4000]byte
 }
 
-// RAMBank - 0xa000-0xbfff
-type RAMBank struct {
-	ptr  uint8
-	Bank [16][0x2000]byte
+// RAM - 0xa000-0xbfff
+type RAM struct {
+	bank   uint8
+	Buffer [16][0x2000]byte // num of banks changes depending on ROM
 }
 
 // WRAM
@@ -72,7 +72,7 @@ type GBC struct {
 	Config    *config.Config
 	timer     *Timer
 	ROMBank
-	RAMBank
+	RAMBank     RAM
 	WRAM        WRAM
 	bankMode    uint
 	sound       *apu.APU
