@@ -11,14 +11,19 @@ import (
 type Color uint16
 
 var defaultDmgPalette = [12]Color{
+	// BGP
 	0x7fff, // -> 0b11111, 0b11111, 0b11111 (white)
 	0x56b5, // -> 0b10101, 0b10101, 0b10101 (light gray)
 	0x294a, // -> 0b01010, 0b01010, 0b01010 (dark gray)
 	0x0000, // -> 0b00000, 0b00000, 0b00000 (black)
+
+	// OBP0
 	0x7fff,
 	0x56b5,
 	0x294a,
 	0x0000,
+
+	// OBP1
 	0x7fff,
 	0x56b5,
 	0x294a,

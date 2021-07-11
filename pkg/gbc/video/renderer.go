@@ -16,7 +16,7 @@ type Renderer struct {
 	highlightAmount                   byte
 
 	// GBVideoSoftwareRenderer
-	// palette -> row -> Lookup -> outputBuffer
+	// Renderer.row[i] -> Renderer.Lookup[i] -> Renderer.palette[i] -> outputBuffer
 	outputBuffer       [256 * 256]Color
 	outputBufferStride int
 
@@ -33,7 +33,7 @@ type Renderer struct {
 
 	palette [64 * 3]Color
 
-	// palette color(row element) ->
+	// palette color(Renderer.row element) -> Renderer.palette index
 	Lookup [64 * 3]byte
 
 	wy, wx, currentWy, currentWx byte
