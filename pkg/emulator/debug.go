@@ -48,23 +48,33 @@ func (e *Emulator) drawDebugTileView(screen *ebiten.Image) {
 	banks := e.debugger.TileView()
 
 	// each row has 16 tiles
-	for row := 0; row < 384/TILE_PER_ROW; row++ {
-		tileStart, tileEnd := row*TILE_PER_ROW, (row+1)*TILE_PER_ROW
-		tileView := ebiten.NewImage(8*TILE_PER_ROW, 8)
-		tileView.ReplacePixels(banks[0][tileStart*64*4 : tileEnd*64*4])
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(2, 2)
-		op.GeoM.Translate(float64(10), float64(340+row*16))
-		screen.DrawImage(tileView, op)
-	}
+	for b := 0; b < 2; b++ {
+		for row := 0; row < 384/TILE_PER_ROW; row++ {
+			rowStart, rowEnd := row*TILE_PER_ROW, (row+1)*TILE_PER_ROW
 
-	for row := 0; row < 384/TILE_PER_ROW; row++ {
-		tileStart, tileEnd := row*TILE_PER_ROW, (row+1)*TILE_PER_ROW
-		tileView := ebiten.NewImage(8*TILE_PER_ROW, 8)
-		tileView.ReplacePixels(banks[1][tileStart*64*4 : tileEnd*64*4])
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(2, 2)
-		op.GeoM.Translate(float64(290), float64(340+row*16))
-		screen.DrawImage(tileView, op)
+			rowView := ebiten.NewImage(8*TILE_PER_ROW, 8)      // [8x16, 8]
+			rowBuffer := banks[b][rowStart*64*4 : rowEnd*64*4] // 0..63, 0..63, 0..63, ..
+			newRowBuffer := make([]byte, TILE_PER_ROW*64*4)    // 0..7, 0..7, ... 8..15, 8..15,
+
+			for t := 0; t < TILE_PER_ROW; t++ {
+				rowBufferBase := t * 64 * 4
+				for y := 0; y < 8; y++ {
+					tileRowBuffer := rowBuffer[rowBufferBase+y*8*4 : rowBufferBase+(y+1)*8*4] // (y*8)..((y*8)+7)
+					for x := 0; x < 8; x++ {
+						idx := y*8*TILE_PER_ROW*4 + t*8*4 + x*4
+						newRowBuffer[idx] = tileRowBuffer[x*4]
+						newRowBuffer[idx+1] = tileRowBuffer[x*4+1]
+						newRowBuffer[idx+2] = tileRowBuffer[x*4+2]
+						newRowBuffer[idx+3] = tileRowBuffer[x*4+3]
+					}
+				}
+			}
+			rowView.ReplacePixels(newRowBuffer)
+
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(2, 2)
+			op.GeoM.Translate(float64(10+280*b), float64(340+row*16))
+			screen.DrawImage(rowView, op)
+		}
 	}
 }
