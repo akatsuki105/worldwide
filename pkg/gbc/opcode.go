@@ -990,27 +990,28 @@ func sub8(g *GBC, _, r8 int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) SUB(op1, _ int) {
-	switch op1 {
-	case OP_d8:
-		value := g.Reg.R[A] - g.d8Fetch()
-		carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
-		g.setCSub(g.Reg.R[A], g.d8Fetch())
-		g.Reg.R[A] = value
-		g.setF(flagZ, value == 0)
-		g.setF(flagN, true)
-		g.setF(flagH, util.Bit(carryBits, 4))
-		g.Reg.PC += 2
-	case OP_HL_PAREN:
-		value := g.Reg.R[A] - g.Load8(g.Reg.HL())
-		carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
-		g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
-		g.Reg.R[A] = value
-		g.setF(flagZ, value == 0)
-		g.setF(flagN, true)
-		g.setF(flagH, util.Bit(carryBits, 4))
-		g.Reg.PC++
-	}
+// SUB A,(HL)
+func subaHL(g *GBC, _, _ int) {
+	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
+	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
+	g.setCSub(g.Reg.R[A], g.Load8(g.Reg.HL()))
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, true)
+	g.setF(flagH, util.Bit(carryBits, 4))
+	g.Reg.PC++
+}
+
+// SUB A,u8
+func subu8(g *GBC, _, _ int) {
+	value := g.Reg.R[A] - g.d8Fetch()
+	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
+	g.setCSub(g.Reg.R[A], g.d8Fetch())
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, true)
+	g.setF(flagH, util.Bit(carryBits, 4))
+	g.Reg.PC += 2
 }
 
 // Rotate register A right through carry.
