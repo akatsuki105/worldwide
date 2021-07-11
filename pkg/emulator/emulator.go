@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"gbc/pkg/emulator/debug"
 	"gbc/pkg/gbc"
-	"image/color"
 	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 var DEBUG_BG = [3]byte{35, 27, 167}
@@ -65,7 +63,7 @@ func (e *Emulator) Update() error {
 
 func (e *Emulator) Draw(screen *ebiten.Image) {
 	if e.debugger.Enable {
-		screen.DrawImage(e.debugScreen(), nil)
+		screen.DrawImage(e.drawDebugScreen(), nil)
 		return
 	}
 
@@ -78,31 +76,4 @@ func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenH
 		return DEBUG_BG_X, DEBUG_BG_Y
 	}
 	return 160, 144
-}
-
-func (e *Emulator) debugScreen() *ebiten.Image {
-	screen := ebiten.NewImage(DEBUG_BG_X, DEBUG_BG_Y)
-	screen.Fill(color.RGBA{DEBUG_BG[0], DEBUG_BG[1], DEBUG_BG[2], 0xff})
-
-	gbcScreen := ebiten.NewImage(160, 144)
-	gbcScreen.ReplacePixels(e.GBC.Draw())
-	{
-		// debug screen
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(2, 2)
-		op.GeoM.Translate(float64(10), float64(25))
-		screen.DrawImage(ebiten.NewImageFromImage(gbcScreen), op)
-	}
-
-	// debug title
-	ebitenutil.DebugPrintAt(screen, "GameBoy screen", 10, 5)
-
-	// debug register
-	ebitenutil.DebugPrintAt(screen, e.debugger.Register(), 340, 5)
-	ebitenutil.DebugPrintAt(screen, e.debugger.IOMap(), 490, 5)
-
-	// debug cartridge
-	ebitenutil.DebugPrintAt(screen, e.debugger.Cartridge(), 680, 5)
-
-	return screen
 }
