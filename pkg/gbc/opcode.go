@@ -529,10 +529,7 @@ func addu8(g *GBC, _, _ int) {
 	value := uint16(g.Reg.R[A]) + uint16(g.d8Fetch())
 	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.d8Fetch()) ^ value
 	g.Reg.R[A] = byte(value)
-	g.setF(flagZ, byte(value) == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, util.Bit(carryBits, 8))
+	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 	g.Reg.PC += 2
 }
 
@@ -541,10 +538,7 @@ func addaHL(g *GBC, _, _ int) {
 	value := uint16(g.Reg.R[A]) + uint16(g.Load8(g.Reg.HL()))
 	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Load8(g.Reg.HL())) ^ value
 	g.Reg.R[A] = byte(value)
-	g.setF(flagZ, byte(value) == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, util.Bit(carryBits, 8))
+	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 	g.Reg.PC++
 }
 
@@ -554,10 +548,7 @@ func addSPi8(g *GBC, _, _ int) {
 	value := int32(g.Reg.SP) + int32(delta)
 	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
 	g.Reg.SP = uint16(value)
-	g.setF(flagZ, false)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, util.Bit(carryBits, 8))
+	g.setZNHC(false, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 	g.Reg.PC += 2
 }
 
@@ -590,10 +581,7 @@ func rlc(g *GBC, r8, _ int) {
 	value = util.SetLSB(value, bit7 != 0)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -606,10 +594,7 @@ func rlcHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -621,10 +606,7 @@ func rlca(g *GBC, _, _ int) {
 	value = util.SetLSB(value, bit7 != 0)
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, false)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(false, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -636,10 +618,7 @@ func rrc(g *GBC, r8, _ int) {
 	value = util.SetMSB(value, bit0 != 0)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit0 != 0)
+	g.setZNHC(value == 0, false, false, bit0 != 0)
 	g.Reg.PC++
 }
 
