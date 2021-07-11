@@ -234,7 +234,7 @@ func (g *GBC) step() {
 	PC := g.Reg.PC
 	bytecode := g.Load8(PC)
 	opcode := opcodes[bytecode]
-	instruction, operand1, operand2, cycle, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
+	operand1, operand2, cycle, handler := opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 
 	if !g.halt {
 		if g.irqPending > 0 {
@@ -244,17 +244,9 @@ func (g *GBC) step() {
 			g.updateIRQs()
 			g.triggerIRQ(int(oldIrqPending - 1))
 			return
-		} else if handler != nil {
-			handler(g, operand1, operand2)
-		} else {
-			switch instruction {
-			case INS_SBC:
-				g.SBC(operand1, operand2)
-			default:
-				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", g.Reg.PC, bytecode)
-				panic(errMsg)
-			}
 		}
+
+		handler(g, operand1, operand2)
 		cycle *= (4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 	} else {
 		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())

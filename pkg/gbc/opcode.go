@@ -1115,26 +1115,42 @@ func sbc8(g *GBC, _, op int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) SBC(_, op2 int) {
+// SBC A,(HL)
+func sbcaHL(g *GBC, _, _ int) {
 	var carry, value, value4 byte
 	var value16 uint16
 	if g.f(flagC) {
 		carry = 1
 	}
 
-	switch op2 {
-	case OP_HL_PAREN:
-		data := g.Load8(g.Reg.HL())
-		value = g.Reg.R[A] - (data + carry)
-		value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
-		value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
-	case OP_d8:
-		data := g.d8Fetch()
-		value = g.Reg.R[A] - (data + carry)
-		value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
-		value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
-		g.Reg.PC++
+	data := g.Load8(g.Reg.HL())
+	value = g.Reg.R[A] - (data + carry)
+	value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+	value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
+
+	g.Reg.R[A] = value
+
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, true)
+	g.setF(flagH, util.Bit(value4, 4))
+	g.setF(flagC, util.Bit(value16, 8))
+	g.Reg.PC++
+}
+
+// SBC A,u8
+func sbcu8(g *GBC, _, _ int) {
+	var carry, value, value4 byte
+	var value16 uint16
+	if g.f(flagC) {
+		carry = 1
 	}
+
+	data := g.d8Fetch()
+	value = g.Reg.R[A] - (data + carry)
+	value4 = (g.Reg.R[A] & 0b1111) - ((data & 0x0f) + carry)
+	value16 = uint16(g.Reg.R[A]) - (uint16(data) + uint16(carry))
+	g.Reg.PC++
+
 	g.Reg.R[A] = value
 
 	g.setF(flagZ, value == 0)
