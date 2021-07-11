@@ -973,10 +973,7 @@ func adcaHL(g *GBC, _, _ int) {
 	value16 = uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
 
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(value4, 4))
-	g.setF(flagC, util.Bit(value16, 8))
+	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
 	g.Reg.PC++
 }
 
@@ -995,10 +992,7 @@ func adcu8(g *GBC, _, _ int) {
 	g.Reg.PC++
 
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(value4, 4))
-	g.setF(flagC, util.Bit(value16, 8))
+	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
 	g.Reg.PC++
 }
 
@@ -1016,10 +1010,7 @@ func sbc8(g *GBC, _, op int) {
 	value16 = uint16(g.Reg.R[A]) - (uint16(g.Reg.R[op]) + uint16(carry))
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(value4, 4))
-	g.setF(flagC, util.Bit(value16, 8))
+	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
 	g.Reg.PC++
 }
 
@@ -1038,10 +1029,7 @@ func sbcaHL(g *GBC, _, _ int) {
 
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(value4, 4))
-	g.setF(flagC, util.Bit(value16, 8))
+	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
 	g.Reg.PC++
 }
 
@@ -1061,10 +1049,7 @@ func sbcu8(g *GBC, _, _ int) {
 
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(value4, 4))
-	g.setF(flagC, util.Bit(value16, 8))
+	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
 	g.Reg.PC++
 }
 
