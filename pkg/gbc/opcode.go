@@ -501,19 +501,23 @@ func orR8(g *GBC, _, r8 int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) OR(operand1, operand2 int) {
-	switch operand1 {
-	case OP_d8:
-		value := g.Reg.R[A] | g.Load8(g.Reg.PC+1)
-		g.Reg.R[A] = value
-		g.setF(flagZ, value == 0)
-		g.Reg.PC++
-	case OP_HL_PAREN:
-		value := g.Reg.R[A] | g.Load8(g.Reg.HL())
-		g.Reg.R[A] = value
-		g.setF(flagZ, value == 0)
-	}
+// OR A,(HL)
+func oraHL(g *GBC, _, _ int) {
+	value := g.Reg.R[A] | g.Load8(g.Reg.HL())
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, false)
+	g.setF(flagH, false)
+	g.setF(flagC, false)
+	g.Reg.PC++
+}
 
+// OR A,u8
+func oru8(g *GBC, _, _ int) {
+	value := g.Reg.R[A] | g.Load8(g.Reg.PC+1)
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.Reg.PC++
 	g.setF(flagN, false)
 	g.setF(flagH, false)
 	g.setF(flagC, false)
