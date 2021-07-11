@@ -424,10 +424,7 @@ func cp(g *GBC, _, r8 int) {
 	carryBits := g.Reg.R[A] ^ g.Reg.R[r8] ^ value
 	newCarry := subC(g.Reg.R[A], g.Reg.R[r8])
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, newCarry)
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 	g.Reg.PC++
 }
 
@@ -436,10 +433,8 @@ func cpaHL(g *GBC, _, _ int) {
 	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
 	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
 	newCarry := subC(g.Reg.R[A], g.Load8(g.Reg.HL()))
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, newCarry)
+
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 	g.Reg.PC++
 }
 
@@ -449,10 +444,8 @@ func cpu8(g *GBC, _, _ int) {
 	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
 	newCarry := subC(g.Reg.R[A], g.d8Fetch())
 	g.Reg.PC++
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, newCarry)
+
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 	g.Reg.PC++
 }
 
@@ -898,10 +891,8 @@ func sub8(g *GBC, _, r8 int) {
 	carryBits := g.Reg.R[A] ^ g.Reg.R[r8] ^ value
 	newCarry := subC(g.Reg.R[A], g.Reg.R[r8])
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, newCarry)
+
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 	g.Reg.PC++
 }
 
@@ -911,10 +902,8 @@ func subaHL(g *GBC, _, _ int) {
 	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
 	newCarry := subC(g.Reg.R[A], g.Load8(g.Reg.HL()))
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, newCarry)
+
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 	g.Reg.PC++
 }
 
@@ -924,10 +913,8 @@ func subu8(g *GBC, _, _ int) {
 	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
 	newCarry := subC(g.Reg.R[A], g.d8Fetch())
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, newCarry)
+
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 	g.Reg.PC += 2
 }
 
