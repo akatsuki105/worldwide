@@ -248,8 +248,6 @@ func (g *GBC) step() {
 			handler(g, operand1, operand2)
 		} else {
 			switch instruction {
-			case INS_ADD:
-				g.ADD(operand1, operand2)
 			case INS_SUB:
 				g.SUB(operand1, operand2)
 			case INS_ADC:

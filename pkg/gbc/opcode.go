@@ -547,43 +547,41 @@ func addHL(g *GBC, _, r16 int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) ADD(operand1, operand2 int) {
-	switch operand1 {
-	case OP_A:
-		switch operand2 {
-		case OP_d8:
-			value := uint16(g.Reg.R[A]) + uint16(g.d8Fetch())
-			carryBits := uint16(g.Reg.R[A]) ^ uint16(g.d8Fetch()) ^ value
-			g.Reg.R[A] = byte(value)
-			g.setF(flagZ, byte(value) == 0)
-			g.setF(flagN, false)
-			g.setF(flagH, util.Bit(carryBits, 4))
-			g.setF(flagC, util.Bit(carryBits, 8))
-			g.Reg.PC += 2
-		case OP_HL_PAREN:
-			value := uint16(g.Reg.R[A]) + uint16(g.Load8(g.Reg.HL()))
-			carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Load8(g.Reg.HL())) ^ value
-			g.Reg.R[A] = byte(value)
-			g.setF(flagZ, byte(value) == 0)
-			g.setF(flagN, false)
-			g.setF(flagH, util.Bit(carryBits, 4))
-			g.setF(flagC, util.Bit(carryBits, 8))
-			g.Reg.PC++
-		}
-	case OP_SP:
-		switch operand2 {
-		case OP_r8:
-			delta := int8(g.Load8(g.Reg.PC + 1))
-			value := int32(g.Reg.SP) + int32(delta)
-			carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
-			g.Reg.SP = uint16(value)
-			g.setF(flagZ, false)
-			g.setF(flagN, false)
-			g.setF(flagH, util.Bit(carryBits, 4))
-			g.setF(flagC, util.Bit(carryBits, 8))
-			g.Reg.PC += 2
-		}
-	}
+// ADD A,u8
+func addu8(g *GBC, _, _ int) {
+	value := uint16(g.Reg.R[A]) + uint16(g.d8Fetch())
+	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.d8Fetch()) ^ value
+	g.Reg.R[A] = byte(value)
+	g.setF(flagZ, byte(value) == 0)
+	g.setF(flagN, false)
+	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, util.Bit(carryBits, 8))
+	g.Reg.PC += 2
+}
+
+// ADD A,(HL)
+func addaHL(g *GBC, _, _ int) {
+	value := uint16(g.Reg.R[A]) + uint16(g.Load8(g.Reg.HL()))
+	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Load8(g.Reg.HL())) ^ value
+	g.Reg.R[A] = byte(value)
+	g.setF(flagZ, byte(value) == 0)
+	g.setF(flagN, false)
+	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, util.Bit(carryBits, 8))
+	g.Reg.PC++
+}
+
+// ADD SP,i8
+func addSPi8(g *GBC, _, _ int) {
+	delta := int8(g.Load8(g.Reg.PC + 1))
+	value := int32(g.Reg.SP) + int32(delta)
+	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
+	g.Reg.SP = uint16(value)
+	g.setF(flagZ, false)
+	g.setF(flagN, false)
+	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setF(flagC, util.Bit(carryBits, 8))
+	g.Reg.PC += 2
 }
 
 // complement A Register
