@@ -4,10 +4,11 @@ package apu
 
 import (
 	"fmt"
-	"gbc/pkg/util"
 	"log"
 	"math"
 	"time"
+
+	"github.com/pokemium/Worldwide/pkg/util"
 
 	"github.com/hajimehoshi/oto"
 )

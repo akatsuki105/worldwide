@@ -2,8 +2,9 @@ package gbc
 
 import (
 	"fmt"
-	"gbc/pkg/gbc/scheduler"
-	"gbc/pkg/util"
+
+	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 func (g *GBC) fixCycles(cycles uint32) uint32 {

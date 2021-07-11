@@ -6,14 +6,14 @@ import (
 	"os"
 	"runtime"
 
-	"gbc/pkg/emulator/config"
-	"gbc/pkg/gbc/apu"
-	"gbc/pkg/gbc/cart"
-	"gbc/pkg/gbc/joypad"
-	"gbc/pkg/gbc/rtc"
-	"gbc/pkg/gbc/scheduler"
-	"gbc/pkg/gbc/video"
-	"gbc/pkg/util"
+	"github.com/pokemium/Worldwide/pkg/emulator/config"
+	"github.com/pokemium/Worldwide/pkg/gbc/apu"
+	"github.com/pokemium/Worldwide/pkg/gbc/cart"
+	"github.com/pokemium/Worldwide/pkg/gbc/joypad"
+	"github.com/pokemium/Worldwide/pkg/gbc/rtc"
+	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/Worldwide/pkg/gbc/video"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 var irqVec = [5]uint16{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}

@@ -2,11 +2,11 @@ package emulator
 
 import (
 	"fmt"
-	"gbc/pkg/emulator/debug"
-	"gbc/pkg/gbc"
 	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/pokemium/Worldwide/pkg/emulator/debug"
+	"github.com/pokemium/Worldwide/pkg/gbc"
 )
 
 var (

@@ -1,9 +1,10 @@
 package gbc
 
 import (
-	"gbc/pkg/gbc/scheduler"
-	"gbc/pkg/util"
 	"math"
+
+	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 const (

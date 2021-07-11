@@ -2,8 +2,9 @@ package debug
 
 import (
 	"fmt"
-	"gbc/pkg/gbc"
-	"gbc/pkg/util"
+
+	"github.com/pokemium/Worldwide/pkg/gbc"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 type Debugger struct {

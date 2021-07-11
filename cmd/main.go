@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"gbc/pkg/emulator"
-	"gbc/pkg/emulator/joypad"
+	"github.com/pokemium/Worldwide/pkg/emulator"
+	"github.com/pokemium/Worldwide/pkg/emulator/joypad"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
