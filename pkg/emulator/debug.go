@@ -2,6 +2,7 @@ package emulator
 
 import (
 	"image/color"
+	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -49,32 +50,38 @@ func (e *Emulator) drawDebugTileView(screen *ebiten.Image) {
 
 	// each row has 16 tiles
 	for b := 0; b < 2; b++ {
+		var wg sync.WaitGroup
+		wg.Add(384 / TILE_PER_ROW)
 		for row := 0; row < 384/TILE_PER_ROW; row++ {
-			rowStart, rowEnd := row*TILE_PER_ROW, (row+1)*TILE_PER_ROW
+			go func(row int) {
+				rowStart, rowEnd := row*TILE_PER_ROW, (row+1)*TILE_PER_ROW
 
-			rowView := ebiten.NewImage(8*TILE_PER_ROW, 8)      // [8x16, 8]
-			rowBuffer := banks[b][rowStart*64*4 : rowEnd*64*4] // 0..63, 0..63, 0..63, ..
-			newRowBuffer := make([]byte, TILE_PER_ROW*64*4)    // 0..7, 0..7, ... 8..15, 8..15,
+				rowView := ebiten.NewImage(8*TILE_PER_ROW, 8)      // [8x16, 8]
+				rowBuffer := banks[b][rowStart*64*4 : rowEnd*64*4] // 0..63, 0..63, 0..63, ..
+				newRowBuffer := make([]byte, TILE_PER_ROW*64*4)    // 0..7, 0..7, ... 8..15, 8..15,
 
-			for t := 0; t < TILE_PER_ROW; t++ {
-				rowBufferBase := t * 64 * 4
-				for y := 0; y < 8; y++ {
-					tileRowBuffer := rowBuffer[rowBufferBase+y*8*4 : rowBufferBase+(y+1)*8*4] // (y*8)..((y*8)+7)
-					for x := 0; x < 8; x++ {
-						idx := y*8*TILE_PER_ROW*4 + t*8*4 + x*4
-						newRowBuffer[idx] = tileRowBuffer[x*4]
-						newRowBuffer[idx+1] = tileRowBuffer[x*4+1]
-						newRowBuffer[idx+2] = tileRowBuffer[x*4+2]
-						newRowBuffer[idx+3] = tileRowBuffer[x*4+3]
+				for t := 0; t < TILE_PER_ROW; t++ {
+					rowBufferBase := t * 64 * 4
+					for y := 0; y < 8; y++ {
+						tileRowBuffer := rowBuffer[rowBufferBase+y*8*4 : rowBufferBase+(y+1)*8*4] // (y*8)..((y*8)+7)
+						for x := 0; x < 8; x++ {
+							idx := y*8*TILE_PER_ROW*4 + t*8*4 + x*4
+							newRowBuffer[idx] = tileRowBuffer[x*4]
+							newRowBuffer[idx+1] = tileRowBuffer[x*4+1]
+							newRowBuffer[idx+2] = tileRowBuffer[x*4+2]
+							newRowBuffer[idx+3] = tileRowBuffer[x*4+3]
+						}
 					}
 				}
-			}
-			rowView.ReplacePixels(newRowBuffer)
+				rowView.ReplacePixels(newRowBuffer)
 
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(2, 2)
-			op.GeoM.Translate(float64(10+280*b), float64(340+row*16))
-			screen.DrawImage(rowView, op)
+				op := &ebiten.DrawImageOptions{}
+				op.GeoM.Scale(2, 2)
+				op.GeoM.Translate(float64(10+280*b), float64(340+row*16))
+				screen.DrawImage(rowView, op)
+				wg.Done()
+			}(row)
 		}
+		wg.Wait()
 	}
 }
