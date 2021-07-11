@@ -631,10 +631,7 @@ func rrcHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit0 != 0)
+	g.setZNHC(value == 0, false, false, bit0 != 0)
 	g.Reg.PC++
 }
 
@@ -645,10 +642,7 @@ func rrca(g *GBC, _, _ int) {
 	value = util.SetMSB(value, lsb)
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, false)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, lsb)
+	g.setZNHC(false, false, false, lsb)
 	g.Reg.PC++
 }
 
@@ -660,10 +654,7 @@ func rl(g *GBC, _, r8 int) {
 	value = util.SetLSB(value, carry)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -678,10 +669,7 @@ func rlHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -695,10 +683,7 @@ func rla(g *GBC, _, _ int) {
 	value = util.SetLSB(value, carry)
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, false)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(false, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -709,10 +694,7 @@ func rr(g *GBC, r8, _ int) {
 	value = util.SetMSB(value, carry)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, lsb)
+	g.setZNHC(value == 0, false, false, lsb)
 	g.Reg.PC++
 }
 
@@ -726,10 +708,7 @@ func rrHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, lsb)
+	g.setZNHC(value == 0, false, false, lsb)
 	g.Reg.PC++
 }
 
@@ -740,10 +719,7 @@ func sla(g *GBC, r8, _ int) {
 	value = (value << 1)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -755,10 +731,7 @@ func slaHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit7 != 0)
+	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
 }
 
@@ -769,10 +742,7 @@ func sra(g *GBC, r8, _ int) {
 	value = util.SetMSB(value, msb)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, lsb)
+	g.setZNHC(value == 0, false, false, lsb)
 	g.Reg.PC++
 }
 
@@ -785,10 +755,7 @@ func sraHL(g *GBC, operand1, operand2 int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, lsb)
+	g.setZNHC(value == 0, false, false, lsb)
 	g.Reg.PC++
 }
 
@@ -799,10 +766,7 @@ func swap(g *GBC, _, r8 int) {
 	upper := b >> 4
 	g.Reg.R[r8] = (lower << 4) | upper
 
-	g.setF(flagZ, g.Reg.R[r8] == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -815,10 +779,7 @@ func swapHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -829,10 +790,7 @@ func srl(g *GBC, r8, _ int) {
 	value = (value >> 1)
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit0 == 1)
+	g.setZNHC(value == 0, false, false, bit0 == 1)
 	g.Reg.PC++
 }
 
@@ -844,10 +802,7 @@ func srlHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, bit0 == 1)
+	g.setZNHC(value == 0, false, false, bit0 == 1)
 	g.Reg.PC++
 }
 
@@ -1000,10 +955,7 @@ func adc8(g *GBC, _, op int) {
 	value16 = uint16(g.Reg.R[op]) + uint16(carry) + uint16(g.Reg.R[A])
 	g.Reg.R[A] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(value4, 4))
-	g.setF(flagC, util.Bit(value16, 8))
+	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
 	g.Reg.PC++
 }
 
