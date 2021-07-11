@@ -8,9 +8,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"gbc/pkg/gbc"
+	"gbc/pkg/emulator"
+	"gbc/pkg/emulator/joypad"
 
-	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var version string
@@ -27,9 +28,8 @@ func main() {
 // Run program
 func Run() int {
 	var (
-		showVersion  = flag.Bool("v", false, "show version")
-		debug        = flag.Bool("debug", false, "enable debug mode")
-		outputScreen = flag.String("test", "", "only CPU works and output screen map file")
+		showVersion = flag.Bool("v", false, "show version")
+		isDebugMode = flag.Bool("d", false, "enable debug mode")
 	)
 
 	flag.Parse()
@@ -42,43 +42,22 @@ func Run() int {
 	romPath := flag.Arg(0)
 	cur, _ := os.Getwd()
 
-	cpu := &gbc.CPU{}
-
 	romDir := filepath.Dir(romPath)
-
 	romData, err := readROM(romPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ROM Error: %s\n", err)
 		return ExitCodeError
 	}
 
-	cpu.Cartridge.ParseCartridge(romData)
-	cpu.TransferROM(romData)
+	emu := emulator.New(romData, joypad.Handler, romDir, *isDebugMode)
 
-	test := *outputScreen != ""
 	os.Chdir(cur)
-	cpu.Init(romDir, *debug, test)
 	defer func() {
 		os.Chdir(cur)
-		cpu.Exit()
 	}()
 
-	if test {
-		sec := 60
-		cpu.DebugExec(30*sec, *outputScreen)
-		return ExitCodeOK
-	}
-
-	ebiten.SetWindowResizable(true)
-	ebiten.SetWindowTitle("Worldwide")
-
-	if *debug {
-		ebiten.SetWindowSize(1270, 740)
-	} else {
-		ebiten.SetWindowSize(160*2, 144*2)
-	}
-
-	if err := ebiten.RunGame(cpu); err != nil {
+	emu.LoadSav()
+	if err := ebiten.RunGame(emu); err != nil {
 		return ExitCodeError
 	}
 	return ExitCodeOK

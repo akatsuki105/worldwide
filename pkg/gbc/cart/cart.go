@@ -1,4 +1,4 @@
-package cartridge
+package cart
 
 const (
 	ROM = iota
@@ -14,11 +14,11 @@ type Cartridge struct {
 	IsCGB                  bool // gameboy color ROM is true
 	Type, ROMSize, RAMSize uint8
 	MBC                    int
-	Debug                  *Debug
 }
 
-// ParseCartridge - read cartridge info from byte slice
-func (cart *Cartridge) ParseCartridge(rom []byte) {
+// Parse - load cartridge info from byte slice
+func New(rom []byte) *Cartridge {
+	cart := &Cartridge{}
 	var titleBuf []byte
 	for i := 0x0134; i < 0x0143; i++ {
 		if rom[i] == 0 {
@@ -31,6 +31,5 @@ func (cart *Cartridge) ParseCartridge(rom []byte) {
 	cart.Type = uint8(rom[0x0147])
 	cart.ROMSize = uint8(rom[0x0148])
 	cart.RAMSize = uint8(rom[0x0149])
-
-	cart.Debug = cart.newDebug()
+	return cart
 }

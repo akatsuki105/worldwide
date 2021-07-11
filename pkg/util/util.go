@@ -42,7 +42,43 @@ func Bit(val interface{}, idx int) bool {
 	return false
 }
 
+func SetBit16(val uint16, idx int, b bool) uint16 {
+	if b {
+		val = val | (1 << idx)
+	} else {
+		val = val & ^(1 << idx)
+	}
+	return val
+}
+
+func SetBit8(val byte, idx int, b bool) byte {
+	if b {
+		val = val | (1 << idx)
+	} else {
+		val = val & ^(1 << idx)
+	}
+	return val
+}
+
 func Bool2Int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+func Bool2U16(b bool) uint16 {
+	if b {
+		return 1
+	}
+	return 0
+}
+func Bool2U32(b bool) uint32 {
+	if b {
+		return 1
+	}
+	return 0
+}
+func Bool2U64(b bool) uint64 {
 	if b {
 		return 1
 	}
