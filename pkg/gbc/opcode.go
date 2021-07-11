@@ -458,15 +458,21 @@ func and8(g *GBC, _, r8 int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) AND(operand1, operand2 int) {
-	var value byte
-	switch operand1 {
-	case OP_HL_PAREN:
-		value = g.Reg.R[A] & g.Load8(g.Reg.HL())
-	case OP_d8:
-		value = g.Reg.R[A] & g.d8Fetch()
-		g.Reg.PC++
-	}
+// AND A,(HL)
+func op0xa6(g *GBC, _, _ int) {
+	value := g.Reg.R[A] & g.Load8(g.Reg.HL())
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, false)
+	g.setF(flagH, true)
+	g.setF(flagC, false)
+	g.Reg.PC++
+}
+
+// AND A,u8
+func andu8(g *GBC, _, _ int) {
+	value := g.Reg.R[A] & g.d8Fetch()
+	g.Reg.PC++
 
 	g.Reg.R[A] = value
 	g.setF(flagZ, value == 0)
