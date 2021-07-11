@@ -18,15 +18,19 @@ import (
 
 var irqVec = [5]uint16{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}
 
-// ROMBank - 0x4000-0x7fff
-type ROMBank struct {
-	ptr  uint8
-	bank [256][0x4000]byte
+// ROM
+//
+// 0x0000-0x3fff: bank0
+//
+// 0x4000-0x7fff: bank1-256
+type ROM struct {
+	bank   byte
+	buffer [256][0x4000]byte
 }
 
 // RAM - 0xa000-0xbfff
 type RAM struct {
-	bank   uint8
+	bank   byte
 	Buffer [16][0x2000]byte // num of banks changes depending on ROM
 }
 
@@ -63,15 +67,15 @@ const (
 
 // GBC core structure
 type GBC struct {
-	Reg       Register
-	RAM       [0x10000]byte
-	IO        [0x100]byte // 0xff00-0xffff
-	Cartridge *cart.Cartridge
-	joypad    *joypad.Joypad
-	halt      bool
-	Config    *config.Config
-	timer     *Timer
-	ROMBank
+	Reg         Register
+	RAM         [0x10000]byte
+	IO          [0x100]byte // 0xff00-0xffff
+	Cartridge   *cart.Cartridge
+	joypad      *joypad.Joypad
+	halt        bool
+	Config      *config.Config
+	timer       *Timer
+	ROM         ROM
 	RAMBank     RAM
 	WRAM        WRAM
 	bankMode    uint
@@ -183,7 +187,7 @@ func (g *GBC) TransferROM(rom []byte) {
 func (g *GBC) transferROM(bankNum int, rom []byte) {
 	for bank := 0; bank < bankNum; bank++ {
 		for i := 0x0000; i <= 0x3fff; i++ {
-			g.ROMBank.bank[bank][i] = rom[bank*0x4000+i]
+			g.ROM.buffer[bank][i] = rom[bank*0x4000+i]
 		}
 	}
 }
@@ -214,7 +218,7 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 	g.resetRegister()
 	g.resetIO()
 
-	g.ROMBank.ptr, g.WRAM.bank = 1, 1
+	g.ROM.bank, g.WRAM.bank = 1, 1
 
 	g.Config = config.New()
 
