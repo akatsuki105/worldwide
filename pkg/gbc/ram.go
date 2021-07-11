@@ -17,8 +17,14 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 		} else {
 			value = g.RAMBank.Bank[g.RAMBank.ptr][addr-0xa000]
 		}
-	case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram bank
-		value = g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000]
+
+	case addr >= 0xc000 && addr < 0xd000:
+		// WRAM bank0
+		value = g.WRAM.buffer[0][addr-0xc000]
+	case addr >= 0xd000 && addr < 0xe000:
+		// WRAM bank1 or 7
+		value = g.WRAM.buffer[g.WRAM.bank][addr-0xd000]
+
 	case addr >= 0xfe00 && addr <= 0xfe9f:
 		value = g.Video.Oam.Get(addr - 0xfe00)
 	case addr >= 0xff00:
@@ -104,8 +110,14 @@ func (g *GBC) Store8(addr uint16, value byte) {
 			} else {
 				g.RTC.Write(byte(g.RTC.Mapped), value)
 			}
-		case g.WRAMBank.ptr > 1 && addr >= 0xd000 && addr < 0xe000: // wram
-			g.WRAMBank.bank[g.WRAMBank.ptr][addr-0xd000] = value
+
+		case addr >= 0xc000 && addr < 0xd000:
+			// WRAM bank0
+			g.WRAM.buffer[0][addr-0xc000] = value
+		case addr >= 0xd000 && addr < 0xe000:
+			// WRAM bank1 or 7
+			g.WRAM.buffer[g.WRAM.bank][addr-0xd000] = value
+
 		case addr >= 0xfe00 && addr <= 0xfe9f:
 			g.Video.Oam.Set(addr-0xfe00, value)
 		case addr >= 0xff00:

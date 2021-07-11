@@ -30,10 +30,15 @@ type RAMBank struct {
 	Bank [16][0x2000]byte
 }
 
-// WRAMBank - 0xd000-0xdfff bank used on GBC only
-type WRAMBank struct {
-	ptr  uint8
-	bank [8][0x1000]byte
+// WRAM
+//
+// 0xc000-0xcfff: bank0
+//
+// 0xd000-0xdfff: bank1-7
+type WRAM struct {
+	// fixed at 1 on DMG, changes from 1 to 7 on CGB
+	bank   byte
+	buffer [8][0x1000]byte
 }
 
 type Dma struct {
@@ -68,7 +73,7 @@ type GBC struct {
 	timer     *Timer
 	ROMBank
 	RAMBank
-	WRAMBank
+	WRAM        WRAM
 	bankMode    uint
 	sound       *apu.APU
 	Video       *video.Video
@@ -209,7 +214,7 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 	g.resetRegister()
 	g.resetIO()
 
-	g.ROMBank.ptr, g.WRAMBank.ptr = 1, 1
+	g.ROMBank.ptr, g.WRAM.bank = 1, 1
 
 	g.Config = config.New()
 
