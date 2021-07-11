@@ -6,15 +6,17 @@ import (
 	"gbc/pkg/util"
 )
 
-func (g *GBC) a16Fetch() uint16 {
-	return g.d16Fetch()
+func (g *GBC) fixCycles(cycles uint32) uint32 {
+	return cycles * 4 >> util.Bool2U32(g.DoubleSpeed)
 }
+
+func (g *GBC) a16Fetch() uint16 { return g.d16Fetch() }
 
 func (g *GBC) a16FetchJP() uint16 {
 	lower := uint16(g.Load8(g.Reg.PC + 1)) // M = 1: nn read: memory access for low byte
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	upper := uint16(g.Load8(g.Reg.PC + 2)) // M = 2: nn read: memory access for high byte
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	value := (upper << 8) | lower
 	return value
 }
@@ -52,7 +54,7 @@ func ld8i(g *GBC, r8, _ int) {
 func op0xfa(g *GBC, operand1, operand2 int) {
 	g.Reg.R[A] = g.Load8(g.a16FetchJP())
 	g.Reg.PC += 3
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // LD A,(FF00+C)
@@ -67,10 +69,10 @@ func op0xf2(g *GBC, operand1, operand2 int) {
 // LD (HL),u8
 func op0x36(g *GBC, operand1, operand2 int) {
 	value := g.d8Fetch()
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.Store8(g.Reg.HL(), value)
 	g.Reg.PC += 2
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // LD (HL),R8
@@ -89,14 +91,14 @@ func op0x08(g *GBC, operand1, operand2 int) {
 	g.Store8(addr, lower)
 	g.Store8(addr+1, upper)
 	g.Reg.PC += 3
-	g.timer.tick(5 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(5))
 }
 
 // LD (u16),A
 func op0xea(g *GBC, operand1, operand2 int) {
 	g.Store8(g.a16FetchJP(), g.Reg.R[A])
 	g.Reg.PC += 3
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // ld r16, u16
@@ -139,21 +141,21 @@ func ldm16r(g *GBC, r16, r8 int) {
 // LD ($FF00+a8),A
 func op0xe0(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.storeIO(byte(addr), g.Reg.R[A])
 	g.Reg.PC += 2
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // LD A,($FF00+a8)
 func op0xf0(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	value := g.loadIO(byte(addr))
 
 	g.Reg.R[A] = value
 	g.Reg.PC += 2
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // No operation
@@ -179,10 +181,10 @@ func inc16(g *GBC, r16, _ int) {
 
 func incHL(g *GBC, _, _ int) {
 	value := g.Load8(g.Reg.HL()) + 1
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, false)
@@ -210,10 +212,10 @@ func dec16(g *GBC, r16, _ int) {
 
 func decHL(g *GBC, _, _ int) {
 	value := g.Load8(g.Reg.HL()) - 1
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, true)
@@ -227,7 +229,7 @@ func decHL(g *GBC, _, _ int) {
 func jr(g *GBC, _, _ int) {
 	delta := int8(g.Load8(g.Reg.PC + 1))
 	g.Reg.PC = uint16(int32(g.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
-	g.timer.tick(3 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(3))
 }
 
 // jr cc,i8
@@ -236,7 +238,7 @@ func jrcc(g *GBC, cc, _ int) {
 		jr(g, 0, 0)
 	} else {
 		g.Reg.PC += 2
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(2))
 	}
 }
 
@@ -246,7 +248,7 @@ func jrncc(g *GBC, cc, _ int) {
 		jr(g, 0, 0)
 	} else {
 		g.Reg.PC += 2
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(2))
 	}
 }
 
@@ -308,17 +310,17 @@ func xoru8(g *GBC, _, _ int) {
 // jp u16
 func jp(g *GBC, _, _ int) {
 	g.Reg.PC = g.a16FetchJP()
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 func jpcc(g *GBC, cc, _ int) {
 	dst := g.a16FetchJP()
 	if g.f(cc) {
 		g.Reg.PC = dst
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(2))
 	} else {
 		g.Reg.PC += 3
-		g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(1))
 	}
 }
 
@@ -326,16 +328,16 @@ func jpncc(g *GBC, cc, _ int) {
 	dst := g.a16FetchJP()
 	if !g.f(cc) {
 		g.Reg.PC = dst
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(2))
 	} else {
 		g.Reg.PC += 3
-		g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(1))
 	}
 }
 
 func jpHL(g *GBC, _, _ int) {
 	g.Reg.PC = g.Reg.HL()
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 }
 
 // Return
@@ -346,10 +348,10 @@ func ret(g *GBC, _, _ int) {
 func retcc(g *GBC, cc, _ int) {
 	if g.f(cc) {
 		g.popPC()
-		g.timer.tick(5 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(5))
 	} else {
 		g.Reg.PC++
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(2))
 	}
 }
 
@@ -357,10 +359,10 @@ func retcc(g *GBC, cc, _ int) {
 func retncc(g *GBC, cc, _ int) {
 	if !g.f(cc) {
 		g.popPC()
-		g.timer.tick(5 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(5))
 	} else {
 		g.Reg.PC++
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(2))
 	}
 }
 
@@ -376,9 +378,9 @@ func reti(g *GBC, operand1, operand2 int) {
 func call(g *GBC, _, _ int) {
 	dst := g.a16FetchJP()
 	g.Reg.PC += 3
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.pushPCCALL()
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.Reg.PC = dst
 }
 
@@ -388,7 +390,7 @@ func callcc(g *GBC, cc, _ int) {
 		return
 	}
 	g.Reg.PC += 3
-	g.timer.tick(3 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(3))
 }
 
 func callncc(g *GBC, cc, _ int) {
@@ -397,7 +399,7 @@ func callncc(g *GBC, cc, _ int) {
 		return
 	}
 	g.Reg.PC += 3
-	g.timer.tick(3 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(3))
 }
 
 // DI Disable Interrupt
@@ -559,13 +561,13 @@ func cpl(g *GBC, _, _ int) {
 // extend instruction
 func prefixCB(g *GBC, _, _ int) {
 	g.Reg.PC++
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	op := prefixCBs[g.Load8(g.Reg.PC)]
 	_, op1, op2, cycle, handler := op.Ins, op.Operand1, op.Operand2, op.Cycle1, op.Handler
 	handler(g, op1, op2)
 
 	if cycle > 1 {
-		g.timer.tick(uint32(cycle-1) * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+		g.timer.tick(g.fixCycles(uint32(cycle - 1)))
 	}
 }
 
@@ -583,12 +585,12 @@ func rlc(g *GBC, r8, _ int) {
 
 func rlcHL(g *GBC, _, _ int) {
 	value := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, bit7 != 0)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
@@ -620,12 +622,12 @@ func rrc(g *GBC, r8, _ int) {
 
 func rrcHL(g *GBC, _, _ int) {
 	value := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	bit0 := value % 2
 	value = (value >> 1)
 	value = util.SetMSB(value, bit0 != 0)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, bit0 != 0)
 	g.Reg.PC++
@@ -658,12 +660,12 @@ func rlHL(g *GBC, _, _ int) {
 	var value, bit7 byte
 	carry := g.f(flagC)
 	value = g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	bit7 = value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, carry)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
@@ -697,12 +699,12 @@ func rr(g *GBC, r8, _ int) {
 func rrHL(g *GBC, _, _ int) {
 	carry := g.f(flagC)
 	value := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	lsb := util.Bit(value, 0)
 	value >>= 1
 	value = util.SetMSB(value, carry)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, lsb)
 	g.Reg.PC++
@@ -721,11 +723,11 @@ func sla(g *GBC, r8, _ int) {
 
 func slaHL(g *GBC, _, _ int) {
 	value := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	bit7 := value >> 7
 	value = (value << 1)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, bit7 != 0)
 	g.Reg.PC++
@@ -744,12 +746,12 @@ func sra(g *GBC, r8, _ int) {
 
 func sraHL(g *GBC, operand1, operand2 int) {
 	value := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	lsb, msb := util.Bit(value, 0), util.Bit(value, 7)
 	value = (value >> 1)
 	value = util.SetMSB(value, msb)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, lsb)
 	g.Reg.PC++
@@ -768,12 +770,12 @@ func swap(g *GBC, _, r8 int) {
 
 func swapHL(g *GBC, _, _ int) {
 	data := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	data03 := data & 0x0f
 	data47 := data >> 4
 	value := (data03 << 4) | data47
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
@@ -792,11 +794,11 @@ func srl(g *GBC, r8, _ int) {
 
 func srlHL(g *GBC, _, _ int) {
 	value := g.Load8(g.Reg.HL())
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	bit0 := value % 2
 	value = (value >> 1)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 
 	g.setZNHC(value == 0, false, false, bit0 == 1)
 	g.Reg.PC++
@@ -828,9 +830,9 @@ func res(g *GBC, bit, r8 int) {
 func resHL(g *GBC, bit, _ int) {
 	mask := ^(byte(1) << bit)
 	value := g.Load8(g.Reg.HL()) & mask
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 	g.Reg.PC++
 }
 
@@ -843,46 +845,46 @@ func set(g *GBC, bit, r8 int) {
 func setHL(g *GBC, bit, _ int) {
 	mask := byte(1) << bit
 	value := g.Load8(g.Reg.HL()) | mask
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 	g.Reg.PC++
 }
 
 // push af
 func pushAF(g *GBC, _, _ int) {
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.push(g.Reg.R[A])
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.push(g.Reg.R[F] & 0xf0)
 	g.Reg.PC++
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // push r16
 func push(g *GBC, r0, r1 int) {
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.push(g.Reg.R[r0])
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.push(g.Reg.R[r1])
 	g.Reg.PC++
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 func popAF(g *GBC, _, _ int) {
 	g.Reg.R[F] = g.pop() & 0xf0
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.Reg.R[A] = g.pop()
 	g.Reg.PC++
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 func pop(g *GBC, r0, r1 int) {
 	g.Reg.R[r0] = g.pop()
-	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(1))
 	g.Reg.R[r1] = g.pop()
 	g.Reg.PC++
-	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.timer.tick(g.fixCycles(2))
 }
 
 // SUB subtract
