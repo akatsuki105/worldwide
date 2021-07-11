@@ -121,3 +121,10 @@ func (g *GBC) setF(idx int, flag bool) {
 	}
 	g.Reg.R[F] &= ^(1 << idx)
 }
+
+func (g *GBC) setZNHC(z, n, h, c bool) {
+	g.setF(flagZ, z)
+	g.setF(flagN, n)
+	g.setF(flagH, h)
+	g.setF(flagC, c)
+}

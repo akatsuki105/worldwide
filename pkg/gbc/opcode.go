@@ -458,10 +458,7 @@ func cpu8(g *GBC, _, _ int) {
 func and8(g *GBC, _, r8 int) {
 	value := g.Reg.R[A] & g.Reg.R[r8]
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, true)
-	g.setF(flagC, false)
+	g.setZNHC(value == 0, false, true, false)
 	g.Reg.PC++
 }
 
@@ -469,10 +466,7 @@ func and8(g *GBC, _, r8 int) {
 func op0xa6(g *GBC, _, _ int) {
 	value := g.Reg.R[A] & g.Load8(g.Reg.HL())
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, true)
-	g.setF(flagC, false)
+	g.setZNHC(value == 0, false, true, false)
 	g.Reg.PC++
 }
 
@@ -482,10 +476,7 @@ func andu8(g *GBC, _, _ int) {
 	g.Reg.PC++
 
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, true)
-	g.setF(flagC, false)
+	g.setZNHC(value == 0, false, true, false)
 	g.Reg.PC++
 }
 
@@ -493,11 +484,7 @@ func andu8(g *GBC, _, _ int) {
 func orR8(g *GBC, _, r8 int) {
 	value := g.Reg.R[A] | g.Reg.R[r8]
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -505,10 +492,7 @@ func orR8(g *GBC, _, r8 int) {
 func oraHL(g *GBC, _, _ int) {
 	value := g.Reg.R[A] | g.Load8(g.Reg.HL())
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
+	g.setZNHC(value == 0, false, false, false)
 	g.Reg.PC++
 }
 
@@ -516,12 +500,8 @@ func oraHL(g *GBC, _, _ int) {
 func oru8(g *GBC, _, _ int) {
 	value := g.Reg.R[A] | g.Load8(g.Reg.PC+1)
 	g.Reg.R[A] = value
-	g.setF(flagZ, value == 0)
-	g.Reg.PC++
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, false)
-	g.Reg.PC++
+	g.setZNHC(value == 0, false, false, false)
+	g.Reg.PC += 2
 }
 
 // ADD Addition
@@ -529,10 +509,7 @@ func add8(g *GBC, _, r8 int) {
 	value := uint16(g.Reg.R[A]) + uint16(g.Reg.R[r8])
 	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Reg.R[r8]) ^ value
 	g.Reg.R[A] = byte(value)
-	g.setF(flagZ, byte(value) == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 4))
-	g.setF(flagC, util.Bit(carryBits, 8))
+	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 	g.Reg.PC++
 }
 
