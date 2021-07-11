@@ -282,18 +282,21 @@ func xor8(g *GBC, _, r8 int) {
 	g.Reg.PC++
 }
 
-func (g *GBC) XOR(operand1, operand2 int) {
-	var value byte
-	switch operand1 {
-	case OP_HL_PAREN:
-		value = g.Reg.R[A] ^ g.Load8(g.Reg.HL())
-	case OP_d8:
-		value = g.Reg.R[A] ^ g.Load8(g.Reg.PC+1)
-		g.Reg.PC++
-	default:
-		panic(fmt.Errorf("error: XOR %d %d", operand1, operand2))
-	}
+// XOR A,(HL)
+func xoraHL(g *GBC, _, _ int) {
+	value := g.Reg.R[A] ^ g.Load8(g.Reg.HL())
+	g.Reg.R[A] = value
+	g.setF(flagZ, value == 0)
+	g.setF(flagN, false)
+	g.setF(flagH, false)
+	g.setF(flagC, false)
+	g.Reg.PC++
+}
 
+// XOR A,u8
+func xoru8(g *GBC, _, _ int) {
+	value := g.Reg.R[A] ^ g.Load8(g.Reg.PC+1)
+	g.Reg.PC++
 	g.Reg.R[A] = value
 	g.setF(flagZ, value == 0)
 	g.setF(flagN, false)

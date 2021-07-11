@@ -248,8 +248,6 @@ func (g *GBC) step() {
 			handler(g, operand1, operand2)
 		} else {
 			switch instruction {
-			case INS_XOR:
-				g.XOR(operand1, operand2)
 			case INS_CP:
 				g.CP(operand1, operand2)
 			case INS_OR:
