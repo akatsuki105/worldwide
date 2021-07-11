@@ -311,7 +311,7 @@ func (g *GBC) updateIRQs() {
 	}
 }
 
-func (g *GBC) Draw() []uint8 { return g.Video.Display().Pix }
+func (g *GBC) Draw() []byte { return g.Video.Display().Pix }
 
 func (g *GBC) handleJoypad() {
 	pressed := g.joypad.Input()
