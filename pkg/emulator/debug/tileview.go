@@ -1,9 +1,5 @@
 package debug
 
-import (
-	"gbc/pkg/gbc"
-)
-
 const TILENUM = 384 // cgb -> 384*2 (bank1)
 
 var (
@@ -33,7 +29,7 @@ func (d *Debugger) TileView() [2][]byte {
 					upperColor := (tileDataUpper >> b) & 0x01
 					lowerColor := (tileDataLower >> b) & 0x01
 					palIdx := (upperColor << 1) | lowerColor // 0 or 1 or 2 or 3
-					colorIdx := (d.g.IO[gbc.BGPIO] >> (palIdx * 2)) & 0b11
+					colorIdx := d.g.Video.Renderer.Lookup[palIdx]
 					red, green, blue := colors[colorIdx][0], colors[colorIdx][1], colors[colorIdx][2]
 					bufferIdx := i*64*4 + y*8*4 + x*4
 					buffer[bank][bufferIdx] = red

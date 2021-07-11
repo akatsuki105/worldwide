@@ -25,7 +25,7 @@ type Renderer struct {
 
 	// DMG -> basically, 0 or 1 or 2 or 3
 	// CGB -> ???
-	lookup [64 * 3]byte
+	Lookup [64 * 3]byte
 
 	wy, wx, currentWy, currentWx byte
 	lastY, lastX                 int
@@ -50,7 +50,7 @@ func NewRenderer(g *Video) *Renderer {
 	}
 
 	for i := byte(0); i < 192; i++ {
-		r.lookup[i] = i
+		r.Lookup[i] = i
 	}
 
 	return r
@@ -101,32 +101,32 @@ func (r *Renderer) WriteVideoRegister(offset byte, value byte) byte {
 		r.wx = value
 		r.updateWindow(wasWindow, r.inWindow(), wy)
 	case GB_REG_BGP:
-		r.lookup[0] = value & 3
-		r.lookup[1] = (value >> 2) & 3
-		r.lookup[2] = (value >> 4) & 3
-		r.lookup[3] = (value >> 6) & 3
-		r.lookup[PAL_HIGHLIGHT_BG+0] = PAL_HIGHLIGHT + (value & 3)
-		r.lookup[PAL_HIGHLIGHT_BG+1] = PAL_HIGHLIGHT + ((value >> 2) & 3)
-		r.lookup[PAL_HIGHLIGHT_BG+2] = PAL_HIGHLIGHT + ((value >> 4) & 3)
-		r.lookup[PAL_HIGHLIGHT_BG+3] = PAL_HIGHLIGHT + ((value >> 6) & 3)
+		r.Lookup[0] = value & 3
+		r.Lookup[1] = (value >> 2) & 3
+		r.Lookup[2] = (value >> 4) & 3
+		r.Lookup[3] = (value >> 6) & 3
+		r.Lookup[PAL_HIGHLIGHT_BG+0] = PAL_HIGHLIGHT + (value & 3)
+		r.Lookup[PAL_HIGHLIGHT_BG+1] = PAL_HIGHLIGHT + ((value >> 2) & 3)
+		r.Lookup[PAL_HIGHLIGHT_BG+2] = PAL_HIGHLIGHT + ((value >> 4) & 3)
+		r.Lookup[PAL_HIGHLIGHT_BG+3] = PAL_HIGHLIGHT + ((value >> 6) & 3)
 	case GB_REG_OBP0:
-		r.lookup[PAL_OBJ+0] = value & 3
-		r.lookup[PAL_OBJ+1] = (value >> 2) & 3
-		r.lookup[PAL_OBJ+2] = (value >> 4) & 3
-		r.lookup[PAL_OBJ+3] = (value >> 6) & 3
-		r.lookup[PAL_HIGHLIGHT_OBJ+0] = PAL_HIGHLIGHT + (value & 3)
-		r.lookup[PAL_HIGHLIGHT_OBJ+1] = PAL_HIGHLIGHT + ((value >> 2) & 3)
-		r.lookup[PAL_HIGHLIGHT_OBJ+2] = PAL_HIGHLIGHT + ((value >> 4) & 3)
-		r.lookup[PAL_HIGHLIGHT_OBJ+3] = PAL_HIGHLIGHT + ((value >> 6) & 3)
+		r.Lookup[PAL_OBJ+0] = value & 3
+		r.Lookup[PAL_OBJ+1] = (value >> 2) & 3
+		r.Lookup[PAL_OBJ+2] = (value >> 4) & 3
+		r.Lookup[PAL_OBJ+3] = (value >> 6) & 3
+		r.Lookup[PAL_HIGHLIGHT_OBJ+0] = PAL_HIGHLIGHT + (value & 3)
+		r.Lookup[PAL_HIGHLIGHT_OBJ+1] = PAL_HIGHLIGHT + ((value >> 2) & 3)
+		r.Lookup[PAL_HIGHLIGHT_OBJ+2] = PAL_HIGHLIGHT + ((value >> 4) & 3)
+		r.Lookup[PAL_HIGHLIGHT_OBJ+3] = PAL_HIGHLIGHT + ((value >> 6) & 3)
 	case GB_REG_OBP1:
-		r.lookup[PAL_OBJ+4] = value & 3
-		r.lookup[PAL_OBJ+5] = (value >> 2) & 3
-		r.lookup[PAL_OBJ+6] = (value >> 4) & 3
-		r.lookup[PAL_OBJ+7] = (value >> 6) & 3
-		r.lookup[PAL_HIGHLIGHT_OBJ+4] = PAL_HIGHLIGHT + (value & 3)
-		r.lookup[PAL_HIGHLIGHT_OBJ+5] = PAL_HIGHLIGHT + ((value >> 2) & 3)
-		r.lookup[PAL_HIGHLIGHT_OBJ+6] = PAL_HIGHLIGHT + ((value >> 4) & 3)
-		r.lookup[PAL_HIGHLIGHT_OBJ+7] = PAL_HIGHLIGHT + ((value >> 6) & 3)
+		r.Lookup[PAL_OBJ+4] = value & 3
+		r.Lookup[PAL_OBJ+5] = (value >> 2) & 3
+		r.Lookup[PAL_OBJ+6] = (value >> 4) & 3
+		r.Lookup[PAL_OBJ+7] = (value >> 6) & 3
+		r.Lookup[PAL_HIGHLIGHT_OBJ+4] = PAL_HIGHLIGHT + (value & 3)
+		r.Lookup[PAL_HIGHLIGHT_OBJ+5] = PAL_HIGHLIGHT + ((value >> 2) & 3)
+		r.Lookup[PAL_HIGHLIGHT_OBJ+6] = PAL_HIGHLIGHT + ((value >> 4) & 3)
+		r.Lookup[PAL_HIGHLIGHT_OBJ+7] = PAL_HIGHLIGHT + ((value >> 6) & 3)
 	}
 
 	return value
@@ -242,7 +242,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			p <<= 2
 		}
 		for ; x < ((startX+7) & ^7) && x < endX; x++ {
-			row[x] = r.palette[p|int(r.lookup[r.row[x]&OBJ_PRIO_MASK])]
+			row[x] = r.palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
 		}
 
 		for ; x+7 < (endX & ^7); x += 8 {
@@ -252,14 +252,14 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 				p &= 3
 				p <<= 2
 			}
-			row[x+0] = r.palette[p|int(r.lookup[r.row[x]&OBJ_PRIO_MASK])]
-			row[x+1] = r.palette[p|int(r.lookup[r.row[x+1]&OBJ_PRIO_MASK])]
-			row[x+2] = r.palette[p|int(r.lookup[r.row[x+2]&OBJ_PRIO_MASK])]
-			row[x+3] = r.palette[p|int(r.lookup[r.row[x+3]&OBJ_PRIO_MASK])]
-			row[x+4] = r.palette[p|int(r.lookup[r.row[x+4]&OBJ_PRIO_MASK])]
-			row[x+5] = r.palette[p|int(r.lookup[r.row[x+5]&OBJ_PRIO_MASK])]
-			row[x+6] = r.palette[p|int(r.lookup[r.row[x+6]&OBJ_PRIO_MASK])]
-			row[x+7] = r.palette[p|int(r.lookup[r.row[x+7]&OBJ_PRIO_MASK])]
+			row[x+0] = r.palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
+			row[x+1] = r.palette[p|int(r.Lookup[r.row[x+1]&OBJ_PRIO_MASK])]
+			row[x+2] = r.palette[p|int(r.Lookup[r.row[x+2]&OBJ_PRIO_MASK])]
+			row[x+3] = r.palette[p|int(r.Lookup[r.row[x+3]&OBJ_PRIO_MASK])]
+			row[x+4] = r.palette[p|int(r.Lookup[r.row[x+4]&OBJ_PRIO_MASK])]
+			row[x+5] = r.palette[p|int(r.Lookup[r.row[x+5]&OBJ_PRIO_MASK])]
+			row[x+6] = r.palette[p|int(r.Lookup[r.row[x+6]&OBJ_PRIO_MASK])]
+			row[x+7] = r.palette[p|int(r.Lookup[r.row[x+7]&OBJ_PRIO_MASK])]
 		}
 		if (r.Model & util.GB_MODEL_SGB) != 0 {
 			p = int(r.sgbAttributes[(x>>5)+5*(y>>3)])
@@ -268,7 +268,7 @@ func (r *Renderer) drawRange(startX, endX, y int) {
 			p <<= 2
 		}
 		for ; x < endX; x++ {
-			row[x] = r.palette[p|int(r.lookup[r.row[x]&OBJ_PRIO_MASK])]
+			row[x] = r.palette[p|int(r.Lookup[r.row[x]&OBJ_PRIO_MASK])]
 		}
 	case 2:
 		for ; x < ((startX+7) & ^7) && x < endX; x++ {
