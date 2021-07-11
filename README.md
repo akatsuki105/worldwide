@@ -28,11 +28,7 @@ This emulator can play almost all ROMs work without problems and has many featur
 - [x] MBC1, MBC2, MBC3, MBC5 support
 - [x] RTC
 - [x] SRAM save
-- [x] Quick save
 - [x] Resizable window
-- [x] Pallete color change in DMG
-- [x] Serial DMG communication in local network
-- [x] RaspberryPi support
 - [x] Debugger
 - [x] HQ2x mode 
 - [ ] Serial CGB communication in local network
@@ -52,7 +48,7 @@ Download worldwide.exe from [here](https://github.com/pokemium/Worldwide/release
 You can play this emulator in debug mode.
 
 ```sh
-./worldwide.exe --debug "***.gb"
+./worldwide.exe -d "***.gb"
 ```
 
 <img src="https://imgur.com/YxQF9AF.png">
