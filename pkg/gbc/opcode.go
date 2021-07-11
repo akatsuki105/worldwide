@@ -136,25 +136,24 @@ func ldm16r(g *GBC, r16, r8 int) {
 	g.Reg.PC++
 }
 
-// LDH Load High Byte
-func LDH(g *GBC, operand1, operand2 int) {
-	if operand1 == OP_A && operand2 == OP_a8_PAREN { // LD A,($FF00+a8)
-		addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
-		g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
-		value := g.loadIO(byte(addr))
+// LD ($FF00+a8),A
+func op0xe0(g *GBC, operand1, operand2 int) {
+	addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
+	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	g.storeIO(byte(addr), g.Reg.R[A])
+	g.Reg.PC += 2
+	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+}
 
-		g.Reg.R[A] = value
-		g.Reg.PC += 2
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
-	} else if operand1 == OP_a8_PAREN && operand2 == OP_A { // LD ($FF00+a8),A
-		addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
-		g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
-		g.storeIO(byte(addr), g.Reg.R[A])
-		g.Reg.PC += 2
-		g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
-	} else {
-		panic(fmt.Errorf("error: LDH %d %d", operand1, operand2))
-	}
+// LD A,($FF00+a8)
+func op0xf0(g *GBC, operand1, operand2 int) {
+	addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
+	g.timer.tick(1 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
+	value := g.loadIO(byte(addr))
+
+	g.Reg.R[A] = value
+	g.Reg.PC += 2
+	g.timer.tick(2 * 4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 }
 
 // No operation
