@@ -68,7 +68,6 @@ const (
 // GBC core structure
 type GBC struct {
 	Reg         Register
-	RAM         [0x10000]byte
 	IO          [0x100]byte // 0xff00-0xffff
 	Cartridge   *cart.Cartridge
 	joypad      *joypad.Joypad
@@ -76,7 +75,7 @@ type GBC struct {
 	Config      *config.Config
 	timer       *Timer
 	ROM         ROM
-	RAMBank     RAM
+	RAM         RAM
 	WRAM        WRAM
 	bankMode    uint
 	sound       *apu.APU
@@ -93,10 +92,6 @@ type GBC struct {
 
 // TransferROM Transfer ROM from cartridge to Memory
 func (g *GBC) TransferROM(rom []byte) {
-	for i := 0x0000; i <= 0x7fff; i++ {
-		g.RAM[i] = rom[i]
-	}
-
 	switch g.Cartridge.Type {
 	case 0x00:
 		g.Cartridge.MBC = cart.ROM

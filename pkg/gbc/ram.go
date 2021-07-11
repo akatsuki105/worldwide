@@ -15,13 +15,16 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 		// ROM bank1..256
 		value = g.ROM.buffer[g.ROM.bank][addr-0x4000]
 
-	case addr >= 0x8000 && addr < 0xa000: // vram bank
+	case addr >= 0x8000 && addr < 0xa000:
+		// VRAM
 		value = g.Video.VRAM.Buffer[addr-0x8000+(0x2000*g.Video.VRAM.Bank)]
-	case addr >= 0xa000 && addr < 0xc000: // rtc or ram bank
+
+	case addr >= 0xa000 && addr < 0xc000:
+		// RTC or RAM
 		if g.RTC.Mapped != 0 {
 			value = g.RTC.Read(byte(g.RTC.Mapped))
 		} else {
-			value = g.RAMBank.Buffer[g.RAMBank.bank][addr-0xa000]
+			value = g.RAM.Buffer[g.RAM.bank][addr-0xa000]
 		}
 
 	case addr >= 0xc000 && addr < 0xd000:
@@ -31,12 +34,13 @@ func (g *GBC) Load8(addr uint16) (value byte) {
 		// WRAM bank1..7
 		value = g.WRAM.buffer[g.WRAM.bank][addr-0xd000]
 
-	case addr >= 0xfe00 && addr <= 0xfe9f:
+	case addr >= 0xfe00 && addr < 0xfea0:
+		// OAM
 		value = g.Video.Oam.Get(addr - 0xfe00)
+
 	case addr >= 0xff00:
+		// IO, HRAM, IE
 		value = g.loadIO(byte(addr))
-	default:
-		value = g.RAM[addr]
 	}
 	return value
 }
@@ -75,19 +79,18 @@ func (g *GBC) Store8(addr uint16, value byte) {
 					bank := (upper2 << 5) | lower5
 					g.switchROMBank(bank)
 				} else if g.bankMode == 1 { // switch RAMptr
-					g.RAMBank.bank = value
+					g.RAM.bank = value
 				}
 			case cart.MBC3:
 				switch {
 				case value <= 0x07:
 					g.RTC.Mapped = 0
-					g.RAMBank.bank = value
+					g.RAM.bank = value
 				case value >= 0x08 && value <= 0x0c:
 					g.RTC.Mapped = uint(value)
 				}
 			case cart.MBC5:
-				// fmt.Println(value)
-				g.RAMBank.bank = value & 0x0f
+				g.RAM.bank = value & 0x0f
 			}
 		} else if (addr >= 0x6000) && (addr <= 0x7fff) {
 			switch g.Cartridge.MBC {
@@ -111,7 +114,7 @@ func (g *GBC) Store8(addr uint16, value byte) {
 			g.Video.VRAM.Buffer[addr-0x8000+(0x2000*g.Video.VRAM.Bank)] = value
 		case addr >= 0xa000 && addr < 0xc000: // rtc or ram
 			if g.RTC.Mapped == 0 {
-				g.RAMBank.Buffer[g.RAMBank.bank][addr-0xa000] = value
+				g.RAM.Buffer[g.RAM.bank][addr-0xa000] = value
 			} else {
 				g.RTC.Write(byte(g.RTC.Mapped), value)
 			}
@@ -125,10 +128,9 @@ func (g *GBC) Store8(addr uint16, value byte) {
 
 		case addr >= 0xfe00 && addr <= 0xfe9f:
 			g.Video.Oam.Set(addr-0xfe00, value)
+
 		case addr >= 0xff00:
 			g.storeIO(byte(addr), value)
-		default:
-			g.RAM[addr] = value
 		}
 	}
 }
@@ -138,19 +140,4 @@ func (g *GBC) switchROMBank(bank uint8) {
 	if switchFlag {
 		g.ROM.bank = bank
 	}
-}
-
-func (g *GBC) doVRAMDMATransfer(length int) {
-	from := (uint16(g.IO[HDMA1IO])<<8 | uint16(g.IO[HDMA2IO])) & 0xfff0
-	to := ((uint16(g.IO[HDMA3IO])<<8 | uint16(g.IO[HDMA4IO])) & 0x1ff0) + 0x8000
-
-	for i := 0; i < length; i++ {
-		value := g.Load8(from)
-		g.Store8(to, value)
-		from++
-		to++
-	}
-
-	g.IO[HDMA1IO], g.IO[HDMA2IO] = byte(from>>8), byte(from)
-	g.IO[HDMA3IO], g.IO[HDMA4IO] = byte(to>>8), byte(to&0xf0)
 }
