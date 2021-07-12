@@ -11,7 +11,10 @@ func (g *GBC) fixCycles(cycles uint32) uint32 {
 	return cycles * 4 >> util.Bool2U32(g.DoubleSpeed)
 }
 
-func (g *GBC) a16Fetch() uint16 { return g.d16Fetch() }
+func (g *GBC) a16Fetch() uint16 {
+	lower, upper := uint16(g.Load8(g.Reg.PC+1)), uint16(g.Load8(g.Reg.PC+2))
+	return (upper << 8) | lower
+}
 
 func (g *GBC) a16FetchJP() uint16 {
 	lower := uint16(g.Load8(g.Reg.PC + 1)) // M = 1: nn read: memory access for low byte
@@ -24,11 +27,6 @@ func (g *GBC) a16FetchJP() uint16 {
 
 func (g *GBC) d8Fetch() byte {
 	return g.Load8(g.Reg.PC + 1)
-}
-
-func (g *GBC) d16Fetch() uint16 {
-	lower, upper := uint16(g.Load8(g.Reg.PC+1)), uint16(g.Load8(g.Reg.PC+2))
-	return (upper << 8) | lower
 }
 
 // LD R8,R8
@@ -104,7 +102,7 @@ func op0xea(g *GBC, operand1, operand2 int) {
 
 // ld r16, u16
 func ld16i(g *GBC, r16, _ int) {
-	g.Reg.setR16(r16, g.d16Fetch())
+	g.Reg.setR16(r16, g.a16Fetch())
 	g.Reg.PC += 3
 }
 
