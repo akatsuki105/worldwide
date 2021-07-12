@@ -388,42 +388,52 @@ func reti(g *GBC, operand1, operand2 int) {
 func call(g *GBC, _, _ int) {
 	g.Reg.PC++
 
-	dst := g.a16FetchJP()
+	dest := g.a16FetchJP()
+	_call(g, dest)
+}
+
+func _call(g *GBC, dest uint16) {
 	g.timer.tick(g.fixCycles(1))
 	g.pushPCCALL()
 	g.timer.tick(g.fixCycles(1))
-	g.Reg.PC = dst
+	g.Reg.PC = dest
 }
 
 func callcc(g *GBC, cc, _ int) {
+	g.Reg.PC++
+
+	dest := g.a16FetchJP()
 	if g.f(cc) {
-		call(g, 0, 0)
+		_call(g, dest)
 		return
 	}
-	g.Reg.PC += 3
 	g.timer.tick(g.fixCycles(3))
 }
 
 func callncc(g *GBC, cc, _ int) {
+	g.Reg.PC++
+
+	dest := g.a16FetchJP()
 	if !g.f(cc) {
-		call(g, 0, 0)
+		_call(g, dest)
 		return
 	}
-	g.Reg.PC += 3
 	g.timer.tick(g.fixCycles(3))
 }
 
 // DI Disable Interrupt
 func di(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	g.Reg.IME = false
 	g.updateIRQs()
-	g.Reg.PC++
 }
 
 // EI Enable Interrupt
 func ei(g *GBC, _, _ int) {
-	// TODO ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
 	g.Reg.PC++
+
+	// TODO ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
 	g.scheduler.DescheduleEvent(scheduler.EiPending)
 	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
 		g.Reg.IME = true
