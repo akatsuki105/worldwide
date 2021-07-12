@@ -1,6 +1,6 @@
 package apu
 
-// サウンドはgoboyのコードをベースに自分のエミュレータに合うように改造(というかほぼコピペ。。。)
+// copy and hack source code from goboy
 
 import (
 	"fmt"
@@ -27,8 +27,7 @@ const (
 // Channels 1 and 2 are both Square channels, channel 3 is a arbitrary
 // waveform channel which can be set in RAM, and channel 4 outputs noise.
 type APU struct {
-	enable  bool
-	playing bool
+	Enable bool
 
 	memory      [52]byte
 	waveformRAM []byte
@@ -44,8 +43,7 @@ type APU struct {
 // Init the sound emulation for a Gameboy.
 func New(enable bool, setAudioStream func([]byte)) *APU {
 	a := &APU{
-		enable:         enable,
-		playing:        enable,
+		Enable:         enable,
 		setAudioStream: setAudioStream,
 	}
 	a.waveformRAM = make([]byte, 0x20)
@@ -74,7 +72,7 @@ func New(enable bool, setAudioStream func([]byte)) *APU {
 //
 // This function is called 60 times per second.
 func (a *APU) Update() {
-	if !a.enable {
+	if !a.Enable {
 		return
 	}
 
@@ -94,7 +92,7 @@ func (a *APU) Update() {
 }
 
 func (a *APU) Buffer(cpuTicks int) {
-	if !a.playing {
+	if !a.Enable {
 		return
 	}
 	a.tickCounter += float64(cpuTicks)
