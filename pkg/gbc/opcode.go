@@ -945,6 +945,8 @@ func adc8(g *GBC, _, op int) {
 
 // ADC A,(HL)
 func adcaHL(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	carry := util.Bool2U8(g.f(flagC))
 	data := g.Load8(g.Reg.HL())
 	value := data + carry + g.Reg.R[A]
@@ -953,7 +955,6 @@ func adcaHL(g *GBC, _, _ int) {
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
-	g.Reg.PC++
 }
 
 // ADC A,u8
@@ -972,6 +973,8 @@ func adcu8(g *GBC, _, _ int) {
 // SBC Subtract the value n8 and the carry flag from A
 
 func sbc8(g *GBC, _, op int) {
+	g.Reg.PC++
+
 	carry := util.Bool2U8(g.f(flagC))
 	value := g.Reg.R[A] - (g.Reg.R[op] + carry)
 	value4 := (g.Reg.R[A] & 0b1111) - ((g.Reg.R[op] & 0b1111) + carry)
@@ -979,11 +982,12 @@ func sbc8(g *GBC, _, op int) {
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
-	g.Reg.PC++
 }
 
 // SBC A,(HL)
 func sbcaHL(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	carry := util.Bool2U8(g.f(flagC))
 	data := g.Load8(g.Reg.HL())
 	value := g.Reg.R[A] - (data + carry)
@@ -992,7 +996,6 @@ func sbcaHL(g *GBC, _, _ int) {
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
-	g.Reg.PC++
 }
 
 // SBC A,u8
@@ -1010,6 +1013,8 @@ func sbcu8(g *GBC, _, _ int) {
 
 // DAA Decimal adjust
 func daa(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	a := g.Reg.R[A]
 	// ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !g.f(flagN) {
@@ -1032,23 +1037,25 @@ func daa(g *GBC, _, _ int) {
 	g.Reg.R[A] = a
 	g.setF(flagZ, a == 0)
 	g.setF(flagH, false)
-	g.Reg.PC++
 }
 
 // push present address and jump to vector address
 func rst(g *GBC, addr, _ int) {
 	g.Reg.PC++
+
 	g.pushPC()
 	g.Reg.PC = uint16(addr)
 }
 
 func scf(g *GBC, _, _ int) {
-	g.setNHC(false, false, true)
 	g.Reg.PC++
+
+	g.setNHC(false, false, true)
 }
 
 // CCF Complement Carry Flag
 func ccf(g *GBC, _, _ int) {
-	g.setNHC(false, false, !g.f(flagC))
 	g.Reg.PC++
+
+	g.setNHC(false, false, !g.f(flagC))
 }
