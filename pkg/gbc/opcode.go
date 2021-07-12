@@ -255,6 +255,7 @@ func jrncc(g *GBC, cc, _ int) {
 
 func halt(g *GBC, _, _ int) {
 	g.Reg.PC++
+
 	if g.IO[IEIO]&g.IO[IFIO]&0x1f == 0 {
 		g.halt = true
 	}
@@ -262,7 +263,9 @@ func halt(g *GBC, _, _ int) {
 
 // stop GBC
 func stop(g *GBC, _, _ int) {
-	g.Reg.PC += 2
+	g.Reg.PC++
+
+	g.Reg.PC++
 	if g.model >= util.GB_MODEL_CGB && util.Bit(g.IO[KEY1IO], 0) {
 		g.DoubleSpeed = !g.DoubleSpeed
 		g.IO[KEY1IO] = byte(util.Bool2Int(g.DoubleSpeed)) << 7
@@ -501,11 +504,12 @@ func oraHL(g *GBC, _, _ int) {
 
 // OR A,u8
 func oru8(g *GBC, _, _ int) {
-	value := g.Reg.R[A] | g.Load8(g.Reg.PC+1)
+	g.Reg.PC++
+
+	value := g.Reg.R[A] | g.d8Fetch()
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, false, false)
-	g.Reg.PC += 2
 }
 
 // ADD Addition
@@ -552,13 +556,14 @@ func addaHL(g *GBC, _, _ int) {
 
 // ADD SP,i8
 func addSPi8(g *GBC, _, _ int) {
-	delta := int8(g.Load8(g.Reg.PC + 1))
+	g.Reg.PC++
+
+	delta := int8(g.d8Fetch())
 	value := int32(g.Reg.SP) + int32(delta)
 	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
 	g.Reg.SP = uint16(value)
 
 	g.setZNHC(false, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
-	g.Reg.PC += 2
 }
 
 // complement A Register
