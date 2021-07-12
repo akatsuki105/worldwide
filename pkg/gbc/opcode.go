@@ -433,21 +433,17 @@ func or8(g *GBC, _, r8 int) {
 
 // OR A,(HL)
 func oraHL(g *GBC, _, _ int) {
-	value := g.Reg.R[A] | g.Load8(g.Reg.HL())
-	g.Reg.R[A] = value
-
-	g.setZNHC(value == 0, false, false, false)
+	g.Reg.R[A] |= g.Load8(g.Reg.HL())
+	g.setZNHC(g.Reg.R[A] == 0, false, false, false)
 }
 
 // OR A,u8
 func oru8(g *GBC, _, _ int) {
-	value := g.Reg.R[A] | g.d8Fetch()
-	g.Reg.R[A] = value
-
-	g.setZNHC(value == 0, false, false, false)
+	g.Reg.R[A] |= g.d8Fetch()
+	g.setZNHC(g.Reg.R[A] == 0, false, false, false)
 }
 
-// ADD Addition
+// ADD A,r8
 func add8(g *GBC, _, r8 int) {
 	value := uint16(g.Reg.R[A]) + uint16(g.Reg.R[r8])
 	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Reg.R[r8]) ^ value
@@ -456,12 +452,12 @@ func add8(g *GBC, _, r8 int) {
 	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 }
 
-// add hl,r16
+// ADD HL,r16
 func addHL(g *GBC, _, r16 int) {
-	value := uint32(g.Reg.HL()) + uint32(g.Reg.R16(r16))
-	carryBits := uint32(g.Reg.HL()) ^ uint32(g.Reg.R16(r16)) ^ value
+	lhs, rhs := g.Reg.HL(), g.Reg.R16(r16)
+	value := uint32(lhs) + uint32(rhs)
+	carryBits := uint32(lhs) ^ uint32(rhs) ^ value
 	g.Reg.setHL(uint16(value))
-
 	g.setNHC(false, util.Bit(carryBits, 12), util.Bit(carryBits, 16))
 }
 
@@ -471,16 +467,15 @@ func addu8(g *GBC, _, _ int) {
 	value := uint16(g.Reg.R[A]) + uint16(d8)
 	carryBits := uint16(g.Reg.R[A]) ^ uint16(d8) ^ value
 	g.Reg.R[A] = byte(value)
-
 	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 }
 
 // ADD A,(HL)
 func addaHL(g *GBC, _, _ int) {
-	value := uint16(g.Reg.R[A]) + uint16(g.Load8(g.Reg.HL()))
-	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Load8(g.Reg.HL())) ^ value
+	rhs := g.Load8(g.Reg.HL())
+	value := uint16(g.Reg.R[A]) + uint16(rhs)
+	carryBits := uint16(g.Reg.R[A]) ^ uint16(rhs) ^ value
 	g.Reg.R[A] = byte(value)
-
 	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 }
 
@@ -497,7 +492,6 @@ func addSPi8(g *GBC, _, _ int) {
 // complement A Register
 func cpl(g *GBC, _, _ int) {
 	g.Reg.R[A] = ^g.Reg.R[A]
-
 	g.setNH(true, true)
 }
 
