@@ -65,9 +65,15 @@ const (
 	JoypadIRQ
 )
 
+type CurInst struct {
+	Opcode byte
+	PC     uint16
+}
+
 // GBC core structure
 type GBC struct {
-	Reg Register
+	Reg  Register
+	Inst CurInst
 
 	// memory
 	ROM  ROM
@@ -234,8 +240,10 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 
 // Exec 1cycle
 func (g *GBC) step() {
-	PC := g.Reg.PC
-	opcode := g.Load8(PC)
+	pc := g.Reg.PC
+	opcode := g.Load8(pc)
+	g.Inst.Opcode, g.Inst.PC = opcode, pc
+
 	inst := gbz80insts[opcode]
 	operand1, operand2, cycle, handler := inst.Operand1, inst.Operand2, inst.Cycle1, inst.Handler
 

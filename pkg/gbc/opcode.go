@@ -12,7 +12,8 @@ func (g *GBC) fixCycles(cycles uint32) uint32 {
 }
 
 func (g *GBC) a16Fetch() uint16 {
-	lower, upper := uint16(g.Load8(g.Reg.PC+1)), uint16(g.Load8(g.Reg.PC+2))
+	lower, upper := uint16(g.Load8(g.Inst.PC+1)), uint16(g.Load8(g.Inst.PC+2))
+	g.Reg.PC += 2
 	return (upper << 8) | lower
 }
 
@@ -84,12 +85,13 @@ func ldHLR8(g *GBC, unused, op int) {
 
 // LD (u16),SP
 func op0x08(g *GBC, operand1, operand2 int) {
+	g.Reg.PC++
+
 	// Store SP into addresses n16 (LSB) and n16 + 1 (MSB).
 	addr := g.a16Fetch()
 	upper, lower := byte(g.Reg.SP>>8), byte(g.Reg.SP) // MSB
 	g.Store8(addr, lower)
 	g.Store8(addr+1, upper)
-	g.Reg.PC += 3
 	g.timer.tick(g.fixCycles(5))
 }
 
@@ -102,8 +104,9 @@ func op0xea(g *GBC, operand1, operand2 int) {
 
 // ld r16, u16
 func ld16i(g *GBC, r16, _ int) {
+	g.Reg.PC++
+
 	g.Reg.setR16(r16, g.a16Fetch())
-	g.Reg.PC += 3
 }
 
 // LD HL,SP+i8
