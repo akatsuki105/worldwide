@@ -28,7 +28,9 @@ func (g *GBC) a16FetchJP() uint16 {
 }
 
 func (g *GBC) d8Fetch() byte {
-	return g.Load8(g.Reg.PC + 1)
+	value := g.Load8(g.Inst.PC + 1)
+	g.Reg.PC++
+	return value
 }
 
 // LD R8,R8
@@ -47,8 +49,9 @@ func ld8m(g *GBC, r8, r16 int) {
 
 // ld r8, mem[imm]
 func ld8i(g *GBC, r8, _ int) {
+	g.Reg.PC++
+
 	g.Reg.R[r8] = g.d8Fetch()
-	g.Reg.PC += 2
 }
 
 // LD A, (u16)
@@ -70,10 +73,11 @@ func op0xf2(g *GBC, operand1, operand2 int) {
 
 // LD (HL),u8
 func op0x36(g *GBC, operand1, operand2 int) {
+	g.Reg.PC++
+
 	value := g.d8Fetch()
 	g.timer.tick(g.fixCycles(1))
 	g.Store8(g.Reg.HL(), value)
-	g.Reg.PC += 2
 	g.timer.tick(g.fixCycles(2))
 }
 
@@ -435,12 +439,14 @@ func cpaHL(g *GBC, _, _ int) {
 
 // CP A,u8
 func cpu8(g *GBC, _, _ int) {
-	value := g.Reg.R[A] - g.d8Fetch()
-	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
-	newCarry := subC(g.Reg.R[A], g.d8Fetch())
+	g.Reg.PC++
+
+	d8 := g.d8Fetch()
+	value := g.Reg.R[A] - d8
+	carryBits := g.Reg.R[A] ^ d8 ^ value
+	newCarry := subC(g.Reg.R[A], d8)
 
 	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
-	g.Reg.PC += 2
 }
 
 // AND And instruction
@@ -464,11 +470,12 @@ func op0xa6(g *GBC, _, _ int) {
 
 // AND A,u8
 func andu8(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] & g.d8Fetch()
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, true, false)
-	g.Reg.PC += 2
 }
 
 // OR or
@@ -520,12 +527,14 @@ func addHL(g *GBC, _, r16 int) {
 
 // ADD A,u8
 func addu8(g *GBC, _, _ int) {
-	value := uint16(g.Reg.R[A]) + uint16(g.d8Fetch())
-	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.d8Fetch()) ^ value
+	g.Reg.PC++
+
+	d8 := g.d8Fetch()
+	value := uint16(g.Reg.R[A]) + uint16(d8)
+	carryBits := uint16(g.Reg.R[A]) ^ uint16(d8) ^ value
 	g.Reg.R[A] = byte(value)
 
 	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
-	g.Reg.PC += 2
 }
 
 // ADD A,(HL)
@@ -914,13 +923,15 @@ func subaHL(g *GBC, _, _ int) {
 
 // SUB A,u8
 func subu8(g *GBC, _, _ int) {
-	value := g.Reg.R[A] - g.d8Fetch()
-	carryBits := g.Reg.R[A] ^ g.d8Fetch() ^ value
-	newCarry := subC(g.Reg.R[A], g.d8Fetch())
+	g.Reg.PC++
+
+	d8 := g.d8Fetch()
+	value := g.Reg.R[A] - d8
+	carryBits := g.Reg.R[A] ^ d8 ^ value
+	newCarry := subC(g.Reg.R[A], d8)
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
-	g.Reg.PC += 2
 }
 
 // Rotate register A right through carry.
@@ -967,6 +978,7 @@ func adcaHL(g *GBC, _, _ int) {
 
 // ADC A,u8
 func adcu8(g *GBC, _, _ int) {
+	g.Reg.PC++
 	carry := util.Bool2U8(g.f(flagC))
 	data := g.d8Fetch()
 	value := data + carry + g.Reg.R[A]
@@ -975,7 +987,6 @@ func adcu8(g *GBC, _, _ int) {
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
-	g.Reg.PC += 2
 }
 
 // SBC Subtract the value n8 and the carry flag from A
@@ -1008,6 +1019,7 @@ func sbcaHL(g *GBC, _, _ int) {
 
 // SBC A,u8
 func sbcu8(g *GBC, _, _ int) {
+	g.Reg.PC++
 	carry := util.Bool2U8(g.f(flagC))
 	data := g.d8Fetch()
 	value := g.Reg.R[A] - (data + carry)
@@ -1016,7 +1028,6 @@ func sbcu8(g *GBC, _, _ int) {
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
-	g.Reg.PC += 2
 }
 
 // DAA Decimal adjust
