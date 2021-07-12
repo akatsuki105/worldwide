@@ -18,10 +18,11 @@ func (g *GBC) a16Fetch() uint16 {
 }
 
 func (g *GBC) a16FetchJP() uint16 {
-	lower := uint16(g.Load8(g.Reg.PC + 1)) // M = 1: nn read: memory access for low byte
+	lower := uint16(g.Load8(g.Inst.PC + 1)) // M = 1: nn read: memory access for low byte
 	g.timer.tick(g.fixCycles(1))
-	upper := uint16(g.Load8(g.Reg.PC + 2)) // M = 2: nn read: memory access for high byte
+	upper := uint16(g.Load8(g.Inst.PC + 2)) // M = 2: nn read: memory access for high byte
 	g.timer.tick(g.fixCycles(1))
+	g.Reg.PC += 2
 	value := (upper << 8) | lower
 	return value
 }
@@ -52,8 +53,9 @@ func ld8i(g *GBC, r8, _ int) {
 
 // LD A, (u16)
 func op0xfa(g *GBC, operand1, operand2 int) {
+	g.Reg.PC++
+
 	g.Reg.R[A] = g.Load8(g.a16FetchJP())
-	g.Reg.PC += 3
 	g.timer.tick(g.fixCycles(2))
 }
 
@@ -97,8 +99,9 @@ func op0x08(g *GBC, operand1, operand2 int) {
 
 // LD (u16),A
 func op0xea(g *GBC, operand1, operand2 int) {
+	g.Reg.PC++
+
 	g.Store8(g.a16FetchJP(), g.Reg.R[A])
-	g.Reg.PC += 3
 	g.timer.tick(g.fixCycles(2))
 }
 
@@ -294,28 +297,32 @@ func xoru8(g *GBC, _, _ int) {
 
 // jp u16
 func jp(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	g.Reg.PC = g.a16FetchJP()
 	g.timer.tick(g.fixCycles(2))
 }
 
 func jpcc(g *GBC, cc, _ int) {
+	g.Reg.PC++
+
 	dst := g.a16FetchJP()
 	if g.f(cc) {
 		g.Reg.PC = dst
 		g.timer.tick(g.fixCycles(2))
 	} else {
-		g.Reg.PC += 3
 		g.timer.tick(g.fixCycles(1))
 	}
 }
 
 func jpncc(g *GBC, cc, _ int) {
+	g.Reg.PC++
+
 	dst := g.a16FetchJP()
 	if !g.f(cc) {
 		g.Reg.PC = dst
 		g.timer.tick(g.fixCycles(2))
 	} else {
-		g.Reg.PC += 3
 		g.timer.tick(g.fixCycles(1))
 	}
 }
@@ -361,8 +368,9 @@ func reti(g *GBC, operand1, operand2 int) {
 }
 
 func call(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	dst := g.a16FetchJP()
-	g.Reg.PC += 3
 	g.timer.tick(g.fixCycles(1))
 	g.pushPCCALL()
 	g.timer.tick(g.fixCycles(1))
