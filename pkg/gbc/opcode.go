@@ -228,27 +228,35 @@ func decHL(g *GBC, _, _ int) {
 
 // jr i8
 func jr(g *GBC, _, _ int) {
-	delta := int8(g.Load8(g.Reg.PC + 1))
-	g.Reg.PC = uint16(int32(g.Reg.PC+2) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
+	g.Reg.PC++
+	_jr(g, int8(g.d8Fetch()))
+}
+
+func _jr(g *GBC, delta int8) {
+	g.Reg.PC = uint16(int32(g.Reg.PC) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
 	g.timer.tick(g.fixCycles(3))
 }
 
 // jr cc,i8
 func jrcc(g *GBC, cc, _ int) {
+	g.Reg.PC++
+
+	delta := int8(g.d8Fetch())
 	if g.f(cc) {
-		jr(g, 0, 0)
+		_jr(g, delta)
 	} else {
-		g.Reg.PC += 2
 		g.timer.tick(g.fixCycles(2))
 	}
 }
 
 // jr ncc,i8 (ncc = not cc)
 func jrncc(g *GBC, cc, _ int) {
+	g.Reg.PC++
+
+	delta := int8(g.d8Fetch())
 	if !g.f(cc) {
-		jr(g, 0, 0)
+		_jr(g, delta)
 	} else {
-		g.Reg.PC += 2
 		g.timer.tick(g.fixCycles(2))
 	}
 }
