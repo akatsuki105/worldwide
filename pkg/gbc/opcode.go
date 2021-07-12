@@ -118,12 +118,13 @@ func ld16i(g *GBC, r16, _ int) {
 
 // LD HL,SP+i8
 func op0xf8(g *GBC, operand1, operand2 int) {
-	delta := int8(g.Load8(g.Reg.PC + 1))
+	g.Reg.PC++
+
+	delta := int8(g.d8Fetch())
 	value := int32(g.Reg.SP) + int32(delta)
 	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
 	g.Reg.setHL(uint16(value))
 	g.setZNHC(false, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
-	g.Reg.PC += 2
 }
 
 // LD SP,HL
@@ -146,21 +147,23 @@ func ldm16r(g *GBC, r16, r8 int) {
 
 // LD ($FF00+a8),A
 func op0xe0(g *GBC, operand1, operand2 int) {
-	addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
+	g.Reg.PC++
+
+	addr := 0xff00 + uint16(g.d8Fetch())
 	g.timer.tick(g.fixCycles(1))
 	g.storeIO(byte(addr), g.Reg.R[A])
-	g.Reg.PC += 2
 	g.timer.tick(g.fixCycles(2))
 }
 
 // LD A,($FF00+a8)
 func op0xf0(g *GBC, operand1, operand2 int) {
-	addr := 0xff00 + uint16(g.Load8(g.Reg.PC+1))
+	g.Reg.PC++
+
+	addr := 0xff00 + uint16(g.d8Fetch())
 	g.timer.tick(g.fixCycles(1))
 	value := g.loadIO(byte(addr))
 
 	g.Reg.R[A] = value
-	g.Reg.PC += 2
 	g.timer.tick(g.fixCycles(2))
 }
 
