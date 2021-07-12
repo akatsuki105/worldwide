@@ -67,16 +67,19 @@ const (
 
 // GBC core structure
 type GBC struct {
-	Reg         Register
-	IO          [0x100]byte // 0xff00-0xffff
+	Reg Register
+
+	// memory
+	ROM  ROM
+	RAM  RAM
+	WRAM WRAM
+	IO   [0x100]byte // 0xff00-0xffff
+
 	Cartridge   *cart.Cartridge
 	joypad      *joypad.Joypad
 	halt        bool
 	Config      *config.Config
 	timer       *Timer
-	ROM         ROM
-	RAM         RAM
-	WRAM        WRAM
 	bankMode    uint
 	sound       *apu.APU
 	Video       *video.Video
@@ -232,9 +235,9 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 // Exec 1cycle
 func (g *GBC) step() {
 	PC := g.Reg.PC
-	bytecode := g.Load8(PC)
-	opcode := opcodes[bytecode]
-	operand1, operand2, cycle, handler := opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
+	opcode := g.Load8(PC)
+	inst := gbz80insts[opcode]
+	operand1, operand2, cycle, handler := inst.Operand1, inst.Operand2, inst.Cycle1, inst.Handler
 
 	if !g.halt {
 		if g.irqPending > 0 {
