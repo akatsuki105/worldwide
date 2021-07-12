@@ -351,7 +351,7 @@ func callcc(g *GBC, cc, _ int) {
 		_call(g, dest)
 		return
 	}
-	g.timer.tick(g.fixCycles(3))
+	g.timer.tick(g.fixCycles(1))
 }
 
 func callncc(g *GBC, cc, _ int) {
@@ -360,7 +360,7 @@ func callncc(g *GBC, cc, _ int) {
 		_call(g, dest)
 		return
 	}
-	g.timer.tick(g.fixCycles(3))
+	g.timer.tick(g.fixCycles(1))
 }
 
 // DI Disable Interrupt
