@@ -257,6 +257,7 @@ func (g *GBC) step() {
 			return
 		}
 
+		g.Reg.PC++
 		handler(g, operand1, operand2)
 		cycle *= (4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 	} else {
