@@ -195,7 +195,7 @@ func (g *GBC) resetRegister() {
 	g.Reg.PC, g.Reg.SP = 0x0100, 0xfffe
 }
 
-func New(romData []byte, j [8](func() bool)) *GBC {
+func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 	g := &GBC{
 		Cartridge: cart.New(romData),
 		scheduler: scheduler.New(),
@@ -218,7 +218,7 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 	g.Config = config.New()
 
 	// Init APU
-	g.sound = apu.New(true)
+	g.sound = apu.New(true, setAudioStream)
 
 	// Init RTC
 	go g.RTC.Init()
@@ -265,6 +265,8 @@ func (g *GBC) Update() error {
 	for frame == g.Video.FrameCounter {
 		g.step()
 	}
+
+	g.sound.Update()
 	return nil
 }
 

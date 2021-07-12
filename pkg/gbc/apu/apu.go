@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"time"
 
 	"github.com/pokemium/Worldwide/pkg/util"
-
-	"github.com/hajimehoshi/oto"
 )
 
 const (
@@ -21,7 +18,7 @@ const (
 	cpuTicksPerSample = float64(4194304) / SAMPLE_RATE
 	STREAM_LEN        = 2940 // 2 * 2 * SAMPLE_RATE * (1/60)
 	volume            = 0.07
-	bufferSeconds     = 60
+	BUF_SEC           = 60
 )
 
 // APU is the GameBoy's audio processing unit. Audio comprises four
@@ -30,23 +27,27 @@ const (
 // Channels 1 and 2 are both Square channels, channel 3 is a arbitrary
 // waveform channel which can be set in RAM, and channel 4 outputs noise.
 type APU struct {
+	enable  bool
 	playing bool
 
 	memory      [52]byte
 	waveformRAM []byte
 
-	player                 *oto.Player
 	chn1, chn2, chn3, chn4 *Channel
 	tickCounter            float64
 	lVol, rVol             float64
 
-	audioBuffer chan [2]byte
+	audioBuffer    chan [2]byte
+	setAudioStream func([]byte)
 }
 
 // Init the sound emulation for a Gameboy.
-func New(sound bool) *APU {
-	a := &APU{}
-	a.playing = sound
+func New(enable bool, setAudioStream func([]byte)) *APU {
+	a := &APU{
+		enable:         enable,
+		playing:        enable,
+		setAudioStream: setAudioStream,
+	}
 	a.waveformRAM = make([]byte, 0x20)
 	a.audioBuffer = make(chan [2]byte, STREAM_LEN)
 
@@ -66,40 +67,30 @@ func New(sound bool) *APU {
 	a.chn3 = NewChannel()
 	a.chn4 = NewChannel()
 
-	if sound {
-		context, err := oto.NewContext(SAMPLE_RATE, 2, 1, SAMPLE_RATE/bufferSeconds)
-		if err != nil {
-			log.Fatalf("Failed to start audio: %v", err)
-		}
-		a.player = context.NewPlayer()
-		a.playSound(bufferSeconds)
-	}
-
 	return a
 }
 
-// Starts a goroutine which plays the sound
-func (a *APU) playSound(bufferSeconds int) {
-	frameTime := time.Second / time.Duration(bufferSeconds)
-	ticker := time.NewTicker(frameTime)
-	targetSamples := SAMPLE_RATE / bufferSeconds
-	go func() {
-		var reading [2]byte
-		var buffer []byte
-		for range ticker.C {
-			fbLen := len(a.audioBuffer)
-			if fbLen >= targetSamples/2 {
-				newBuffer := make([]byte, fbLen*2)
-				for i := 0; i < fbLen*2; i += 2 {
-					reading = <-a.audioBuffer
-					newBuffer[i], newBuffer[i+1] = reading[0], reading[1]
-				}
-				buffer = newBuffer
-			}
+// Plays the sound
+//
+// This function is called 60 times per second.
+func (a *APU) Update() {
+	if !a.enable {
+		return
+	}
 
-			a.player.Write(buffer)
+	targetSamples := SAMPLE_RATE / BUF_SEC
+	var reading [2]byte
+	var buffer []byte
+	fbLen := len(a.audioBuffer)
+	if fbLen >= targetSamples/2 {
+		newBuffer := make([]byte, fbLen*2)
+		for i := 0; i < fbLen*2; i += 2 {
+			reading = <-a.audioBuffer
+			newBuffer[i], newBuffer[i+1] = reading[0], reading[1]
 		}
-	}()
+		buffer = newBuffer
+	}
+	a.setAudioStream(buffer)
 }
 
 func (a *APU) Buffer(cpuTicks int) {
