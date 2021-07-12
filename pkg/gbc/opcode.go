@@ -305,12 +305,12 @@ func xoraHL(g *GBC, _, _ int) {
 
 // XOR A,u8
 func xoru8(g *GBC, _, _ int) {
-	value := g.Reg.R[A] ^ g.Load8(g.Reg.PC+1)
 	g.Reg.PC++
+
+	value := g.Reg.R[A] ^ g.d8Fetch()
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, false, false)
-	g.Reg.PC++
 }
 
 // jp u16
@@ -443,22 +443,24 @@ func ei(g *GBC, _, _ int) {
 
 // CP Compare
 func cp(g *GBC, _, r8 int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] - g.Reg.R[r8]
 	carryBits := g.Reg.R[A] ^ g.Reg.R[r8] ^ value
 	newCarry := subC(g.Reg.R[A], g.Reg.R[r8])
 
 	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
-	g.Reg.PC++
 }
 
 // CP A,(HL)
 func cpaHL(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
 	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
 	newCarry := subC(g.Reg.R[A], g.Load8(g.Reg.HL()))
 
 	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
-	g.Reg.PC++
 }
 
 // CP A,u8
@@ -476,20 +478,22 @@ func cpu8(g *GBC, _, _ int) {
 // AND And instruction
 
 func and8(g *GBC, _, r8 int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] & g.Reg.R[r8]
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, true, false)
-	g.Reg.PC++
 }
 
 // AND A,(HL)
 func op0xa6(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] & g.Load8(g.Reg.HL())
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, true, false)
-	g.Reg.PC++
 }
 
 // AND A,u8
@@ -504,20 +508,22 @@ func andu8(g *GBC, _, _ int) {
 
 // OR or
 func orR8(g *GBC, _, r8 int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] | g.Reg.R[r8]
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, false, false)
-	g.Reg.PC++
 }
 
 // OR A,(HL)
 func oraHL(g *GBC, _, _ int) {
+	g.Reg.PC++
+
 	value := g.Reg.R[A] | g.Load8(g.Reg.HL())
 	g.Reg.R[A] = value
 
 	g.setZNHC(value == 0, false, false, false)
-	g.Reg.PC++
 }
 
 // OR A,u8
@@ -532,22 +538,24 @@ func oru8(g *GBC, _, _ int) {
 
 // ADD Addition
 func add8(g *GBC, _, r8 int) {
+	g.Reg.PC++
+
 	value := uint16(g.Reg.R[A]) + uint16(g.Reg.R[r8])
 	carryBits := uint16(g.Reg.R[A]) ^ uint16(g.Reg.R[r8]) ^ value
 	g.Reg.R[A] = byte(value)
 
 	g.setZNHC(byte(value) == 0, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
-	g.Reg.PC++
 }
 
 // add hl,r16
 func addHL(g *GBC, _, r16 int) {
+	g.Reg.PC++
+
 	value := uint32(g.Reg.HL()) + uint32(g.Reg.R16(r16))
 	carryBits := uint32(g.Reg.HL()) ^ uint32(g.Reg.R16(r16)) ^ value
 	g.Reg.setHL(uint16(value))
 
 	g.setNHC(false, util.Bit(carryBits, 12), util.Bit(carryBits, 16))
-	g.Reg.PC++
 }
 
 // ADD A,u8
