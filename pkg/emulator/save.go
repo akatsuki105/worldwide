@@ -21,19 +21,19 @@ func (e *Emulator) WriteSav() {
 	case 1:
 		savdata = make([]byte, 0x800)
 		for index := 0; index < 0x800; index++ {
-			savdata[index] = g.RAMBank.Bank[0][index]
+			savdata[index] = g.RAM.Buffer[0][index]
 		}
 	case 2:
 		savdata = make([]byte, 0x2000*1)
 		for index := 0; index < 0x2000; index++ {
-			savdata[index] = g.RAMBank.Bank[0][index]
+			savdata[index] = g.RAM.Buffer[0][index]
 		}
 	case 3:
 		savdata = make([]byte, 0x2000*4)
 		for i := 0; i < 4; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				savdata[index] = g.RAMBank.Bank[i][j]
+				savdata[index] = g.RAM.Buffer[i][j]
 			}
 		}
 	case 5:
@@ -41,7 +41,7 @@ func (e *Emulator) WriteSav() {
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				savdata[index] = g.RAMBank.Bank[i][j]
+				savdata[index] = g.RAM.Buffer[i][j]
 			}
 		}
 	}
@@ -69,24 +69,24 @@ func (e *Emulator) LoadSav() {
 	switch g.Cartridge.RAMSize {
 	case 1:
 		for index := 0; index < 0x800; index++ {
-			g.RAMBank.Bank[0][index] = savdata[index]
+			g.RAM.Buffer[0][index] = savdata[index]
 		}
 	case 2:
 		for index := 0; index < 0x2000; index++ {
-			g.RAMBank.Bank[0][index] = savdata[index]
+			g.RAM.Buffer[0][index] = savdata[index]
 		}
 	case 3:
 		for i := 0; i < 4; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				g.RAMBank.Bank[i][j] = savdata[index]
+				g.RAM.Buffer[i][j] = savdata[index]
 			}
 		}
 	case 5:
 		for i := 0; i < 8; i++ {
 			for j := 0; j < 0x2000; j++ {
 				index := i*0x2000 + j
-				g.RAMBank.Bank[i][j] = savdata[index]
+				g.RAM.Buffer[i][j] = savdata[index]
 			}
 		}
 	}

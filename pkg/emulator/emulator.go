@@ -2,11 +2,12 @@ package emulator
 
 import (
 	"fmt"
-	"gbc/pkg/emulator/debug"
-	"gbc/pkg/gbc"
 	"time"
 
 	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/pokemium/Worldwide/pkg/emulator/audio"
+	"github.com/pokemium/Worldwide/pkg/emulator/debug"
+	"github.com/pokemium/Worldwide/pkg/gbc"
 )
 
 var (
@@ -21,7 +22,8 @@ type Emulator struct {
 }
 
 func New(romData []byte, j [8](func() bool), romDir string, isDebugMode bool) *Emulator {
-	g := gbc.New(romData, j)
+	audio.Init()
+	g := gbc.New(romData, j, audio.SetStream)
 
 	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowTitle("60fps")
@@ -30,7 +32,6 @@ func New(romData []byte, j [8](func() bool), romDir string, isDebugMode bool) *E
 	} else {
 		ebiten.SetWindowSize(160*2, 144*2)
 	}
-
 	return &Emulator{
 		GBC:      g,
 		Rom:      romDir,
@@ -41,6 +42,7 @@ func New(romData []byte, j [8](func() bool), romDir string, isDebugMode bool) *E
 func (e *Emulator) Update() error {
 	defer e.GBC.PanicHandler("update", true)
 	err := e.GBC.Update()
+	audio.Play()
 
 	select {
 	case <-second.C:

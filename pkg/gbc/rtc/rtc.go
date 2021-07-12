@@ -2,8 +2,9 @@ package rtc
 
 import (
 	"fmt"
-	"gbc/pkg/util"
 	"time"
+
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 const (

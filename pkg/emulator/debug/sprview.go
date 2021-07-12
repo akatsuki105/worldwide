@@ -1,8 +1,8 @@
 package debug
 
 import (
-	"gbc/pkg/gbc/video"
-	"gbc/pkg/util"
+	"github.com/pokemium/Worldwide/pkg/gbc/video"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 func (d *Debugger) SprView() [40][64 * 4]byte {

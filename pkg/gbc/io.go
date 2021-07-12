@@ -1,9 +1,9 @@
 package gbc
 
 import (
-	"gbc/pkg/gbc/scheduler"
-	"gbc/pkg/gbc/video"
-	"gbc/pkg/util"
+	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/Worldwide/pkg/gbc/video"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 const (
@@ -185,11 +185,11 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		g.Video.WritePalette(offset, value)
 
 	case offset == SVBKIO: // switch wram bank
-		newWRAMBankPtr := value & 0x07
-		if newWRAMBankPtr == 0 {
-			newWRAMBankPtr++
+		bank := value & 0x07
+		if bank == 0 {
+			bank = 1
 		}
-		g.WRAMBank.ptr = newWRAMBankPtr
+		g.WRAM.bank = bank
 
 	case offset == IEIO:
 		g.IO[IEIO] = value

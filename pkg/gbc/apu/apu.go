@@ -1,26 +1,24 @@
 package apu
 
-// サウンドはgoboyのコードをベースに自分のエミュレータに合うように改造(というかほぼコピペ。。。)
+// copy and hack source code from goboy
 
 import (
 	"fmt"
-	"gbc/pkg/util"
 	"log"
 	"math"
-	"time"
 
-	"github.com/hajimehoshi/oto"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 const (
-	sampleRate = 44100
-	twoPi      = 2 * math.Pi
-	perSample  = 1 / float64(sampleRate)
+	SAMPLE_RATE = 44100
+	twoPi       = 2 * math.Pi
+	perSample   = 1 / float64(SAMPLE_RATE)
 
-	cpuTicksPerSample = float64(4194304) / sampleRate
-	streamLen         = 2940 // 2 * 2 * sampleRate * (1/60)
+	cpuTicksPerSample = float64(4194304) / SAMPLE_RATE
+	STREAM_LEN        = 2940 // 2 * 2 * SAMPLE_RATE * (1/60)
 	volume            = 0.07
-	bufferSeconds     = 60
+	BUF_SEC           = 60
 )
 
 // APU is the GameBoy's audio processing unit. Audio comprises four
@@ -29,25 +27,27 @@ const (
 // Channels 1 and 2 are both Square channels, channel 3 is a arbitrary
 // waveform channel which can be set in RAM, and channel 4 outputs noise.
 type APU struct {
-	playing bool
+	Enable bool
 
 	memory      [52]byte
 	waveformRAM []byte
 
-	player                 *oto.Player
 	chn1, chn2, chn3, chn4 *Channel
 	tickCounter            float64
 	lVol, rVol             float64
 
-	audioBuffer chan [2]byte
+	audioBuffer    chan [2]byte
+	setAudioStream func([]byte)
 }
 
 // Init the sound emulation for a Gameboy.
-func New(sound bool) *APU {
-	a := &APU{}
-	a.playing = sound
+func New(enable bool, setAudioStream func([]byte)) *APU {
+	a := &APU{
+		Enable:         enable,
+		setAudioStream: setAudioStream,
+	}
 	a.waveformRAM = make([]byte, 0x20)
-	a.audioBuffer = make(chan [2]byte, streamLen)
+	a.audioBuffer = make(chan [2]byte, STREAM_LEN)
 
 	// Sets waveform ram to:
 	// 00 FF 00 FF  00 FF 00 FF  00 FF 00 FF  00 FF 00 FF
@@ -65,44 +65,34 @@ func New(sound bool) *APU {
 	a.chn3 = NewChannel()
 	a.chn4 = NewChannel()
 
-	if sound {
-		context, err := oto.NewContext(sampleRate, 2, 1, sampleRate/bufferSeconds)
-		if err != nil {
-			log.Fatalf("Failed to start audio: %v", err)
-		}
-		a.player = context.NewPlayer()
-		a.playSound(bufferSeconds)
-	}
-
 	return a
 }
 
-// Starts a goroutine which plays the sound
-func (a *APU) playSound(bufferSeconds int) {
-	frameTime := time.Second / time.Duration(bufferSeconds)
-	ticker := time.NewTicker(frameTime)
-	targetSamples := sampleRate / bufferSeconds
-	go func() {
-		var reading [2]byte
-		var buffer []byte
-		for range ticker.C {
-			fbLen := len(a.audioBuffer)
-			if fbLen >= targetSamples/2 {
-				newBuffer := make([]byte, fbLen*2)
-				for i := 0; i < fbLen*2; i += 2 {
-					reading = <-a.audioBuffer
-					newBuffer[i], newBuffer[i+1] = reading[0], reading[1]
-				}
-				buffer = newBuffer
-			}
+// Plays the sound
+//
+// This function is called 60 times per second.
+func (a *APU) Update() {
+	if !a.Enable {
+		return
+	}
 
-			a.player.Write(buffer)
+	targetSamples := SAMPLE_RATE / BUF_SEC
+	var reading [2]byte
+	var buffer []byte
+	fbLen := len(a.audioBuffer)
+	if fbLen >= targetSamples/2 {
+		newBuffer := make([]byte, fbLen*2)
+		for i := 0; i < fbLen*2; i += 2 {
+			reading = <-a.audioBuffer
+			newBuffer[i], newBuffer[i+1] = reading[0], reading[1]
 		}
-	}()
+		buffer = newBuffer
+	}
+	a.setAudioStream(buffer)
 }
 
 func (a *APU) Buffer(cpuTicks int) {
-	if !a.playing {
+	if !a.Enable {
 		return
 	}
 	a.tickCounter += float64(cpuTicks)
@@ -169,7 +159,7 @@ func (a *APU) Write(offset byte, value byte) {
 		// VVVV APPP - Starting volume, Envelop add mode, period
 		envVolume, envDirection, envSweep := a.extractEnvelope(value)
 		a.chn1.envelopeVolume = int(envVolume)
-		a.chn1.envelopeSamples = int(envSweep) * sampleRate / 64
+		a.chn1.envelopeSamples = int(envSweep) * SAMPLE_RATE / 64
 		a.chn1.envelopeIncreasing = envDirection == 1
 	case 0xFF13:
 		// FFFF FFFF Frequency LSB
@@ -185,7 +175,7 @@ func (a *APU) Write(offset byte, value byte) {
 			}
 			duration := -1
 			if util.Bit(value, 6) { // 1 = use length
-				duration = int(float64(a.chn1.length)*(1/64)) * sampleRate
+				duration = int(float64(a.chn1.length)*(1/64)) * SAMPLE_RATE
 			}
 			a.chn1.Reset(duration)
 			a.chn1.envelopeSteps = a.chn1.envelopeVolume
@@ -205,7 +195,7 @@ func (a *APU) Write(offset byte, value byte) {
 		// VVVV APPP Starting volume, Envelope add mode, period
 		envVolume, envDirection, envSweep := a.extractEnvelope(value)
 		a.chn2.envelopeVolume = int(envVolume)
-		a.chn2.envelopeSamples = int(envSweep) * sampleRate / 64
+		a.chn2.envelopeSamples = int(envSweep) * SAMPLE_RATE / 64
 		a.chn2.envelopeIncreasing = envDirection == 1
 	case 0xFF18:
 		// FFFF FFFF Frequency LSB
@@ -219,7 +209,7 @@ func (a *APU) Write(offset byte, value byte) {
 			}
 			duration := -1
 			if util.Bit(value, 6) {
-				duration = int(float64(a.chn2.length)*(1/64)) * sampleRate
+				duration = int(float64(a.chn2.length)*(1/64)) * SAMPLE_RATE
 			}
 			a.chn2.Reset(duration)
 			a.chn2.envelopeSteps = a.chn2.envelopeVolume
@@ -251,7 +241,7 @@ func (a *APU) Write(offset byte, value byte) {
 			}
 			duration := -1
 			if value&0b100_0000 != 0 { // 1 = use length
-				duration = int((256-float64(a.chn3.length))*(1/256)) * sampleRate
+				duration = int((256-float64(a.chn3.length))*(1/256)) * SAMPLE_RATE
 			}
 			a.chn3.generator = Waveform(func(i int) byte { return a.waveformRAM[i] })
 			a.chn3.duration = duration
@@ -269,7 +259,7 @@ func (a *APU) Write(offset byte, value byte) {
 		// VVVV APPP Starting volume, Envelope add mode, period
 		envVolume, envDirection, envSweep := a.extractEnvelope(value)
 		a.chn4.envelopeVolume = int(envVolume)
-		a.chn4.envelopeSamples = int(envSweep) * sampleRate / 64
+		a.chn4.envelopeSamples = int(envSweep) * SAMPLE_RATE / 64
 		a.chn4.envelopeIncreasing = envDirection == 1
 	case 0xFF22:
 		// SSSS WDDD Clock shift, Width mode of LFSR, Divisor code
@@ -285,7 +275,7 @@ func (a *APU) Write(offset byte, value byte) {
 		if util.Bit(value, 7) {
 			duration := -1
 			if util.Bit(value, 6) { // 1 = use length
-				duration = int(float64(61-a.chn4.length)*(1/256)) * sampleRate
+				duration = int(float64(61-a.chn4.length)*(1/256)) * SAMPLE_RATE
 			}
 			a.chn4.generator = Noise()
 			a.chn4.Reset(duration)

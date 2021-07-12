@@ -41,7 +41,7 @@ type Channel struct {
 // will increase the internal timer based on the global sample rate.
 func (chn *Channel) Sample() (outputL, outputR float64) {
 	var output float64
-	step := chn.frequency * twoPi / float64(sampleRate)
+	step := chn.frequency * twoPi / float64(SAMPLE_RATE)
 	chn.time += step
 	if chn.shouldPlay() {
 		// Take the sample value from the generator

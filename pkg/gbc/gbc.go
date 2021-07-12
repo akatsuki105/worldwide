@@ -6,34 +6,43 @@ import (
 	"os"
 	"runtime"
 
-	"gbc/pkg/emulator/config"
-	"gbc/pkg/gbc/apu"
-	"gbc/pkg/gbc/cart"
-	"gbc/pkg/gbc/joypad"
-	"gbc/pkg/gbc/rtc"
-	"gbc/pkg/gbc/scheduler"
-	"gbc/pkg/gbc/video"
-	"gbc/pkg/util"
+	"github.com/pokemium/Worldwide/pkg/emulator/config"
+	"github.com/pokemium/Worldwide/pkg/gbc/apu"
+	"github.com/pokemium/Worldwide/pkg/gbc/cart"
+	"github.com/pokemium/Worldwide/pkg/gbc/joypad"
+	"github.com/pokemium/Worldwide/pkg/gbc/rtc"
+	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/Worldwide/pkg/gbc/video"
+	"github.com/pokemium/Worldwide/pkg/util"
 )
 
 var irqVec = [5]uint16{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}
 
-// ROMBank - 0x4000-0x7fff
-type ROMBank struct {
-	ptr  uint8
-	bank [256][0x4000]byte
+// ROM
+//
+// 0x0000-0x3fff: bank0
+//
+// 0x4000-0x7fff: bank1-256
+type ROM struct {
+	bank   byte
+	buffer [256][0x4000]byte
 }
 
-// RAMBank - 0xa000-0xbfff
-type RAMBank struct {
-	ptr  uint8
-	Bank [16][0x2000]byte
+// RAM - 0xa000-0xbfff
+type RAM struct {
+	bank   byte
+	Buffer [16][0x2000]byte // num of banks changes depending on ROM
 }
 
-// WRAMBank - 0xd000-0xdfff bank used on GBC only
-type WRAMBank struct {
-	ptr  uint8
-	bank [8][0x1000]byte
+// WRAM
+//
+// 0xc000-0xcfff: bank0
+//
+// 0xd000-0xdfff: bank1-7
+type WRAM struct {
+	// fixed at 1 on DMG, changes from 1 to 7 on CGB
+	bank   byte
+	buffer [8][0x1000]byte
 }
 
 type Dma struct {
@@ -58,17 +67,16 @@ const (
 
 // GBC core structure
 type GBC struct {
-	Reg       Register
-	RAM       [0x10000]byte
-	IO        [0x100]byte // 0xff00-0xffff
-	Cartridge *cart.Cartridge
-	joypad    *joypad.Joypad
-	halt      bool
-	Config    *config.Config
-	timer     *Timer
-	ROMBank
-	RAMBank
-	WRAMBank
+	Reg         Register
+	IO          [0x100]byte // 0xff00-0xffff
+	Cartridge   *cart.Cartridge
+	joypad      *joypad.Joypad
+	halt        bool
+	Config      *config.Config
+	timer       *Timer
+	ROM         ROM
+	RAM         RAM
+	WRAM        WRAM
 	bankMode    uint
 	sound       *apu.APU
 	Video       *video.Video
@@ -84,10 +92,6 @@ type GBC struct {
 
 // TransferROM Transfer ROM from cartridge to Memory
 func (g *GBC) TransferROM(rom []byte) {
-	for i := 0x0000; i <= 0x7fff; i++ {
-		g.RAM[i] = rom[i]
-	}
-
 	switch g.Cartridge.Type {
 	case 0x00:
 		g.Cartridge.MBC = cart.ROM
@@ -178,7 +182,7 @@ func (g *GBC) TransferROM(rom []byte) {
 func (g *GBC) transferROM(bankNum int, rom []byte) {
 	for bank := 0; bank < bankNum; bank++ {
 		for i := 0x0000; i <= 0x3fff; i++ {
-			g.ROMBank.bank[bank][i] = rom[bank*0x4000+i]
+			g.ROM.buffer[bank][i] = rom[bank*0x4000+i]
 		}
 	}
 }
@@ -191,7 +195,7 @@ func (g *GBC) resetRegister() {
 	g.Reg.PC, g.Reg.SP = 0x0100, 0xfffe
 }
 
-func New(romData []byte, j [8](func() bool)) *GBC {
+func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 	g := &GBC{
 		Cartridge: cart.New(romData),
 		scheduler: scheduler.New(),
@@ -209,12 +213,12 @@ func New(romData []byte, j [8](func() bool)) *GBC {
 	g.resetRegister()
 	g.resetIO()
 
-	g.ROMBank.ptr, g.WRAMBank.ptr = 1, 1
+	g.ROM.bank, g.WRAM.bank = 1, 1
 
 	g.Config = config.New()
 
 	// Init APU
-	g.sound = apu.New(true)
+	g.sound = apu.New(true, setAudioStream)
 
 	// Init RTC
 	go g.RTC.Init()
@@ -230,7 +234,7 @@ func (g *GBC) step() {
 	PC := g.Reg.PC
 	bytecode := g.Load8(PC)
 	opcode := opcodes[bytecode]
-	instruction, operand1, operand2, cycle, handler := opcode.Ins, opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
+	operand1, operand2, cycle, handler := opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
 
 	if !g.halt {
 		if g.irqPending > 0 {
@@ -240,33 +244,9 @@ func (g *GBC) step() {
 			g.updateIRQs()
 			g.triggerIRQ(int(oldIrqPending - 1))
 			return
-		} else if handler != nil {
-			handler(g, operand1, operand2)
-		} else {
-			switch instruction {
-			case INS_LDH:
-				LDH(g, operand1, operand2)
-			case INS_AND:
-				g.AND(operand1, operand2)
-			case INS_XOR:
-				g.XOR(operand1, operand2)
-			case INS_CP:
-				g.CP(operand1, operand2)
-			case INS_OR:
-				g.OR(operand1, operand2)
-			case INS_ADD:
-				g.ADD(operand1, operand2)
-			case INS_SUB:
-				g.SUB(operand1, operand2)
-			case INS_ADC:
-				g.ADC(operand1, operand2)
-			case INS_SBC:
-				g.SBC(operand1, operand2)
-			default:
-				errMsg := fmt.Sprintf("eip: 0x%04x opcode: 0x%02x", g.Reg.PC, bytecode)
-				panic(errMsg)
-			}
 		}
+
+		handler(g, operand1, operand2)
 		cycle *= (4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 	} else {
 		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
@@ -285,6 +265,8 @@ func (g *GBC) Update() error {
 	for frame == g.Video.FrameCounter {
 		g.step()
 	}
+
+	g.sound.Update()
 	return nil
 }
 
@@ -331,7 +313,7 @@ func (g *GBC) updateIRQs() {
 	}
 }
 
-func (g *GBC) Draw() []uint8 { return g.Video.Display().Pix }
+func (g *GBC) Draw() []byte { return g.Video.Display().Pix }
 
 func (g *GBC) handleJoypad() {
 	pressed := g.joypad.Input()

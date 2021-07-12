@@ -104,44 +104,9 @@ func (r *Register) setHL(value uint16) {
 	r.R[H], r.R[L] = byte(value>>8), byte(value)
 }
 
-func (g *GBC) getRegister(s string) uint16 {
-	switch s {
-	case "A":
-		return uint16(g.Reg.R[A])
-	case "F":
-		return uint16(g.Reg.R[F])
-	case "B":
-		return uint16(g.Reg.R[B])
-	case "C":
-		return uint16(g.Reg.R[C])
-	case "D":
-		return uint16(g.Reg.R[D])
-	case "E":
-		return uint16(g.Reg.R[E])
-	case "H":
-		return uint16(g.Reg.R[H])
-	case "L":
-		return uint16(g.Reg.R[L])
-	case "AF":
-		return g.Reg.AF()
-	case "BC":
-		return g.Reg.BC()
-	case "DE":
-		return g.Reg.DE()
-	case "HL":
-		return g.Reg.HL()
-	case "SP":
-		return g.Reg.SP
-	}
-
-	return 0
-}
-
 // flag
 
-func (g *GBC) setCSub(dst, src byte) {
-	g.setF(flagC, dst < uint8(dst-src))
-}
+func subC(dst, src byte) bool { return dst < uint8(dst-src) }
 
 func (g *GBC) f(idx int) bool {
 	return g.Reg.R[F]&(1<<idx) != 0
@@ -153,4 +118,11 @@ func (g *GBC) setF(idx int, flag bool) {
 		return
 	}
 	g.Reg.R[F] &= ^(1 << idx)
+}
+
+func (g *GBC) setZNHC(z, n, h, c bool) {
+	g.setF(flagZ, z)
+	g.setF(flagN, n)
+	g.setF(flagH, h)
+	g.setF(flagC, c)
 }
