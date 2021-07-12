@@ -120,9 +120,21 @@ func (g *GBC) setF(idx int, flag bool) {
 	g.Reg.R[F] &= ^(1 << idx)
 }
 
-func (g *GBC) setZNHC(z, n, h, c bool) {
-	g.setF(flagZ, z)
+func (g *GBC) setNH(n, h bool) {
 	g.setF(flagN, n)
 	g.setF(flagH, h)
+}
+
+func (g *GBC) setZNH(z, n, h bool) {
+	g.setF(flagZ, z)
+	g.setNH(n, h)
+}
+func (g *GBC) setNHC(n, h, c bool) {
+	g.setNH(n, h)
+	g.setF(flagC, c)
+}
+
+func (g *GBC) setZNHC(z, n, h, c bool) {
+	g.setZNH(z, n, h)
 	g.setF(flagC, c)
 }

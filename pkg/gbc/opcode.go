@@ -166,9 +166,7 @@ func inc8(g *GBC, r8, _ int) {
 	carryBits := g.Reg.R[r8] ^ 1 ^ value
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setZNH(value == 0, false, util.Bit(carryBits, 4))
 	g.Reg.PC++
 }
 
@@ -184,9 +182,7 @@ func incHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(g.fixCycles(2))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setZNH(value == 0, false, util.Bit(carryBits, 4))
 	g.Reg.PC++
 }
 
@@ -197,9 +193,7 @@ func dec8(g *GBC, r8, _ int) {
 	carryBits := g.Reg.R[r8] ^ 1 ^ value
 	g.Reg.R[r8] = value
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setZNH(value == 0, true, util.Bit(carryBits, 4))
 	g.Reg.PC++
 }
 
@@ -215,9 +209,7 @@ func decHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(g.fixCycles(2))
 
-	g.setF(flagZ, value == 0)
-	g.setF(flagN, true)
-	g.setF(flagH, util.Bit(carryBits, 4))
+	g.setZNH(value == 0, true, util.Bit(carryBits, 4))
 	g.Reg.PC++
 }
 
@@ -513,9 +505,7 @@ func addHL(g *GBC, _, r16 int) {
 	carryBits := uint32(g.Reg.HL()) ^ uint32(g.Reg.R16(r16)) ^ value
 	g.Reg.setHL(uint16(value))
 
-	g.setF(flagN, false)
-	g.setF(flagH, util.Bit(carryBits, 12))
-	g.setF(flagC, util.Bit(carryBits, 16))
+	g.setNHC(false, util.Bit(carryBits, 12), util.Bit(carryBits, 16))
 	g.Reg.PC++
 }
 
@@ -554,8 +544,7 @@ func addSPi8(g *GBC, _, _ int) {
 func cpl(g *GBC, _, _ int) {
 	g.Reg.R[A] = ^g.Reg.R[A]
 
-	g.setF(flagN, true)
-	g.setF(flagH, true)
+	g.setNH(true, true)
 	g.Reg.PC++
 }
 
@@ -658,11 +647,10 @@ func rl(g *GBC, _, r8 int) {
 }
 
 func rlHL(g *GBC, _, _ int) {
-	var value, bit7 byte
 	carry := g.f(flagC)
-	value = g.Load8(g.Reg.HL())
+	value := g.Load8(g.Reg.HL())
 	g.timer.tick(g.fixCycles(1))
-	bit7 = value >> 7
+	bit7 := value >> 7
 	value = (value << 1)
 	value = util.SetLSB(value, carry)
 	g.Store8(g.Reg.HL(), value)
@@ -675,7 +663,6 @@ func rlHL(g *GBC, _, _ int) {
 // Rotate register A left through carry.
 func rla(g *GBC, _, _ int) {
 	carry := g.f(flagC)
-
 	value := g.Reg.R[A]
 	bit7 := value >> 7
 	value = (value << 1)
@@ -809,18 +796,14 @@ func srlHL(g *GBC, _, _ int) {
 func bit(g *GBC, bit, r8 int) {
 	value := util.Bit(g.Reg.R[r8], bit)
 
-	g.setF(flagZ, !value)
-	g.setF(flagN, false)
-	g.setF(flagH, true)
+	g.setZNH(!value, false, true)
 	g.Reg.PC++
 }
 
 func bitHL(g *GBC, bit, _ int) {
 	value := util.Bit(g.Load8(g.Reg.HL()), bit)
 
-	g.setF(flagZ, !value)
-	g.setF(flagN, false)
-	g.setF(flagH, true)
+	g.setZNH(!value, false, true)
 	g.Reg.PC++
 }
 
@@ -934,14 +917,14 @@ func subu8(g *GBC, _, _ int) {
 // Rotate register A right through carry.
 func rra(g *GBC, _, _ int) {
 	carry := g.f(flagC)
-	regA := g.Reg.R[A]
-	newCarry := util.Bit(regA, 0)
+	a := g.Reg.R[A]
+	newCarry := util.Bit(a, 0)
 	if carry {
-		regA = (1 << 7) | (regA >> 1)
+		a = (1 << 7) | (a >> 1)
 	} else {
-		regA = (0 << 7) | (regA >> 1)
+		a = (0 << 7) | (a >> 1)
 	}
-	g.Reg.R[A] = regA
+	g.Reg.R[A] = a
 
 	g.setZNHC(false, false, false, newCarry)
 	g.Reg.PC++
@@ -1026,7 +1009,7 @@ func sbcu8(g *GBC, _, _ int) {
 
 // DAA Decimal adjust
 func daa(g *GBC, _, _ int) {
-	a := uint8(g.Reg.R[A])
+	a := g.Reg.R[A]
 	// ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !g.f(flagN) {
 		if g.f(flagC) || a > 0x99 {
@@ -1059,16 +1042,12 @@ func rst(g *GBC, addr, _ int) {
 }
 
 func scf(g *GBC, _, _ int) {
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, true)
+	g.setNHC(false, false, true)
 	g.Reg.PC++
 }
 
 // CCF Complement Carry Flag
 func ccf(g *GBC, _, _ int) {
-	g.setF(flagN, false)
-	g.setF(flagH, false)
-	g.setF(flagC, !g.f(flagC))
+	g.setNHC(false, false, !g.f(flagC))
 	g.Reg.PC++
 }
