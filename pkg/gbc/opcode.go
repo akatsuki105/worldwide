@@ -201,7 +201,7 @@ func jr(g *GBC, _, _ int) {
 }
 
 func _jr(g *GBC, delta int8) {
-	g.Reg.PC = uint16(int32(g.Reg.PC) + int32(delta)) // PC+2 because of time after fetch(pc is incremented)
+	g.Reg.PC = uint16(int32(g.Reg.PC) + int32(delta))
 	g.timer.tick(g.fixCycles(3))
 }
 
@@ -407,37 +407,28 @@ func cpu8(g *GBC, _, _ int) {
 	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
 }
 
-// AND And instruction
-
+// AND A,r8
 func and8(g *GBC, _, r8 int) {
-	value := g.Reg.R[A] & g.Reg.R[r8]
-	g.Reg.R[A] = value
-
-	g.setZNHC(value == 0, false, true, false)
+	g.Reg.R[A] &= g.Reg.R[r8]
+	g.setZNHC(g.Reg.R[A] == 0, false, true, false)
 }
 
 // AND A,(HL)
-func op0xa6(g *GBC, _, _ int) {
-	value := g.Reg.R[A] & g.Load8(g.Reg.HL())
-	g.Reg.R[A] = value
-
-	g.setZNHC(value == 0, false, true, false)
+func andaHL(g *GBC, _, _ int) {
+	g.Reg.R[A] &= g.Load8(g.Reg.HL())
+	g.setZNHC(g.Reg.R[A] == 0, false, true, false)
 }
 
 // AND A,u8
 func andu8(g *GBC, _, _ int) {
-	value := g.Reg.R[A] & g.d8Fetch()
-	g.Reg.R[A] = value
-
-	g.setZNHC(value == 0, false, true, false)
+	g.Reg.R[A] &= g.d8Fetch()
+	g.setZNHC(g.Reg.R[A] == 0, false, true, false)
 }
 
-// OR or
-func orR8(g *GBC, _, r8 int) {
-	value := g.Reg.R[A] | g.Reg.R[r8]
-	g.Reg.R[A] = value
-
-	g.setZNHC(value == 0, false, false, false)
+// OR A,r8
+func or8(g *GBC, _, r8 int) {
+	g.Reg.R[A] |= g.Reg.R[r8]
+	g.setZNHC(g.Reg.R[A] == 0, false, false, false)
 }
 
 // OR A,(HL)
