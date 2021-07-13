@@ -361,27 +361,25 @@ func ei(g *GBC, _, _ int) {
 
 // CP Compare
 func cp(g *GBC, _, r8 int) {
-	value := g.Reg.R[A] - g.Reg.R[r8]
-	carryBits := g.Reg.R[A] ^ g.Reg.R[r8] ^ value
-	newCarry := subC(g.Reg.R[A], g.Reg.R[r8])
-	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
+	lhs, rhs, value := g.Reg.R[A], g.Reg.R[r8], g.Reg.R[A]-g.Reg.R[r8]
+	carryBits := lhs ^ rhs ^ value
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), subC(lhs, rhs))
 }
 
 // CP A,(HL)
 func cpaHL(g *GBC, _, _ int) {
-	value := g.Reg.R[A] - g.Load8(g.Reg.HL())
-	carryBits := g.Reg.R[A] ^ g.Load8(g.Reg.HL()) ^ value
-	newCarry := subC(g.Reg.R[A], g.Load8(g.Reg.HL()))
-	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
+	lhs, rhs := g.Reg.R[A], g.Load8(g.Reg.HL())
+	value := lhs - rhs
+	carryBits := lhs ^ rhs ^ value
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), subC(lhs, rhs))
 }
 
 // CP A,u8
 func cpu8(g *GBC, _, _ int) {
-	d8 := g.d8Fetch()
-	value := g.Reg.R[A] - d8
-	carryBits := g.Reg.R[A] ^ d8 ^ value
-	newCarry := subC(g.Reg.R[A], d8)
-	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), newCarry)
+	lhs, rhs := g.Reg.R[A], g.d8Fetch()
+	value := lhs - rhs
+	carryBits := lhs ^ rhs ^ value
+	g.setZNHC(value == 0, true, util.Bit(carryBits, 4), subC(lhs, rhs))
 }
 
 // AND A,r8
