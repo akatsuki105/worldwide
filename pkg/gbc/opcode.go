@@ -86,13 +86,11 @@ func op0x08(g *GBC, operand1, operand2 int) {
 	upper, lower := byte(g.Reg.SP>>8), byte(g.Reg.SP) // MSB
 	g.Store8(addr, lower)
 	g.Store8(addr+1, upper)
-	g.timer.tick(g.fixCycles(5))
 }
 
 // LD (u16),A
 func op0xea(g *GBC, operand1, operand2 int) {
 	g.Store8(g.a16FetchJP(), g.Reg.R[A])
-	g.timer.tick(g.fixCycles(2))
 }
 
 // ld r16, u16
@@ -129,7 +127,6 @@ func op0xe0(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.d8Fetch())
 	g.timer.tick(g.fixCycles(1))
 	g.storeIO(byte(addr), g.Reg.R[A])
-	g.timer.tick(g.fixCycles(2))
 }
 
 // LD A,($FF00+a8)
@@ -137,7 +134,6 @@ func op0xf0(g *GBC, operand1, operand2 int) {
 	addr := 0xff00 + uint16(g.d8Fetch())
 	g.timer.tick(g.fixCycles(1))
 	g.Reg.R[A] = g.loadIO(byte(addr))
-	g.timer.tick(g.fixCycles(2))
 }
 
 // No operation
@@ -161,7 +157,6 @@ func incHL(g *GBC, _, _ int) {
 	g.timer.tick(g.fixCycles(1))
 	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
 	g.setZNH(value == 0, false, util.Bit(carryBits, 4))
 }
 
@@ -183,7 +178,6 @@ func decHL(g *GBC, _, _ int) {
 	g.timer.tick(g.fixCycles(1))
 	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
 	g.setZNH(value == 0, true, util.Bit(carryBits, 4))
 }
 
@@ -260,7 +254,6 @@ func xoru8(g *GBC, _, _ int) {
 // jp u16
 func jp(g *GBC, _, _ int) {
 	g.Reg.PC = g.a16FetchJP()
-	g.timer.tick(g.fixCycles(2))
 }
 
 func jpcc(g *GBC, cc, _ int) {
@@ -285,7 +278,6 @@ func jpncc(g *GBC, cc, _ int) {
 
 func jpHL(g *GBC, _, _ int) {
 	g.Reg.PC = g.Reg.HL()
-	g.timer.tick(g.fixCycles(1))
 }
 
 // Return
