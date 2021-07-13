@@ -510,19 +510,16 @@ func rlcHL(g *GBC, _, _ int) {
 
 // Rotate register A left.
 func rlca(g *GBC, _, _ int) {
-	value, msb := g.Reg.R[A], util.Bit(g.Reg.R[A], 7)
-	g.Reg.R[A] = util.SetLSB(value<<1, msb)
-	g.setZNHC(false, false, false, msb)
+	value, bit7 := g.Reg.R[A], util.Bit(g.Reg.R[A], 7)
+	g.Reg.R[A] = util.SetLSB(value<<1, bit7)
+	g.setZNHC(false, false, false, bit7)
 }
 
 // Rotate n right carry => bit7
 func rrc(g *GBC, r8, _ int) {
-	value := g.Reg.R[r8]
-	bit0 := value % 2
-	value = (value >> 1)
-	value = util.SetMSB(value, bit0 != 0)
-	g.Reg.R[r8] = value
-	g.setZNHC(value == 0, false, false, bit0 != 0)
+	value, bit0 := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 0)
+	g.Reg.R[r8] = util.SetMSB(value>>1, bit0)
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, bit0)
 }
 
 func rrcHL(g *GBC, _, _ int) {
@@ -537,9 +534,9 @@ func rrcHL(g *GBC, _, _ int) {
 
 // rotate register A right.
 func rrca(g *GBC, _, _ int) {
-	value, lsb := g.Reg.R[A], util.Bit(g.Reg.R[A], 0)
-	g.Reg.R[A] = util.SetMSB(value>>1, lsb)
-	g.setZNHC(false, false, false, lsb)
+	value, bit0 := g.Reg.R[A], util.Bit(g.Reg.R[A], 0)
+	g.Reg.R[A] = util.SetMSB(value>>1, bit0)
+	g.setZNHC(false, false, false, bit0)
 }
 
 // RL Rotate n rigth through carry bit7 => bit0
@@ -568,27 +565,27 @@ func rla(g *GBC, _, _ int) {
 
 // rr Rotate n right through carry bit0 => bit7
 func rr(g *GBC, r8, _ int) {
-	value, lsb, carry := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 0), g.f(flagC)
+	value, bit0, carry := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 0), g.f(flagC)
 	g.Reg.R[r8] = util.SetMSB(value>>1, carry)
-	g.setZNHC(g.Reg.R[r8] == 0, false, false, lsb)
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, bit0)
 }
 
 func rrHL(g *GBC, _, _ int) {
 	carry, value := g.f(flagC), g.Load8(g.Reg.HL())
 	g.timer.tick(g.fixCycles(1))
-	lsb := util.Bit(value, 0)
+	bit0 := util.Bit(value, 0)
 	value = util.SetMSB(value>>1, carry)
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(g.fixCycles(2))
-	g.setZNHC(value == 0, false, false, lsb)
+	g.setZNHC(value == 0, false, false, bit0)
 }
 
 // Shift Left
 func sla(g *GBC, r8, _ int) {
-	value, msb := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 7)
+	value, bit7 := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 7)
 	value = (value << 1)
 	g.Reg.R[r8] = value
-	g.setZNHC(value == 0, false, false, msb)
+	g.setZNHC(value == 0, false, false, bit7)
 }
 
 func slaHL(g *GBC, _, _ int) {
@@ -603,56 +600,46 @@ func slaHL(g *GBC, _, _ int) {
 
 // Shift Right MSBit dosen't change
 func sra(g *GBC, r8, _ int) {
-	value, lsb, msb := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 0), util.Bit(g.Reg.R[r8], 7)
-	value = (value >> 1)
-	value = util.SetMSB(value, msb)
-	g.Reg.R[r8] = value
-
-	g.setZNHC(value == 0, false, false, lsb)
+	value, bit0, bit7 := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 0), util.Bit(g.Reg.R[r8], 7)
+	g.Reg.R[r8] = util.SetMSB(value>>1, bit7)
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, bit0)
 }
 
 func sraHL(g *GBC, operand1, operand2 int) {
 	value := g.Load8(g.Reg.HL())
 	g.timer.tick(g.fixCycles(1))
-	lsb, msb := util.Bit(value, 0), util.Bit(value, 7)
+	bit0, bit7 := util.Bit(value, 0), util.Bit(value, 7)
 	value = (value >> 1)
-	value = util.SetMSB(value, msb)
+	value = util.SetMSB(value, bit7)
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(g.fixCycles(2))
 
-	g.setZNHC(value == 0, false, false, lsb)
+	g.setZNHC(value == 0, false, false, bit0)
 }
 
 // SWAP Swap n[5:8] and n[0:4]
 func swap(g *GBC, _, r8 int) {
 	b := g.Reg.R[r8]
-	lower := b & 0b1111
-	upper := b >> 4
+	upper, lower := b>>4, b&0b1111
 	g.Reg.R[r8] = (lower << 4) | upper
-
 	g.setZNHC(g.Reg.R[r8] == 0, false, false, false)
 }
 
 func swapHL(g *GBC, _, _ int) {
-	data := g.Load8(g.Reg.HL())
+	b := g.Load8(g.Reg.HL())
 	g.timer.tick(g.fixCycles(1))
-	data03 := data & 0x0f
-	data47 := data >> 4
-	value := (data03 << 4) | data47
+	upper, lower := b>>4, b&0b1111
+	value := (lower << 4) | upper
 	g.Store8(g.Reg.HL(), value)
 	g.timer.tick(g.fixCycles(2))
-
 	g.setZNHC(value == 0, false, false, false)
 }
 
 // SRL Shift Right MSBit = 0
 func srl(g *GBC, r8, _ int) {
-	value := g.Reg.R[r8]
-	bit0 := value % 2
-	value = (value >> 1)
-	g.Reg.R[r8] = value
-
-	g.setZNHC(value == 0, false, false, bit0 == 1)
+	value, bit0 := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 0)
+	g.Reg.R[r8] = value >> 1
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, bit0)
 }
 
 func srlHL(g *GBC, _, _ int) {
