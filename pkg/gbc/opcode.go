@@ -33,6 +33,12 @@ func (g *GBC) d8Fetch() byte {
 	return value
 }
 
+func (g *GBC) fetchAtHL() byte {
+	value := g.Load8(g.Reg.HL())
+	g.timer.tick(g.fixCycles(1))
+	return value
+}
+
 // LD R8,R8
 func ld8r(g *GBC, op1, op2 int) {
 	g.Reg.R[op1] = g.Reg.R[op2]
@@ -143,9 +149,9 @@ func inc16(g *GBC, r16, _ int) {
 }
 
 func incHL(g *GBC, _, _ int) {
-	value := g.Load8(g.Reg.HL()) + 1
-	g.timer.tick(g.fixCycles(1))
-	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
+	hl := g.fetchAtHL()
+	value := hl + 1
+	carryBits := hl ^ 1 ^ value
 	g.Store8(g.Reg.HL(), value)
 	g.setZNH(value == 0, false, util.Bit(carryBits, 4))
 }
@@ -162,9 +168,9 @@ func dec16(g *GBC, r16, _ int) {
 }
 
 func decHL(g *GBC, _, _ int) {
-	value := g.Load8(g.Reg.HL()) - 1
-	g.timer.tick(g.fixCycles(1))
-	carryBits := g.Load8(g.Reg.HL()) ^ 1 ^ value
+	hl := g.fetchAtHL()
+	value := hl - 1
+	carryBits := hl ^ 1 ^ value
 	g.Store8(g.Reg.HL(), value)
 	g.setZNH(value == 0, true, util.Bit(carryBits, 4))
 }
@@ -476,8 +482,7 @@ func rlc(g *GBC, r8, _ int) {
 }
 
 func rlcHL(g *GBC, _, _ int) {
-	value := g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	value := g.fetchAtHL()
 	msb := util.Bit(value, 7)
 	value = util.SetLSB(value<<1, msb)
 	g.Store8(g.Reg.HL(), value)
@@ -499,8 +504,7 @@ func rrc(g *GBC, r8, _ int) {
 }
 
 func rrcHL(g *GBC, _, _ int) {
-	value := g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	value := g.fetchAtHL()
 	bit0 := util.Bit(value, 0)
 	value = util.SetMSB(value>>1, bit0)
 	g.Store8(g.Reg.HL(), value)
@@ -522,8 +526,7 @@ func rl(g *GBC, _, r8 int) {
 }
 
 func rlHL(g *GBC, _, _ int) {
-	carry, value := g.f(flagC), g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	carry, value := g.f(flagC), g.fetchAtHL()
 	bit7 := util.Bit(value, 7)
 	value = util.SetLSB(value<<1, carry)
 	g.Store8(g.Reg.HL(), value)
@@ -545,8 +548,7 @@ func rr(g *GBC, r8, _ int) {
 }
 
 func rrHL(g *GBC, _, _ int) {
-	carry, value := g.f(flagC), g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	carry, value := g.f(flagC), g.fetchAtHL()
 	bit0 := util.Bit(value, 0)
 	value = util.SetMSB(value>>1, carry)
 	g.Store8(g.Reg.HL(), value)
@@ -561,8 +563,7 @@ func sla(g *GBC, r8, _ int) {
 }
 
 func slaHL(g *GBC, _, _ int) {
-	value := g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	value := g.fetchAtHL()
 	bit7 := util.Bit(value, 7)
 	hl := (value << 1)
 	g.Store8(g.Reg.HL(), hl)
@@ -577,8 +578,7 @@ func sra(g *GBC, r8, _ int) {
 }
 
 func sraHL(g *GBC, operand1, operand2 int) {
-	value := g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	value := g.fetchAtHL()
 	bit0, bit7 := util.Bit(value, 0), util.Bit(value, 7)
 	value = util.SetMSB(value>>1, bit7)
 	g.Store8(g.Reg.HL(), value)
@@ -594,8 +594,7 @@ func swap(g *GBC, _, r8 int) {
 }
 
 func swapHL(g *GBC, _, _ int) {
-	b := g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	b := g.fetchAtHL()
 	upper, lower := b>>4, b&0b1111
 	value := (lower << 4) | upper
 	g.Store8(g.Reg.HL(), value)
@@ -610,8 +609,7 @@ func srl(g *GBC, r8, _ int) {
 }
 
 func srlHL(g *GBC, _, _ int) {
-	hl := g.Load8(g.Reg.HL())
-	g.timer.tick(g.fixCycles(1))
+	hl := g.fetchAtHL()
 	bit0 := util.Bit(hl, 0)
 	hl = (hl >> 1)
 	g.Store8(g.Reg.HL(), hl)
@@ -635,8 +633,7 @@ func res(g *GBC, bit, r8 int) {
 
 func resHL(g *GBC, bit, _ int) {
 	mask := ^(byte(1) << bit)
-	value := g.Load8(g.Reg.HL()) & mask
-	g.timer.tick(g.fixCycles(1))
+	value := g.fetchAtHL() & mask
 	g.Store8(g.Reg.HL(), value)
 }
 
@@ -646,8 +643,7 @@ func set(g *GBC, bit, r8 int) {
 
 func setHL(g *GBC, bit, _ int) {
 	mask := byte(1) << bit
-	value := g.Load8(g.Reg.HL()) | mask
-	g.timer.tick(g.fixCycles(1))
+	value := g.fetchAtHL() | mask
 	g.Store8(g.Reg.HL(), value)
 }
 
