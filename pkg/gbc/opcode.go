@@ -38,14 +38,12 @@ func ld8r(g *GBC, op1, op2 int) {
 	g.Reg.R[op1] = g.Reg.R[op2]
 }
 
-// ------ LD A, *
-
-// ld r8, mem[r16]
+// LD r8, mem[r16]
 func ld8m(g *GBC, r8, r16 int) {
 	g.Reg.R[r8] = g.Load8(g.Reg.R16(r16))
 }
 
-// ld r8, mem[imm]
+// LD r8, mem[imm]
 func ld8i(g *GBC, r8, _ int) {
 	g.Reg.R[r8] = g.d8Fetch()
 }
@@ -53,7 +51,6 @@ func ld8i(g *GBC, r8, _ int) {
 // LD A, (u16)
 func op0xfa(g *GBC, operand1, operand2 int) {
 	g.Reg.R[A] = g.Load8(g.a16FetchJP())
-	g.timer.tick(g.fixCycles(2))
 }
 
 // LD A,(FF00+C)
@@ -62,22 +59,17 @@ func op0xf2(g *GBC, operand1, operand2 int) {
 	g.Reg.R[A] = g.loadIO(byte(addr))
 }
 
-// ------ LD (HL), *
-
 // LD (HL),u8
 func op0x36(g *GBC, operand1, operand2 int) {
 	value := g.d8Fetch()
 	g.timer.tick(g.fixCycles(1))
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
 }
 
 // LD (HL),R8
 func ldHLR8(g *GBC, unused, op int) {
 	g.Store8(g.Reg.HL(), g.Reg.R[op])
 }
-
-// ------ others ld
 
 // LD (u16),SP
 func op0x08(g *GBC, operand1, operand2 int) {
@@ -93,16 +85,16 @@ func op0xea(g *GBC, operand1, operand2 int) {
 	g.Store8(g.a16FetchJP(), g.Reg.R[A])
 }
 
-// ld r16, u16
+// LD r16, u16
 func ld16i(g *GBC, r16, _ int) {
 	g.Reg.setR16(r16, g.a16Fetch())
 }
 
 // LD HL,SP+i8
 func op0xf8(g *GBC, operand1, operand2 int) {
-	delta := int8(g.d8Fetch())
-	value := int32(g.Reg.SP) + int32(delta)
-	carryBits := uint32(g.Reg.SP) ^ uint32(delta) ^ uint32(value)
+	rhs := int8(g.d8Fetch())
+	value := int32(g.Reg.SP) + int32(rhs)
+	carryBits := uint32(g.Reg.SP) ^ uint32(rhs) ^ uint32(value)
 	g.Reg.setHL(uint16(value))
 	g.setZNHC(false, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 }
@@ -139,8 +131,6 @@ func op0xf0(g *GBC, operand1, operand2 int) {
 // No operation
 func nop(g *GBC, operand1, operand2 int) {}
 
-// INC Increment
-
 func inc8(g *GBC, r8, _ int) {
 	value := g.Reg.R[r8] + 1
 	carryBits := g.Reg.R[r8] ^ 1 ^ value
@@ -159,8 +149,6 @@ func incHL(g *GBC, _, _ int) {
 	g.Store8(g.Reg.HL(), value)
 	g.setZNH(value == 0, false, util.Bit(carryBits, 4))
 }
-
-// DEC Decrement
 
 func dec8(g *GBC, r8, _ int) {
 	value := g.Reg.R[r8] - 1
@@ -351,7 +339,6 @@ func di(g *GBC, _, _ int) {
 
 // EI Enable Interrupt
 func ei(g *GBC, _, _ int) {
-	// TODO ref: https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/halt_ime0_ei.s#L23
 	g.scheduler.DescheduleEvent(scheduler.EiPending)
 	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
 		g.Reg.IME = true
@@ -569,9 +556,8 @@ func rrHL(g *GBC, _, _ int) {
 // Shift Left
 func sla(g *GBC, r8, _ int) {
 	value, bit7 := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 7)
-	value = (value << 1)
-	g.Reg.R[r8] = value
-	g.setZNHC(value == 0, false, false, bit7)
+	g.Reg.R[r8] = value << 1
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, bit7)
 }
 
 func slaHL(g *GBC, _, _ int) {
@@ -663,7 +649,6 @@ func setHL(g *GBC, bit, _ int) {
 	value := g.Load8(g.Reg.HL()) | mask
 	g.timer.tick(g.fixCycles(1))
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
 }
 
 // push af
@@ -680,7 +665,6 @@ func push(g *GBC, r0, r1 int) {
 	g.push(g.Reg.R[r0])
 	g.timer.tick(g.fixCycles(1))
 	g.push(g.Reg.R[r1])
-	g.timer.tick(g.fixCycles(2))
 }
 
 func popAF(g *GBC, _, _ int) {
@@ -693,7 +677,6 @@ func pop(g *GBC, r0, r1 int) {
 	g.Reg.R[r0] = g.pop()
 	g.timer.tick(g.fixCycles(1))
 	g.Reg.R[r1] = g.pop()
-	g.timer.tick(g.fixCycles(2))
 }
 
 // SUB subtract
