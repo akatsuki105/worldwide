@@ -594,7 +594,6 @@ func slaHL(g *GBC, _, _ int) {
 	bit7 := util.Bit(value, 7)
 	hl := (value << 1)
 	g.Store8(g.Reg.HL(), hl)
-	g.timer.tick(g.fixCycles(2))
 	g.setZNHC(hl == 0, false, false, bit7)
 }
 
@@ -609,11 +608,8 @@ func sraHL(g *GBC, operand1, operand2 int) {
 	value := g.Load8(g.Reg.HL())
 	g.timer.tick(g.fixCycles(1))
 	bit0, bit7 := util.Bit(value, 0), util.Bit(value, 7)
-	value = (value >> 1)
-	value = util.SetMSB(value, bit7)
+	value = util.SetMSB(value>>1, bit7)
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
-
 	g.setZNHC(value == 0, false, false, bit0)
 }
 
@@ -631,7 +627,6 @@ func swapHL(g *GBC, _, _ int) {
 	upper, lower := b>>4, b&0b1111
 	value := (lower << 4) | upper
 	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
 	g.setZNHC(value == 0, false, false, false)
 }
 
@@ -643,32 +638,27 @@ func srl(g *GBC, r8, _ int) {
 }
 
 func srlHL(g *GBC, _, _ int) {
-	value := g.Load8(g.Reg.HL())
+	hl := g.Load8(g.Reg.HL())
 	g.timer.tick(g.fixCycles(1))
-	bit0 := value % 2
-	value = (value >> 1)
-	g.Store8(g.Reg.HL(), value)
-	g.timer.tick(g.fixCycles(2))
-
-	g.setZNHC(value == 0, false, false, bit0 == 1)
+	bit0 := util.Bit(hl, 0)
+	hl = (hl >> 1)
+	g.Store8(g.Reg.HL(), hl)
+	g.setZNHC(hl == 0, false, false, bit0)
 }
 
 // BIT Test bit n
 func bit(g *GBC, bit, r8 int) {
-	value := util.Bit(g.Reg.R[r8], bit)
-
-	g.setZNH(!value, false, true)
+	isSet := util.Bit(g.Reg.R[r8], bit)
+	g.setZNH(!isSet, false, true)
 }
 
 func bitHL(g *GBC, bit, _ int) {
-	value := util.Bit(g.Load8(g.Reg.HL()), bit)
-
-	g.setZNH(!value, false, true)
+	isSet := util.Bit(g.Load8(g.Reg.HL()), bit)
+	g.setZNH(!isSet, false, true)
 }
 
 func res(g *GBC, bit, r8 int) {
-	mask := ^(byte(1) << bit)
-	g.Reg.R[r8] &= mask
+	g.Reg.R[r8] &= ^(byte(1) << bit)
 }
 
 func resHL(g *GBC, bit, _ int) {
@@ -680,8 +670,7 @@ func resHL(g *GBC, bit, _ int) {
 }
 
 func set(g *GBC, bit, r8 int) {
-	mask := byte(1) << bit
-	g.Reg.R[r8] |= mask
+	g.Reg.R[r8] |= byte(1) << bit
 }
 
 func setHL(g *GBC, bit, _ int) {
