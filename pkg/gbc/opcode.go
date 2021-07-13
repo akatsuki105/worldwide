@@ -55,7 +55,7 @@ func ld8i(g *GBC, r8, _ int) {
 }
 
 // LD A, (u16)
-func op0xfa(g *GBC, operand1, operand2 int) {
+func ldau16(g *GBC, operand1, operand2 int) {
 	g.Reg.R[A] = g.Load8(g.a16FetchJP())
 }
 
@@ -79,9 +79,8 @@ func ldHLR8(g *GBC, unused, op int) {
 
 // LD (u16),SP
 func op0x08(g *GBC, operand1, operand2 int) {
-	// Store SP into addresses n16 (LSB) and n16 + 1 (MSB).
 	addr := g.a16Fetch()
-	upper, lower := byte(g.Reg.SP>>8), byte(g.Reg.SP) // MSB
+	upper, lower := byte(g.Reg.SP>>8), byte(g.Reg.SP)
 	g.Store8(addr, lower)
 	g.Store8(addr+1, upper)
 }
@@ -98,9 +97,9 @@ func ld16i(g *GBC, r16, _ int) {
 
 // LD HL,SP+i8
 func op0xf8(g *GBC, operand1, operand2 int) {
-	rhs := int8(g.d8Fetch())
-	value := int32(g.Reg.SP) + int32(rhs)
-	carryBits := uint32(g.Reg.SP) ^ uint32(rhs) ^ uint32(value)
+	lhs, rhs := g.Reg.SP, int8(g.d8Fetch())
+	value := int32(lhs) + int32(rhs)
+	carryBits := uint32(lhs) ^ uint32(rhs) ^ uint32(value)
 	g.Reg.setHL(uint16(value))
 	g.setZNHC(false, false, util.Bit(carryBits, 4), util.Bit(carryBits, 8))
 }
@@ -134,8 +133,8 @@ func op0xf0(g *GBC, operand1, operand2 int) {
 	g.Reg.R[A] = g.loadIO(byte(addr))
 }
 
-// No operation
-func nop(g *GBC, operand1, operand2 int) {}
+// nop No operation
+func nop(g *GBC, _, _ int) {}
 
 func inc8(g *GBC, r8, _ int) {
 	value := g.Reg.R[r8] + 1
