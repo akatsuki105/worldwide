@@ -738,37 +738,30 @@ func rra(g *GBC, _, _ int) {
 }
 
 // ADC Add the value n8 plus the carry flag to A
+// ADC A, r8
 func adc8(g *GBC, _, op int) {
-	carry := util.Bool2U8(g.f(flagC))
-	value := g.Reg.R[op] + carry + g.Reg.R[A]
-	value4 := (g.Reg.R[op] & 0b1111) + carry + (g.Reg.R[A] & 0b1111)
-	value16 := uint16(g.Reg.R[op]) + uint16(carry) + uint16(g.Reg.R[A])
+	lhs, rhs, carry := g.Reg.R[A], g.Reg.R[op], util.Bool2U8(g.f(flagC))
+	value := lhs + rhs + carry
+	value4, value16 := (lhs&0b1111)+(rhs&0b1111)+carry, uint16(lhs)+uint16(rhs)+uint16(carry)
 	g.Reg.R[A] = value
-
 	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
 }
 
 // ADC A,(HL)
 func adcaHL(g *GBC, _, _ int) {
-	carry := util.Bool2U8(g.f(flagC))
-	data := g.Load8(g.Reg.HL())
-	value := data + carry + g.Reg.R[A]
-	value4 := (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
-	value16 := uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
+	lhs, rhs, carry := g.Load8(g.Reg.HL()), g.Reg.R[A], util.Bool2U8(g.f(flagC))
+	value := lhs + carry + rhs
+	value4, value16 := (lhs&0x0f)+carry+(rhs&0b1111), uint16(lhs)+uint16(rhs)+uint16(carry)
 	g.Reg.R[A] = value
-
 	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
 }
 
 // ADC A,u8
 func adcu8(g *GBC, _, _ int) {
-	carry := util.Bool2U8(g.f(flagC))
-	data := g.d8Fetch()
-	value := data + carry + g.Reg.R[A]
-	value4 := (data & 0x0f) + carry + (g.Reg.R[A] & 0b1111)
-	value16 := uint16(data) + uint16(g.Reg.R[A]) + uint16(carry)
+	lhs, rhs, carry := g.d8Fetch(), g.Reg.R[A], util.Bool2U8(g.f(flagC))
+	value := lhs + carry + rhs
+	value4, value16 := (lhs&0x0f)+carry+(rhs&0b1111), uint16(lhs)+uint16(rhs)+uint16(carry)
 	g.Reg.R[A] = value
-
 	g.setZNHC(value == 0, false, util.Bit(value4, 4), util.Bit(value16, 8))
 }
 
