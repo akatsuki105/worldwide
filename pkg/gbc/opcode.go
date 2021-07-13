@@ -254,8 +254,6 @@ func jpcc(g *GBC, cc, _ int) {
 	dst := g.a16FetchJP()
 	if g.f(cc) {
 		g.Reg.PC = dst
-		g.timer.tick(g.fixCycles(2))
-	} else {
 		g.timer.tick(g.fixCycles(1))
 	}
 }
@@ -264,8 +262,6 @@ func jpncc(g *GBC, cc, _ int) {
 	dst := g.a16FetchJP()
 	if !g.f(cc) {
 		g.Reg.PC = dst
-		g.timer.tick(g.fixCycles(2))
-	} else {
 		g.timer.tick(g.fixCycles(1))
 	}
 }
