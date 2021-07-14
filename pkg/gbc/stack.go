@@ -20,10 +20,9 @@ func (g *GBC) pushPC() {
 }
 
 func (g *GBC) pushPCCALL() {
-	upper := byte(g.Reg.PC >> 8)
+	upper, lower := byte(g.Reg.PC>>8), byte(g.Reg.PC&0x00ff)
 	g.push(upper)
 	g.timer.tick(1 * 4 >> util.Bool2U32(g.DoubleSpeed)) // M = 4: PC push: memory access for high byte
-	lower := byte(g.Reg.PC & 0x00ff)
 	g.push(lower)
 	g.timer.tick(1 * 4 >> util.Bool2U32(g.DoubleSpeed)) // M = 5: PC push: memory access for low byte
 }

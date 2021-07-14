@@ -11,17 +11,9 @@ type Scheduler struct {
 	root   *Event
 }
 
-func New() *Scheduler {
-	return &Scheduler{}
-}
-
-func (s *Scheduler) Cycle() uint64 {
-	return s.cycles
-}
-
-func (s *Scheduler) Add(c uint64) {
-	s.cycles += c
-}
+func New() *Scheduler              { return &Scheduler{} }
+func (s *Scheduler) Cycle() uint64 { return s.cycles }
+func (s *Scheduler) Add(c uint64)  { s.cycles += c }
 
 func (s *Scheduler) Next() uint64 {
 	if s.root == nil {
@@ -75,39 +67,6 @@ func (s *Scheduler) ScheduleEvent(name EventName, callback func(cyclesLate uint6
 				name:     name,
 				callback: callback,
 				when:     when,
-			}
-			return
-		}
-		previous = event
-		event = event.next
-	}
-}
-
-func (s *Scheduler) ScheduleEventAbsolute(name EventName, callback func(cyclesLate uint64), when uint64) {
-	var previous *Event = nil
-	event := s.root
-	for {
-		if event.next == nil {
-			// last executed
-			event.next = &Event{
-				name:     name,
-				callback: callback,
-				when:     when,
-			}
-			return
-		}
-		if when < event.when {
-			// previous <- new <- event
-			newEvent := &Event{
-				name:     name,
-				callback: callback,
-				when:     when,
-				next:     event,
-			}
-			if previous == nil {
-				s.root = newEvent
-			} else {
-				previous.next = newEvent
 			}
 			return
 		}

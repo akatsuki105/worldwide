@@ -46,6 +46,7 @@ func (e *Emulator) Update() error {
 
 	select {
 	case <-second.C:
+		e.GBC.RTC.IncrementSecond()
 		oldFrame := e.frame
 		e.frame = e.GBC.Frame()
 		fps := e.frame - oldFrame

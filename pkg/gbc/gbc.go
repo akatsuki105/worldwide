@@ -65,22 +65,31 @@ const (
 	JoypadIRQ
 )
 
+type CurInst struct {
+	Opcode byte
+	PC     uint16
+}
+
 // GBC core structure
 type GBC struct {
-	Reg         Register
-	IO          [0x100]byte // 0xff00-0xffff
+	Reg  Register
+	Inst CurInst
+
+	// memory
+	ROM  ROM
+	RAM  RAM
+	WRAM WRAM
+	IO   [0x100]byte // 0xff00-0xffff
+
 	Cartridge   *cart.Cartridge
 	joypad      *joypad.Joypad
 	halt        bool
 	Config      *config.Config
 	timer       *Timer
-	ROM         ROM
-	RAM         RAM
-	WRAM        WRAM
 	bankMode    uint
 	sound       *apu.APU
 	Video       *video.Video
-	RTC         rtc.RTC
+	RTC         *rtc.RTC
 	DoubleSpeed bool
 	model       util.GBModel
 	irqPending  int
@@ -200,6 +209,7 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 		Cartridge: cart.New(romData),
 		scheduler: scheduler.New(),
 		joypad:    joypad.New(j),
+		RTC:       rtc.New(true),
 	}
 
 	g.Video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent, g.scheduler.DescheduleEvent)
@@ -220,9 +230,6 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 	// Init APU
 	g.sound = apu.New(true, setAudioStream)
 
-	// Init RTC
-	go g.RTC.Init()
-
 	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.Video.EndMode2, video.MODE_2_LENGTH)
 
 	g.TransferROM(romData)
@@ -231,10 +238,12 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 
 // Exec 1cycle
 func (g *GBC) step() {
-	PC := g.Reg.PC
-	bytecode := g.Load8(PC)
-	opcode := opcodes[bytecode]
-	operand1, operand2, cycle, handler := opcode.Operand1, opcode.Operand2, opcode.Cycle1, opcode.Handler
+	pc := g.Reg.PC
+	opcode := g.Load8(pc)
+	g.Inst.Opcode, g.Inst.PC = opcode, pc
+
+	inst := gbz80insts[opcode]
+	operand1, operand2, cycle, handler := inst.Operand1, inst.Operand2, inst.Cycle1, inst.Handler
 
 	if !g.halt {
 		if g.irqPending > 0 {
@@ -246,6 +255,7 @@ func (g *GBC) step() {
 			return
 		}
 
+		g.Reg.PC++
 		handler(g, operand1, operand2)
 		cycle *= (4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
 	} else {

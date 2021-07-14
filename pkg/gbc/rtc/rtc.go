@@ -27,15 +27,11 @@ type RTC struct {
 // LatchedRTC Latched RTC
 type LatchedRTC struct{ Ctr [5]byte }
 
-// Init rtc clock
-func (rtc *RTC) Init() {
-	rtc.Enable = true
-	for range time.Tick(time.Second) {
-		if rtc.Enable {
-			if rtc.isActive() {
-				rtc.incrementSecond()
-			}
-		}
+func New(enable bool) *RTC { return &RTC{Enable: enable} }
+
+func (rtc *RTC) IncrementSecond() {
+	if rtc.Enable && rtc.isActive() {
+		rtc.incrementSecond()
 	}
 }
 
@@ -61,7 +57,6 @@ func (rtc *RTC) Write(target, value byte) {
 
 func (rtc *RTC) incrementSecond() {
 	rtc.Ctr[S]++
-	// pass one minute
 	if rtc.Ctr[S] == 60 {
 		rtc.incrementMinute()
 	}
@@ -70,7 +65,6 @@ func (rtc *RTC) incrementSecond() {
 func (rtc *RTC) incrementMinute() {
 	rtc.Ctr[M]++
 	rtc.Ctr[S] = 0
-	// pass 1 hour
 	if rtc.Ctr[M] == 60 {
 		rtc.incrementHour()
 	}
@@ -79,18 +73,17 @@ func (rtc *RTC) incrementMinute() {
 func (rtc *RTC) incrementHour() {
 	rtc.Ctr[H]++
 	rtc.Ctr[M] = 0
-	// pass a day
 	if rtc.Ctr[H] == 24 {
 		rtc.incrementDay()
 	}
 }
 
 func (rtc *RTC) incrementDay() {
-	previousDL := rtc.Ctr[DL]
+	old := rtc.Ctr[DL]
 	rtc.Ctr[DL]++
 	rtc.Ctr[H] = 0
 	// pass 256 days
-	if rtc.Ctr[DL] < previousDL {
+	if rtc.Ctr[DL] < old {
 		rtc.Ctr[DL] = 0
 		if rtc.Ctr[DH]&0x01 == 1 {
 			// msb on day is set
