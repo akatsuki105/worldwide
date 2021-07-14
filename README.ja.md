@@ -80,4 +80,4 @@ make run ROM="***.gb"
 | <kbd>X</kbd>         | A ボタン      |
 | <kbd>Z</kbd>         | B ボタン      |
 | <kbd>Enter</kbd>     | Start ボタン  |
-| <kbd>Right shift</kbd> | Select ボタン |
+| <kbd>Backspace</kbd> | Select ボタン |
