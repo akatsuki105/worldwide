@@ -82,4 +82,4 @@ Please download [here](https://github.com/pokemium/Worldwide/releases).
 | <kbd>X</kbd>         | A button      |
 | <kbd>Z</kbd>         | B button      |
 | <kbd>Enter</kbd>     | Start button  |
-| <kbd>Right shift</kbd> | Select button |
+| <kbd>Backspace</kbd> | Select button |
