@@ -277,9 +277,7 @@ func ret(g *GBC, _, _ int) {
 func retcc(g *GBC, cc, _ int) {
 	if g.f(cc) {
 		g.popPC()
-		g.timer.tick(g.fixCycles(5))
-	} else {
-		g.timer.tick(g.fixCycles(2))
+		g.timer.tick(g.fixCycles(3))
 	}
 }
 
@@ -287,9 +285,7 @@ func retcc(g *GBC, cc, _ int) {
 func retncc(g *GBC, cc, _ int) {
 	if !g.f(cc) {
 		g.popPC()
-		g.timer.tick(g.fixCycles(5))
-	} else {
-		g.timer.tick(g.fixCycles(2))
+		g.timer.tick(g.fixCycles(3))
 	}
 }
 
@@ -471,17 +467,17 @@ func prefixCB(g *GBC, _, _ int) {
 
 // RLC Rotate n left carry => bit0
 func rlc(g *GBC, r8, _ int) {
-	value, msb := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 7)
-	g.Reg.R[r8] = util.SetLSB(value<<1, msb)
-	g.setZNHC(g.Reg.R[r8] == 0, false, false, msb)
+	value, bit7 := g.Reg.R[r8], util.Bit(g.Reg.R[r8], 7)
+	g.Reg.R[r8] = util.SetLSB(value<<1, bit7)
+	g.setZNHC(g.Reg.R[r8] == 0, false, false, bit7)
 }
 
 func rlcHL(g *GBC, _, _ int) {
 	value := g.fetchAtHL()
-	msb := util.Bit(value, 7)
-	value = util.SetLSB(value<<1, msb)
+	bit7 := util.Bit(value, 7)
+	value = util.SetLSB(value<<1, bit7)
 	g.Store8(g.Reg.HL(), value)
-	g.setZNHC(value == 0, false, false, msb)
+	g.setZNHC(value == 0, false, false, bit7)
 }
 
 // Rotate register A left.
@@ -580,7 +576,7 @@ func sraHL(g *GBC, operand1, operand2 int) {
 	g.setZNHC(value == 0, false, false, bit0)
 }
 
-// SWAP Swap n[5:8] and n[0:4]
+// SWAP Swap b[5:8] and b[0:4]
 func swap(g *GBC, _, r8 int) {
 	b := g.Reg.R[r8]
 	upper, lower := b>>4, b&0b1111
@@ -604,11 +600,11 @@ func srl(g *GBC, r8, _ int) {
 }
 
 func srlHL(g *GBC, _, _ int) {
-	hl := g.fetchAtHL()
-	bit0 := util.Bit(hl, 0)
-	hl = (hl >> 1)
-	g.Store8(g.Reg.HL(), hl)
-	g.setZNHC(hl == 0, false, false, bit0)
+	value := g.fetchAtHL()
+	bit0 := util.Bit(value, 0)
+	value = (value >> 1)
+	g.Store8(g.Reg.HL(), value)
+	g.setZNHC(value == 0, false, false, bit0)
 }
 
 // BIT Test bit n
@@ -628,8 +624,7 @@ func res(g *GBC, bit, r8 int) {
 
 func resHL(g *GBC, bit, _ int) {
 	mask := ^(byte(1) << bit)
-	value := g.fetchAtHL() & mask
-	g.Store8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), g.fetchAtHL()&mask)
 }
 
 func set(g *GBC, bit, r8 int) {
@@ -638,8 +633,7 @@ func set(g *GBC, bit, r8 int) {
 
 func setHL(g *GBC, bit, _ int) {
 	mask := byte(1) << bit
-	value := g.fetchAtHL() | mask
-	g.Store8(g.Reg.HL(), value)
+	g.Store8(g.Reg.HL(), g.fetchAtHL()|mask)
 }
 
 // push af
@@ -699,16 +693,15 @@ func subu8(g *GBC, _, _ int) {
 
 // Rotate register A right through carry.
 func rra(g *GBC, _, _ int) {
-	carry := g.f(flagC)
-	a := g.Reg.R[A]
-	newCarry := util.Bit(a, 0)
-	if carry {
+	oldC, a := g.f(flagC), g.Reg.R[A]
+	newC := util.Bit(a, 0)
+	if oldC {
 		a = (1 << 7) | (a >> 1)
 	} else {
 		a = (0 << 7) | (a >> 1)
 	}
 	g.Reg.R[A] = a
-	g.setZNHC(false, false, false, newCarry)
+	g.setZNHC(false, false, false, newC)
 }
 
 // ADC Add the value n8 plus the carry flag to A
@@ -767,28 +760,21 @@ func sbcu8(g *GBC, _, _ int) {
 	g.setZNHC(value == 0, true, util.Bit(value4, 4), util.Bit(value16, 8))
 }
 
-// DAA Decimal adjust
+// DAA Decimal adjust (ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944)
 func daa(g *GBC, _, _ int) {
 	a := g.Reg.R[A]
-	// ref: https://forums.nesdev.com/viewtopic.php?f=20&t=15944
 	if !g.f(flagN) {
 		if g.f(flagC) || a > 0x99 {
 			a += 0x60
 			g.setF(flagC, true)
 		}
-		if g.f(flagH) || (a&0x0f) > 0x09 {
-			a += 0x06
-		}
+		a += 0x06 * util.Bool2U8(g.f(flagH) || (a&0x0f) > 0x09)
 	} else {
-		if g.f(flagC) {
-			a -= 0x60
-		}
-		if g.f(flagH) {
-			a -= 0x06
-		}
+		a -= 0x60 * util.Bool2U8(g.f(flagC))
+		a -= 0x06 * util.Bool2U8(g.f(flagH))
 	}
-
 	g.Reg.R[A] = a
+
 	g.setF(flagZ, a == 0)
 	g.setF(flagH, false)
 }
