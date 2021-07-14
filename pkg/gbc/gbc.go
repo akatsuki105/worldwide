@@ -89,7 +89,7 @@ type GBC struct {
 	bankMode    uint
 	sound       *apu.APU
 	Video       *video.Video
-	RTC         rtc.RTC
+	RTC         *rtc.RTC
 	DoubleSpeed bool
 	model       util.GBModel
 	irqPending  int
@@ -209,6 +209,7 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 		Cartridge: cart.New(romData),
 		scheduler: scheduler.New(),
 		joypad:    joypad.New(j),
+		RTC:       rtc.New(true),
 	}
 
 	g.Video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent, g.scheduler.DescheduleEvent)
@@ -228,9 +229,6 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 
 	// Init APU
 	g.sound = apu.New(true, setAudioStream)
-
-	// Init RTC
-	go g.RTC.Init()
 
 	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.Video.EndMode2, video.MODE_2_LENGTH)
 
