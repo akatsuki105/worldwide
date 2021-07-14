@@ -24,13 +24,11 @@ This emulator can play almost all ROMs work without problems and has many featur
 - [x] Sound(ported from goboy)
 - [x] GameBoy Color ROM support
 - [x] Multi-platform support
-- [x] Joypad support
 - [x] MBC1, MBC2, MBC3, MBC5 support
 - [x] RTC
 - [x] SRAM save
 - [x] Resizable window
 - [x] Debugger
-- [x] HQ2x mode 
 - [ ] Serial CGB communication in local network
 - [ ] Serial communication with global network
 - [ ] SuperGameBoy support
@@ -53,20 +51,12 @@ You can play this emulator in debug mode.
 
 <img src="https://imgur.com/YxQF9AF.png">
 
-## ✨ HQ2x
-
-You can play games in HQ2x(high-resolution) mode.
-
-HQ2x can be enabled in config file.
-
-<img src="https://imgur.com/bu6WanY.png" width="320px"> <img src="https://imgur.com/OntekWj.png" width="320px">
-
 ## 🔨 Build
 
 For those who want to build from source code.
 
 Requirements
-- Go 1.15
+- Go 1.16
 - make
 
 ```sh
