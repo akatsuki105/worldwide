@@ -205,33 +205,25 @@ func (g *GBC) resetRegister() {
 }
 
 func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
+	c := cart.New(romData)
 	g := &GBC{
-		Cartridge: cart.New(romData),
+		Cartridge: c,
 		scheduler: scheduler.New(),
 		joypad:    joypad.New(j),
-		RTC:       rtc.New(true),
+		RTC:       rtc.New(c.HasRTC()),
+		sound:     apu.New(true, setAudioStream),
+		Config:    config.New(),
 	}
 
-	g.Video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler.ScheduleEvent, g.scheduler.DescheduleEvent)
+	// init graphics
+	g.Video = video.New(&g.IO, g.updateIRQs, g.hdmaMode3, g.scheduler)
 	if g.Cartridge.IsCGB {
 		g.setModel(util.GB_MODEL_CGB)
 	}
 
+	// init timer
 	g.timer = NewTimer(g)
-	g.scheduler.ScheduleEvent(scheduler.TimerUpdate, g.timer.update, 0)
-
-	g.resetRegister()
-	g.resetIO()
-
-	g.ROM.bank, g.WRAM.bank = 1, 1
-
-	g.Config = config.New()
-
-	// Init APU
-	g.sound = apu.New(true, setAudioStream)
-
-	g.scheduler.ScheduleEvent(scheduler.EndMode2, g.Video.EndMode2, video.MODE_2_LENGTH)
-
+	g.skipBIOS()
 	g.TransferROM(romData)
 	return g
 }
@@ -396,4 +388,14 @@ func (g *GBC) hdmaMode3() {
 		g.scheduler.DescheduleEvent(scheduler.HDMA)
 		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 0)
 	}
+}
+
+func (g *GBC) skipBIOS() {
+	g.resetRegister()
+	g.resetIO()
+	g.ROM.bank, g.WRAM.bank = 1, 1
+
+	g.scheduler.ScheduleEvent(scheduler.TimerUpdate, g.timer.update, GB_DMG_DIV_PERIOD*(16-9))
+	g.storeIO(LCDCIO, 0x91)
+	g.Video.SkipBIOS()
 }

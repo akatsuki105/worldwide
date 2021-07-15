@@ -55,7 +55,6 @@ func (g *GBC) resetIO() {
 	g.IO[0x1a], g.IO[0x1b], g.IO[0x1c], g.IO[0x1e] = 0x7f, 0xff, 0x9f, 0xbf // sound3
 	g.IO[0x20], g.IO[0x23] = 0xff, 0xbf                                     // sound4
 	g.IO[0x24], g.IO[0x25], g.IO[0x26] = 0x77, 0xf3, 0xf1                   // sound control
-	g.storeIO(LCDCIO, 0x91)
 	g.storeIO(LCDSTATIO, 0x85)
 	g.storeIO(BGPIO, 0xfc)
 	if model < util.GB_MODEL_CGB {
@@ -131,8 +130,9 @@ func (g *GBC) storeIO(offset byte, value byte) {
 
 	case offset == LCDCIO:
 		g.Video.ProcessDots(0)
+		old := g.Video.LCDC
 		g.Video.Renderer.WriteVideoRegister(offset, value)
-		g.Video.WriteLCDC(value)
+		g.Video.WriteLCDC(old, value)
 
 	case offset == LCDSTATIO:
 		g.Video.WriteSTAT(value)

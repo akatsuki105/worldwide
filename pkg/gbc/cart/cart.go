@@ -33,3 +33,7 @@ func New(rom []byte) *Cartridge {
 	cart.RAMSize = uint8(rom[0x0149])
 	return cart
 }
+
+func (c *Cartridge) HasRTC() bool {
+	return c.Type == 0x0f || c.Type == 0x10
+}

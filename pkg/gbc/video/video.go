@@ -60,9 +60,8 @@ type Video struct {
 	FrameCounter, frameskip, frameskipCounter int
 	updateIRQs                                func()
 
-	scheduleEvent   func(name scheduler.EventName, callback func(cyclesLate uint64), after uint64)
-	descheduleEvent func(name scheduler.EventName)
-	hdma            func()
+	scheduler *scheduler.Scheduler
+	hdma      func()
 }
 
 var (
@@ -78,15 +77,14 @@ const (
 	OBP1
 )
 
-func New(io *[0x100]byte, updateIRQs, hdma func(), scheduleEvent func(name scheduler.EventName, callback func(cyclesLate uint64), after uint64), descheduleEvent func(name scheduler.EventName)) *Video {
+func New(io *[0x100]byte, updateIRQs, hdma func(), scheduler *scheduler.Scheduler) *Video {
 	g := &Video{
-		io:              io,
-		Oam:             NewOAM(),
-		dmgPalette:      defaultDmgPalette,
-		updateIRQs:      updateIRQs,
-		scheduleEvent:   scheduleEvent,
-		descheduleEvent: descheduleEvent,
-		hdma:            hdma,
+		io:         io,
+		Oam:        NewOAM(),
+		dmgPalette: defaultDmgPalette,
+		updateIRQs: updateIRQs,
+		scheduler:  scheduler,
+		hdma:       hdma,
 	}
 
 	g.Renderer = NewRenderer(g)
@@ -129,6 +127,21 @@ func (g *Video) Reset() {
 	g.Renderer.writePalette(9*4+1, g.Palette[9*4+1])
 	g.Renderer.writePalette(9*4+2, g.Palette[9*4+2])
 	g.Renderer.writePalette(9*4+3, g.Palette[9*4+3])
+}
+
+// GBVideoSkipBIOS
+func (g *Video) SkipBIOS() {
+	next := uint64(56)
+	if g.Renderer.Model == util.GB_MODEL_CGB {
+		next = 20
+	}
+	g.Ly, g.io[GB_REG_LY] = VERTICAL_PIXELS, VERTICAL_PIXELS
+	g.setMode(1)
+
+	g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 0, true)
+	g.updateIRQs()
+	g.scheduler.DescheduleEvent(scheduler.EndMode1)
+	g.scheduler.ScheduleEvent(scheduler.EndMode1, g.EndMode1, next)
 }
 
 // Display returns gameboy display data
@@ -262,8 +275,8 @@ func (g *Video) EndMode0(cyclesLate uint64) {
 		g.setMode(1)
 		name, callback, after = scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH
 
-		g.descheduleEvent(scheduler.UpdateFrame)
-		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, 0)
+		g.scheduler.DescheduleEvent(scheduler.UpdateFrame)
+		g.scheduler.ScheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, 0)
 
 		if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 			g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
@@ -283,16 +296,12 @@ func (g *Video) EndMode0(cyclesLate uint64) {
 	}
 
 	g.updateIRQs()
-	g.scheduleEvent(name, callback, after-cyclesLate)
+	g.scheduler.ScheduleEvent(name, callback, after-cyclesLate)
 }
 
 // mode1 = VBlank
 func (g *Video) EndMode1(cyclesLate uint64) {
 	if !util.Bit(g.LCDC, Enable) {
-		g.Ly = 0
-		g.io[GB_REG_LY] = byte(g.Ly)
-		g.setMode(2)
-		g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH)
 		return
 	}
 
@@ -303,16 +312,16 @@ func (g *Video) EndMode1(cyclesLate uint64) {
 		g.Ly = 0
 		g.io[GB_REG_LY] = byte(g.Ly)
 		g.setMode(2)
-		defer g.scheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH-cyclesLate)
+		defer g.scheduler.ScheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH-cyclesLate)
 	case VERTICAL_TOTAL_PIXELS:
 		g.io[GB_REG_LY] = 0
-		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-8-cyclesLate)
+		defer g.scheduler.ScheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-8-cyclesLate)
 	case VERTICAL_TOTAL_PIXELS - 1:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, 8-cyclesLate)
+		defer g.scheduler.ScheduleEvent(scheduler.EndMode1, g.EndMode1, 8-cyclesLate)
 	default:
 		g.io[GB_REG_LY] = byte(g.Ly)
-		defer g.scheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-cyclesLate)
+		defer g.scheduler.ScheduleEvent(scheduler.EndMode1, g.EndMode1, HORIZONTAL_LENGTH-cyclesLate)
 	}
 
 	oldStat := g.Stat
@@ -329,7 +338,7 @@ func (g *Video) EndMode2(cyclesLate uint64) {
 	oldStat := g.Stat
 	g.X = -(int(g.io[GB_REG_SCX]) & 7)
 	g.setMode(3)
-	g.scheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH-cyclesLate)
+	g.scheduler.ScheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -343,7 +352,7 @@ func (g *Video) EndMode3(cyclesLate uint64) {
 	g.ProcessDots(cyclesLate)
 	g.hdma()
 	g.setMode(0)
-	g.scheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH-cyclesLate)
+	g.scheduler.ScheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -353,7 +362,7 @@ func (g *Video) EndMode3(cyclesLate uint64) {
 // _updateFrameCount
 func (g *Video) updateFrameCount(cyclesLate uint64) {
 	if !util.Bit(g.LCDC, Enable) {
-		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
+		g.scheduler.ScheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
 	}
 
 	g.frameskipCounter--
@@ -373,8 +382,9 @@ func (g *Video) setMode(mode byte) {
 }
 
 // GBVideoWriteLCDC
-func (g *Video) WriteLCDC(value byte) {
-	if !util.Bit(g.LCDC, Enable) && util.Bit(value, Enable) {
+func (g *Video) WriteLCDC(old, value byte) {
+	if !util.Bit(old, Enable) && util.Bit(value, Enable) {
+		g.scheduler.ScheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH-5)
 		g.Ly = 0
 		g.io[GB_REG_LY] = 0
 		oldStat := g.Stat
@@ -386,18 +396,17 @@ func (g *Video) WriteLCDC(value byte) {
 		}
 		g.Renderer.writePalette(0, g.Palette[0])
 
-		g.descheduleEvent(scheduler.UpdateFrame)
+		g.scheduler.DescheduleEvent(scheduler.UpdateFrame)
 	}
-	if util.Bit(g.LCDC, Enable) && !util.Bit(value, Enable) {
-		modeEventName := [4]scheduler.EventName{scheduler.EndMode0, scheduler.EndMode1, scheduler.EndMode2, scheduler.EndMode3}[g.Mode()]
+	if util.Bit(old, Enable) && !util.Bit(value, Enable) {
 		g.setMode(0)
 		g.Ly = 0
 		g.io[GB_REG_LY] = 0
 		g.Renderer.writePalette(0, Color(g.dmgPalette[0]))
 
-		g.descheduleEvent(modeEventName)
-		g.descheduleEvent(scheduler.UpdateFrame)
-		g.scheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
+		g.scheduler.DescheduleEvent(scheduler.EndMode0)
+		g.scheduler.DescheduleEvent(scheduler.UpdateFrame)
+		g.scheduler.ScheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
 	}
 }
 
