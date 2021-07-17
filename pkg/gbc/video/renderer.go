@@ -161,13 +161,6 @@ func (r *Renderer) writePalette(index int, value Color) {
 	}
 }
 
-// writeVRAM / GBVideoSoftwareRendererWriteVRAM
-// GBStore8 calls this
-func (r *Renderer) writeVRAM(address uint16) {}
-
-// writeOAM / GBVideoSoftwareRendererWriteOAM
-func (r *Renderer) writeOAM(oam uint16) {}
-
 // drawRange / GBVideoSoftwareRendererDrawRange
 // by row
 func (r *Renderer) drawRange(startX, endX, y int) {

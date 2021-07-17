@@ -5,25 +5,46 @@
     <title>TileView</title>
 </head>
 <body>
-    <img id="tileview" src="">
+    <img id="tileview0" src="">
+    <img id="tileview1" src="">
 
 <script>
-    const uri = "ws://localhost:8888" + "/debug/tileview";
-    const webSocket = new WebSocket(uri);
-    webSocket.binaryType = 'blob';
-    webSocket.onopen = (e) => {
+    const uri0 = "ws://localhost:8888" + "/debug/tileview/bank0";
+    const webSocket0 = new WebSocket(uri0);
+    webSocket0.binaryType = 'blob';
+    webSocket0.onopen = (e) => {
         console.log("open");
     };
 
-    webSocket.onmessage = (e) => {
+    webSocket0.onmessage = (e) => {
         console.log("message");
         const data = e.data;
         if (data.constructor === Blob) {
-            document.getElementById('tileview').src = URL.createObjectURL(data);
+            document.getElementById('tileview0').src = URL.createObjectURL(data);
         }
     };
 
-    webSocket.onclose = (e) => {
+    webSocket0.onclose = (e) => {
+        console.log("close");
+    };
+</script>
+<script>
+    const uri1 = "ws://localhost:8888" + "/debug/tileview/bank1";
+    const webSocket1 = new WebSocket(uri1);
+    webSocket1.binaryType = 'blob';
+    webSocket1.onopen = (e) => {
+        console.log("open");
+    };
+
+    webSocket1.onmessage = (e) => {
+        console.log("message");
+        const data = e.data;
+        if (data.constructor === Blob) {
+            document.getElementById('tileview1').src = URL.createObjectURL(data);
+        }
+    };
+
+    webSocket1.onclose = (e) => {
         console.log("close");
     };
 </script>

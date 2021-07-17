@@ -309,8 +309,7 @@ func (g *Video) EndMode1(cyclesLate uint64) {
 	g.Ly++
 	switch g.Ly {
 	case VERTICAL_TOTAL_PIXELS + 1:
-		g.Ly = 0
-		g.io[GB_REG_LY] = byte(g.Ly)
+		g.Ly, g.io[GB_REG_LY] = 0, 0
 		g.setMode(2)
 		defer g.scheduler.ScheduleEvent(scheduler.EndMode2, g.EndMode2, MODE_2_LENGTH-cyclesLate)
 	case VERTICAL_TOTAL_PIXELS:
@@ -360,7 +359,7 @@ func (g *Video) EndMode3(cyclesLate uint64) {
 }
 
 // _updateFrameCount
-func (g *Video) updateFrameCount(cyclesLate uint64) {
+func (g *Video) updateFrameCount(_ uint64) {
 	if !util.Bit(g.LCDC, Enable) {
 		g.scheduler.ScheduleEvent(scheduler.UpdateFrame, g.updateFrameCount, TOTAL_LENGTH)
 	}

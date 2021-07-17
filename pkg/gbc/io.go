@@ -166,9 +166,7 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		g.IO[OCPDIO] = byte(g.Video.Palette[8*4+(g.Video.OcpIndex>>1)] >> (8 * (g.Video.OcpIndex & 1)))
 
 	case offset == BCPDIO || offset == OCPDIO:
-		if g.Video.Mode() != 3 {
-			g.Video.ProcessDots(0)
-		}
+		g.Video.ProcessDots(0)
 		g.Video.WritePalette(offset, value)
 
 	case offset == SVBKIO: // switch wram bank
@@ -189,22 +187,20 @@ func (g *GBC) storeIO(offset byte, value byte) {
 
 // GBMemoryWriteHDMA5
 func (g *GBC) writeHDMA5(value byte) byte {
-	g.hdma.src = uint16(g.IO[HDMA1IO]) << 8
-	g.hdma.src |= uint16(g.IO[HDMA2IO])
-	g.hdma.dest = uint16(g.IO[HDMA3IO]) << 8
-	g.hdma.dest |= uint16(g.IO[HDMA4IO])
+	g.hdma.src = (uint16(g.IO[HDMA1IO]) << 8) | uint16(g.IO[HDMA2IO])
+	g.hdma.dest = (uint16(g.IO[HDMA3IO]) << 8) | uint16(g.IO[HDMA4IO])
 	g.hdma.src &= 0xfff0
 
 	g.hdma.dest &= 0x1ff0
 	g.hdma.dest |= 0x8000
 	wasHdma := g.hdma.enable
-	g.hdma.enable = value&0x80 > 0
+	g.hdma.enable = util.Bit(value, 7)
 
 	if (!wasHdma && !g.hdma.enable) || (util.Bit(g.Video.LCDC, video.Enable) && g.Video.Mode() == 0) {
 		if g.hdma.enable {
 			g.hdma.remaining = 0x10
 		} else {
-			g.hdma.remaining = int(((value & 0x7F) + 1) * 0x10)
+			g.hdma.remaining = ((int(value) & 0x7F) + 1) * 0x10
 		}
 		g.cpuBlocked = true
 		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 0)

@@ -17,7 +17,7 @@ const (
 
 	cpuTicksPerSample = float64(4194304) / SAMPLE_RATE
 	STREAM_LEN        = 2940 // 2 * 2 * SAMPLE_RATE * (1/60)
-	volume            = 0.07
+	VOLUME            = 0.07
 	BUF_SEC           = 60
 )
 
@@ -109,7 +109,7 @@ func (a *APU) Buffer(cpuTicks int) {
 	valL := (chn1l + chn2l + chn3l + chn4l) / 4
 	valR := (chn1r + chn2r + chn3r + chn4r) / 4
 
-	lVol, rVol := valL*a.lVol*volume, valR*a.rVol*volume
+	lVol, rVol := valL*a.lVol*VOLUME, valR*a.rVol*VOLUME
 	a.audioBuffer <- [2]byte{byte(lVol), byte(rVol)}
 }
 

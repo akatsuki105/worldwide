@@ -234,7 +234,9 @@ func (g *GBC) step() {
 	inst := gbz80insts[opcode]
 	operand1, operand2, cycle, handler := inst.Operand1, inst.Operand2, inst.Cycle1, inst.Handler
 
-	if !g.halt {
+	if g.halt || g.cpuBlocked {
+		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
+	} else {
 		if g.irqPending > 0 {
 			oldIrqPending := g.irqPending
 			g.irqPending = 0
@@ -247,8 +249,6 @@ func (g *GBC) step() {
 		g.Reg.PC++
 		handler(g, operand1, operand2)
 		cycle *= (4 >> uint32(util.Bool2U64(g.DoubleSpeed)))
-	} else {
-		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
 	}
 
 	g.timer.tick(uint32(cycle))
@@ -334,8 +334,7 @@ func (g *GBC) dmaService(cyclesLate uint64) {
 	g.dma.dest++
 	g.dma.remaining = remaining - 1
 	if g.dma.remaining > 0 {
-		after := 4 * (2 - util.Bool2U64(g.DoubleSpeed))
-		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, after)
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, (4>>util.Bool2U64(g.DoubleSpeed))-cyclesLate)
 	}
 }
 
@@ -352,7 +351,7 @@ func (g *GBC) hdmaService(cyclesLate uint64) {
 
 	if g.hdma.remaining > 0 {
 		g.scheduler.DescheduleEvent(scheduler.HDMA)
-		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 4)
+		g.scheduler.ScheduleEvent(scheduler.HDMA, g.hdmaService, 4-cyclesLate)
 		return
 	}
 
@@ -392,7 +391,6 @@ func (g *GBC) skipBIOS() {
 	g.resetIO()
 	g.ROM.bank, g.WRAM.bank = 1, 1
 
-	g.scheduler.ScheduleEvent(scheduler.TimerUpdate, g.timer.update, GB_DMG_DIV_PERIOD*(16-9))
 	g.storeIO(LCDCIO, 0x91)
 	g.Video.SkipBIOS()
 }

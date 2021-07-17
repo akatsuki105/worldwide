@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IO</title>
+</head>
+<body>
+    <div id="io"></div>
+
+<script>
+    const uri = "ws://localhost:8888" + "/debug/io";
+    const webSocket = new WebSocket(uri);
+    const io = document.getElementById('io');
+    webSocket.binaryType = 'arraybuffer';
+    webSocket.onopen = (e) => {
+        console.log("open");
+    };
+
+    webSocket.onmessage = async (e) => {
+        console.log("message", e.data);
+        const data = new Uint8Array(e.data);
+        io.innerHTML = "";
+        data.map((val, ofs) => {
+            io.insertAdjacentHTML('beforeend', `0xFF${toHex(ofs)}: 0x${toHex(val)}<br/>`)
+        });
+    };
+
+    webSocket.onclose = (e) => {
+        console.log("close");
+    };
+
+    function toHex(d) {
+        return  ("0"+(Number(d).toString(16))).slice(-2).toUpperCase()
+    }
+</script>
+</body>
+</html>

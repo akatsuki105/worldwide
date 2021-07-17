@@ -11,10 +11,14 @@ func (e *Emulator) RunServer(port int) {
 	http.HandleFunc("/pause", e.Pause)
 	http.HandleFunc("/continue", e.Continue)
 	http.HandleFunc("/mute", e.toggleSound)
-	http.HandleFunc("/debug/register", e.debugger.Register)
+	http.HandleFunc("/debug/status", e.debugger.Status)
 	http.HandleFunc("/debug/cartridge", e.debugger.Cartridge)
-	http.Handle("/debug/tileview", websocket.Handler(e.debugger.TileView))
+	http.HandleFunc("/debug/read1", e.debugger.Read1)
+	http.HandleFunc("/debug/read2", e.debugger.Read2)
+	http.Handle("/debug/tileview/bank0", websocket.Handler(e.debugger.TileView0))
+	http.Handle("/debug/tileview/bank1", websocket.Handler(e.debugger.TileView1))
 	http.Handle("/debug/sprview", websocket.Handler(e.debugger.SprView))
+	http.Handle("/debug/io", websocket.Handler(e.debugger.IO))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 

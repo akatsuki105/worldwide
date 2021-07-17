@@ -43,8 +43,8 @@ func (d *Debugger) getRawTileView(bank int) []byte {
 	return buffer
 }
 
-func (d *Debugger) getTileView() []byte {
-	rawBuffer := d.getRawTileView(0)
+func (d *Debugger) getTileView(bank int) []byte {
+	rawBuffer := d.getRawTileView(bank)
 	m := image.NewRGBA(image.Rect(0, 0, 8*16, 8*384/TILE_PER_ROW))
 	var wg sync.WaitGroup
 	wg.Add(384 / TILE_PER_ROW)
@@ -76,18 +76,26 @@ func (d *Debugger) getTileView() []byte {
 	return buffer.Bytes()
 }
 
-func (d *Debugger) TileView(ws *websocket.Conn) {
-	err := websocket.Message.Send(ws, d.getTileView())
+func (d *Debugger) tileView(ws *websocket.Conn, bank int) {
+	err := websocket.Message.Send(ws, d.getTileView(bank))
 	if err != nil {
 		log.Printf("error sending data: %v\n", err)
 		return
 	}
 
 	for range time.NewTicker(time.Second).C {
-		err := websocket.Message.Send(ws, d.getTileView())
+		err := websocket.Message.Send(ws, d.getTileView(bank))
 		if err != nil {
 			log.Printf("error sending data: %v\n", err)
 			return
 		}
 	}
+}
+
+func (d *Debugger) TileView0(ws *websocket.Conn) {
+	d.tileView(ws, 0)
+}
+
+func (d *Debugger) TileView1(ws *websocket.Conn) {
+	d.tileView(ws, 1)
 }

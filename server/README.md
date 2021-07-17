@@ -38,6 +38,50 @@ curl localhost:8888/mute
 
 ## Debug commands
 
+**debug/status**
+
+Get general status
+
+```sh
+curl localhost:8888/debug/status
+```
+
+```json
+{
+    "A":"0x00", "F":"0xa0",
+    "B":"0x00", "C":"0x00",
+    "D":"0x00", "E":"0x04",
+    "H":"0xff", "L":"0xfe",
+    "PC":"0x4a10","SP":"0xc0f8",
+    "IE":"0x000f","IF":"0x00e1","IME":"0x01",
+    "LCDC":"0xcf","STAT":"0x40","LY":"0x90","LYC":"0xc7",
+    "DoubleSpeed":"true"
+}
+```
+
+**debug/read1**
+
+Read a byte from memory
+
+```sh
+curl "localhost:8888/debug/read1?addr=0x0150"
+```
+
+```sh
+0x12 # text/plain
+```
+**debug/read2**
+
+Read two bytes from memory
+
+```sh
+curl "localhost:8888/debug/read2?addr=0x0150"
+```
+
+```sh
+0x1411 # text/plain
+```
+
 **debug/cartridge**
 
 Get cartridge info
@@ -55,14 +99,24 @@ curl localhost:8888/debug/cartridge
 }
 ```
 
-**debug/tileview**
+**debug/io**
+
+Get IO registers(`0xff00-0xffff`) at 1-second intervals using Websocket.
+
+IO registers is sent in arraybuffer. Please refer to [io.html](./io.html) for how to display it.
+
+```sh
+wscat -c ws://localhost:8888/debug/io
+```
+
+**debug/tileview/bank0**
 
 Get tile data at 1-second intervals using Websocket.
 
 Tile data is sent in binary format. Please refer to [tileview.html](./tileview.html) for how to display it.
 
 ```sh
-wscat -c ws://localhost:8888/debug/tileview
+wscat -c ws://localhost:8888/debug/tileview/bank0 # or ws://localhost:8888/debug/tileview/bank1
 ```
 
 **debug/sprview**
