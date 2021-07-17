@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pokemium/Worldwide/pkg/emulator"
-	"github.com/pokemium/Worldwide/pkg/emulator/joypad"
+	"github.com/pokemium/worldwide/pkg/emulator"
+	"github.com/pokemium/worldwide/pkg/emulator/joypad"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -29,13 +29,13 @@ func main() {
 func Run() int {
 	var (
 		showVersion = flag.Bool("v", false, "show version")
-		isDebugMode = flag.Bool("d", false, "enable debug mode")
+		port        = flag.Int("p", -1, "server port (>1023)")
 	)
 
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println("Worldwide:", getVersion())
+		fmt.Println("worldwide:", getVersion())
 		return ExitCodeOK
 	}
 
@@ -49,7 +49,14 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	emu := emulator.New(romData, joypad.Handler, romDir, *isDebugMode)
+	emu := emulator.New(romData, joypad.Handler, romDir)
+	if *port > 0 {
+		if *port < 1024 {
+			fmt.Fprintf(os.Stderr, "Server Error: cannot use well-known port for server")
+		} else {
+			go emu.RunServer(*port)
+		}
+	}
 
 	os.Chdir(cur)
 	defer func() {

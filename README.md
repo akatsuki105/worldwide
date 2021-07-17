@@ -1,10 +1,10 @@
 ![logo](./logo.png)
 
-# 🌏 Worldwide
-![Go](https://github.com/pokemium/Worldwide/workflows/Go/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pokemium/Worldwide)](https://goreportcard.com/report/github.com/pokemium/Worldwide)
-[![GitHub stars](https://img.shields.io/github/stars/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/stargazers)
-[![GitHub license](https://img.shields.io/github/license/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/blob/master/LICENSE)
+# 🌏 worldwide
+![Go](https://github.com/pokemium/worldwide/workflows/Go/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pokemium/worldwide)](https://goreportcard.com/report/github.com/pokemium/worldwide)
+[![GitHub stars](https://img.shields.io/github/stars/pokemium/worldwide)](https://github.com/pokemium/worldwide/stargazers)
+[![GitHub license](https://img.shields.io/github/license/pokemium/worldwide)](https://github.com/pokemium/worldwide/blob/master/LICENSE)
 
 日本語のドキュメントは[こちら](./README.ja.md)
 
@@ -28,28 +28,23 @@ This emulator can play almost all ROMs work without problems and has many featur
 - [x] RTC
 - [x] SRAM save
 - [x] Resizable window
-- [x] Debugger
 - [ ] Serial CGB communication in local network
 - [ ] Serial communication with global network
 - [ ] SuperGameBoy support
 
 ## 🎮 Usage
 
-Download worldwide.exe from [here](https://github.com/pokemium/Worldwide/releases).
+Download worldwide.exe from [here](https://github.com/pokemium/worldwide/releases).
 
 ```sh
 ./worldwide.exe "***.gb" # or ***.gbc
 ```
 
-## 🐛 Debug
+## 🐛 HTTP Server
 
-You can play this emulator in debug mode.
+worldwide contains an HTTP server, and the user can give various instructions to it through HTTP requests.
 
-```sh
-./worldwide.exe -d "***.gb"
-```
-
-<img src="https://imgur.com/YxQF9AF.png">
+Please read [Server Document](./server/README.md).
 
 ## 🔨 Build
 
@@ -69,7 +64,7 @@ make run ROM="***.gb"
 
 ## 📥 Download
 
-Please download [here](https://github.com/pokemium/Worldwide/releases).
+Please download [here](https://github.com/pokemium/worldwide/releases).
 
 ## 📄 Command 
 

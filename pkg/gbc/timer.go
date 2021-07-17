@@ -3,8 +3,8 @@ package gbc
 import (
 	"math"
 
-	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
-	"github.com/pokemium/Worldwide/pkg/util"
+	"github.com/pokemium/worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 const (
@@ -34,7 +34,7 @@ func (t *Timer) reset() {
 
 // mTimingTick
 func (t *Timer) tick(cycles uint32) {
-	t.p.sound.Buffer(int(cycles))
+	t.p.Sound.Buffer(int(cycles))
 	t.p.scheduler.Add(uint64(cycles))
 	for {
 		if t.p.scheduler.Next() > t.p.scheduler.Cycle() {

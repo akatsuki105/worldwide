@@ -7,7 +7,7 @@ import (
 	"log"
 	"math"
 
-	"github.com/pokemium/Worldwide/pkg/util"
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 const (

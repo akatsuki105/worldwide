@@ -1,11 +1,20 @@
 package debug
 
 import (
-	"github.com/pokemium/Worldwide/pkg/gbc/video"
-	"github.com/pokemium/Worldwide/pkg/util"
+	"bytes"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"log"
+	"sync"
+	"time"
+
+	"github.com/pokemium/worldwide/pkg/gbc/video"
+	"github.com/pokemium/worldwide/pkg/util"
+	"golang.org/x/net/websocket"
 )
 
-func (d *Debugger) SprView() [40][64 * 4]byte {
+func (d *Debugger) getRawSprView() [40][64 * 4]byte {
 	buffer := [40][64 * 4]byte{}
 
 	for i := 0; i < 40; i++ {
@@ -39,4 +48,48 @@ func (d *Debugger) SprView() [40][64 * 4]byte {
 	}
 
 	return buffer
+}
+
+func (d *Debugger) getSprView() []byte {
+	rawBuffer := d.getRawSprView()
+	m := image.NewRGBA(image.Rect(0, 0, 8*8, 8*5))
+
+	var wg sync.WaitGroup
+	wg.Add(40)
+	for i := 0; i < 40; i++ {
+		go func(i int) {
+			col, row := i&0x7, i/8
+			for y := 0; y < 8; y++ {
+				for x := 0; x < 8; x++ {
+					idx := (y*8 + x) * 4
+					m.Set(col*8+x, row*8+y, color.RGBA{rawBuffer[i][idx], rawBuffer[i][idx+1], rawBuffer[i][idx+2], rawBuffer[i][idx+3]})
+				}
+			}
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+
+	buffer := new(bytes.Buffer)
+	if err := jpeg.Encode(buffer, m, nil); err != nil {
+		log.Println("unable to encode image.")
+	}
+
+	return buffer.Bytes()
+}
+
+func (d *Debugger) SprView(ws *websocket.Conn) {
+	err := websocket.Message.Send(ws, d.getSprView())
+	if err != nil {
+		log.Printf("error sending data: %v\n", err)
+		return
+	}
+
+	for range time.NewTicker(time.Second).C {
+		err := websocket.Message.Send(ws, d.getSprView())
+		if err != nil {
+			log.Printf("error sending data: %v\n", err)
+			return
+		}
+	}
 }

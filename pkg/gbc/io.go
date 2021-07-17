@@ -1,9 +1,9 @@
 package gbc
 
 import (
-	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
-	"github.com/pokemium/Worldwide/pkg/gbc/video"
-	"github.com/pokemium/Worldwide/pkg/util"
+	"github.com/pokemium/worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/worldwide/pkg/gbc/video"
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 const (
@@ -79,7 +79,7 @@ func (g *GBC) loadIO(offset byte) (value byte) {
 		value = g.Video.Stat
 	default:
 		if (offset >= 0x10 && offset <= 0x26) || (offset >= 0x30 && offset <= 0x3f) {
-			value = g.sound.Read(offset)
+			value = g.Sound.Read(offset)
 		} else {
 			value = g.IO[offset]
 		}
@@ -124,9 +124,9 @@ func (g *GBC) storeIO(offset byte, value byte) {
 		g.dma.remaining = 0xa0
 
 	case offset >= 0x10 && offset <= 0x26: // sound io
-		g.sound.Write(offset, value)
+		g.Sound.Write(offset, value)
 	case offset >= 0x30 && offset <= 0x3f: // sound io
-		g.sound.WriteWaveform(offset, value)
+		g.Sound.WriteWaveform(offset, value)
 
 	case offset == LCDCIO:
 		g.Video.ProcessDots(0)

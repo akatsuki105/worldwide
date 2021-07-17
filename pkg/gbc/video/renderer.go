@@ -1,7 +1,7 @@
 package video
 
 import (
-	"github.com/pokemium/Worldwide/pkg/util"
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 // GBVideoRenderer & GBVideoSoftwareRenderer

@@ -1,7 +1,7 @@
 package joypad
 
 import (
-	ebiten "github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var Handler = [8](func() bool){

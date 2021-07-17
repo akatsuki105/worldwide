@@ -2,14 +2,17 @@ package audio
 
 import (
 	"github.com/hajimehoshi/oto"
-	"github.com/pokemium/Worldwide/pkg/gbc/apu"
+	"github.com/pokemium/worldwide/pkg/gbc/apu"
 )
 
 var context *oto.Context
 var player *oto.Player
 var Stream []byte
+var enable *bool
 
-func Init() {
+func Init(enablePtr *bool) {
+	enable = enablePtr
+
 	var err error
 	context, err = oto.NewContext(apu.SAMPLE_RATE, 2, 1, apu.SAMPLE_RATE/apu.BUF_SEC)
 	if err != nil {
@@ -20,7 +23,7 @@ func Init() {
 }
 
 func Play() {
-	if player == nil {
+	if player == nil || !*enable {
 		return
 	}
 	player.Write(Stream)

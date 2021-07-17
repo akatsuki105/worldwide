@@ -4,8 +4,8 @@ import (
 	"image"
 	"image/color"
 
-	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
-	"github.com/pokemium/Worldwide/pkg/util"
+	"github.com/pokemium/worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 // uint16 = Bit0-4(R) | Bit5-9(G) | Bit10-14(B)

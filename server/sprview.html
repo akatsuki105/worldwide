@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SprView</title>
+</head>
+<body>
+    <img id="sprview" src="">
+
+<script>
+    const uri = "ws://localhost:8888" + "/debug/sprview";
+    const webSocket = new WebSocket(uri);
+    webSocket.binaryType = 'blob';
+    webSocket.onopen = (e) => {
+        console.log("open");
+    };
+
+    webSocket.onmessage = (e) => {
+        console.log("message");
+        const data = e.data;
+        if (data.constructor === Blob) {
+            document.getElementById('sprview').src = URL.createObjectURL(data);
+        }
+    };
+
+    webSocket.onclose = (e) => {
+        console.log("close");
+    };
+</script>
+</body>
+</html>

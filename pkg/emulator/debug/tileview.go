@@ -1,38 +1,93 @@
 package debug
 
+import (
+	"bytes"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"log"
+	"sync"
+	"time"
+
+	"golang.org/x/net/websocket"
+)
+
 const TILENUM = 384 // cgb -> 384*2 (bank1)
 
-func (d *Debugger) TileView() [2][]byte {
-	buffer := [2][]byte{make([]byte, TILENUM*64*4), make([]byte, TILENUM*64*4)} // bank0, bank1
+func (d *Debugger) getRawTileView(bank int) []byte {
+	buffer := make([]byte, TILENUM*64*4)
 
-	for bank := 0; bank < 2; bank++ {
-		if bank == 1 && !d.g.Cartridge.IsCGB {
-			break
-		}
+	for i := 0; i < TILENUM; i++ {
+		addr := 16 * i
 
-		for i := 0; i < TILENUM; i++ {
-			addr := 16 * i
+		for y := 0; y < 8; y++ {
+			tileAddr := addr + 2*y + 0x2000*bank
+			tileDataLower, tileDataUpper := d.g.Video.VRAM.Buffer[tileAddr], d.g.Video.VRAM.Buffer[tileAddr+1]
 
-			for y := 0; y < 8; y++ {
-				tileAddr := addr + 2*y + 0x2000*bank
-				tileDataLower, tileDataUpper := d.g.Video.VRAM.Buffer[tileAddr], d.g.Video.VRAM.Buffer[tileAddr+1]
-
-				for x := 0; x < 8; x++ {
-					b := (7 - uint(x))
-					upperColor := (tileDataUpper >> b) & 0x01
-					lowerColor := (tileDataLower >> b) & 0x01
-					palIdx := (upperColor << 1) | lowerColor // 0 or 1 or 2 or 3
-					p := d.g.Video.Palette[d.g.Video.Renderer.Lookup[palIdx]]
-					red, green, blue := byte((p&0b11111)*8), byte(((p>>5)&0b11111)*8), byte(((p>>10)&0b11111)*8)
-					bufferIdx := i*64*4 + y*8*4 + x*4
-					buffer[bank][bufferIdx] = red
-					buffer[bank][bufferIdx+1] = green
-					buffer[bank][bufferIdx+2] = blue
-					buffer[bank][bufferIdx+3] = 0xff
-				}
+			for x := 0; x < 8; x++ {
+				b := (7 - uint(x))
+				upperColor := (tileDataUpper >> b) & 0x01
+				lowerColor := (tileDataLower >> b) & 0x01
+				palIdx := (upperColor << 1) | lowerColor // 0 or 1 or 2 or 3
+				p := d.g.Video.Palette[d.g.Video.Renderer.Lookup[palIdx]]
+				red, green, blue := byte((p&0b11111)*8), byte(((p>>5)&0b11111)*8), byte(((p>>10)&0b11111)*8)
+				bufferIdx := i*64*4 + y*8*4 + x*4
+				buffer[bufferIdx] = red
+				buffer[bufferIdx+1] = green
+				buffer[bufferIdx+2] = blue
+				buffer[bufferIdx+3] = 0xff
 			}
 		}
 	}
 
 	return buffer
+}
+
+func (d *Debugger) getTileView() []byte {
+	rawBuffer := d.getRawTileView(0)
+	m := image.NewRGBA(image.Rect(0, 0, 8*16, 8*384/TILE_PER_ROW))
+	var wg sync.WaitGroup
+	wg.Add(384 / TILE_PER_ROW)
+	for row := 0; row < 384/TILE_PER_ROW; row++ {
+		// 0..63, 0..63, 0..63, .. -> 0..7, 0..7, ... 8..15, 8..15,
+		go func(row int) {
+			rowStart, rowEnd := row*TILE_PER_ROW, (row+1)*TILE_PER_ROW
+			rowBuffer := rawBuffer[rowStart*64*4 : rowEnd*64*4]
+
+			for t := 0; t < TILE_PER_ROW; t++ {
+				rowBufferBase := t * 64 * 4
+				for y := 0; y < 8; y++ {
+					tileRowBuffer := rowBuffer[rowBufferBase+y*8*4 : rowBufferBase+(y+1)*8*4] // (y*8)..((y*8)+7)
+					for x := 0; x < 8; x++ {
+						m.SetRGBA(t*8+x, row*8+y, color.RGBA{tileRowBuffer[x*4], tileRowBuffer[x*4+1], tileRowBuffer[x*4+2], tileRowBuffer[x*4+3]})
+					}
+				}
+			}
+			wg.Done()
+		}(row)
+	}
+	wg.Wait()
+
+	buffer := new(bytes.Buffer)
+	if err := jpeg.Encode(buffer, m, nil); err != nil {
+		log.Println("unable to encode image.")
+	}
+
+	return buffer.Bytes()
+}
+
+func (d *Debugger) TileView(ws *websocket.Conn) {
+	err := websocket.Message.Send(ws, d.getTileView())
+	if err != nil {
+		log.Printf("error sending data: %v\n", err)
+		return
+	}
+
+	for range time.NewTicker(time.Second).C {
+		err := websocket.Message.Send(ws, d.getTileView())
+		if err != nil {
+			log.Printf("error sending data: %v\n", err)
+			return
+		}
+	}
 }

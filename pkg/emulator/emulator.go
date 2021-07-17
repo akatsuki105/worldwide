@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	ebiten "github.com/hajimehoshi/ebiten/v2"
-	"github.com/pokemium/Worldwide/pkg/emulator/audio"
-	"github.com/pokemium/Worldwide/pkg/emulator/debug"
-	"github.com/pokemium/Worldwide/pkg/gbc"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/pokemium/worldwide/pkg/emulator/audio"
+	"github.com/pokemium/worldwide/pkg/emulator/debug"
+	"github.com/pokemium/worldwide/pkg/gbc"
 )
 
 var (
 	second = time.NewTicker(time.Second)
+	cache  []byte
 )
 
 type Emulator struct {
@@ -19,27 +20,28 @@ type Emulator struct {
 	Rom      string
 	debugger *debug.Debugger
 	frame    int
+	pause    bool
 }
 
-func New(romData []byte, j [8](func() bool), romDir string, isDebugMode bool) *Emulator {
-	audio.Init()
+func New(romData []byte, j [8](func() bool), romDir string) *Emulator {
 	g := gbc.New(romData, j, audio.SetStream)
+	audio.Init(&g.Sound.Enable)
 
 	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowTitle("60fps")
-	if isDebugMode {
-		ebiten.SetWindowSize(DEBUG_BG_X, DEBUG_BG_Y)
-	} else {
-		ebiten.SetWindowSize(160*2, 144*2)
-	}
+	ebiten.SetWindowSize(160*2, 144*2)
 	return &Emulator{
 		GBC:      g,
 		Rom:      romDir,
-		debugger: debug.New(isDebugMode, g),
+		debugger: debug.New(g),
 	}
 }
 
 func (e *Emulator) Update() error {
+	if e.pause {
+		return nil
+	}
+
 	defer e.GBC.PanicHandler("update", true)
 	err := e.GBC.Update()
 	audio.Play()
@@ -58,18 +60,16 @@ func (e *Emulator) Update() error {
 }
 
 func (e *Emulator) Draw(screen *ebiten.Image) {
-	if e.debugger.Enable {
-		screen.DrawImage(e.drawDebugScreen(), nil)
+	if e.pause {
+		screen.ReplacePixels(cache)
 		return
 	}
 
 	defer e.GBC.PanicHandler("draw", true)
-	screen.ReplacePixels(e.GBC.Draw())
+	cache = e.GBC.Draw()
+	screen.ReplacePixels(cache)
 }
 
 func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	if e.debugger.Enable {
-		return DEBUG_BG_X, DEBUG_BG_Y
-	}
 	return 160, 144
 }

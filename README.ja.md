@@ -1,10 +1,10 @@
 ![logo](./logo.png)
 
-# 🌏 Worldwide
-![Go](https://github.com/pokemium/Worldwide/workflows/Go/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/pokemium/Worldwide)](https://goreportcard.com/report/github.com/pokemium/Worldwide)
-[![GitHub stars](https://img.shields.io/github/stars/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/stargazers)
-[![GitHub license](https://img.shields.io/github/license/pokemium/Worldwide)](https://github.com/pokemium/Worldwide/blob/master/LICENSE)
+# 🌏 worldwide
+![Go](https://github.com/pokemium/worldwide/workflows/Go/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pokemium/worldwide)](https://goreportcard.com/report/github.com/pokemium/worldwide)
+[![GitHub stars](https://img.shields.io/github/stars/pokemium/worldwide)](https://github.com/pokemium/worldwide/stargazers)
+[![GitHub license](https://img.shields.io/github/license/pokemium/worldwide)](https://github.com/pokemium/worldwide/blob/master/LICENSE)
 
 Go言語で書かれたゲームボーイカラーエミュレータです。  
 
@@ -35,19 +35,17 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 
 ## 🎮 使い方
 
-[ここ](https://github.com/pokemium/Worldwide/releases)からダウンロードした後次のように起動します。
+[ここ](https://github.com/pokemium/worldwide/releases)からダウンロードした後次のように起動します。
 
 ```sh
 ./worldwide.exe "***.gb" # or ***.gbc
 ```
 
-## 🐛 デバッガ
+## 🐛 HTTPサーバー
 
-デバッグモードも搭載しています。
+worldwideはHTTPサーバーを内包しており、ユーザーはHTTPリクエストを通じて worldwideにさまざまな指示を出すことが可能です。
 
-```sh
-./worldwide.exe -d "***.gb"
-```
+[サーバードキュメント](./server/README.md)を参照してください。
 
 ## 🔨 ビルド
 
@@ -67,7 +65,7 @@ make run ROM="***.gb"
 
 ## 📥 ダウンロード
 
-[ここ](https://github.com/pokemium/Worldwide/releases)からダウンロードできます。最新版をダウンロードすることをお勧めします。
+[ここ](https://github.com/pokemium/worldwide/releases)からダウンロードできます。最新版をダウンロードすることをお勧めします。
 
 ## 📄 コマンド
 

@@ -1,6 +1,6 @@
 package gbc
 
-import "github.com/pokemium/Worldwide/pkg/util"
+import "github.com/pokemium/worldwide/pkg/util"
 
 func (g *GBC) push(b byte) {
 	g.Store8(g.Reg.SP-1, b)

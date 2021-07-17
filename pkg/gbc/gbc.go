@@ -6,14 +6,13 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/pokemium/Worldwide/pkg/emulator/config"
-	"github.com/pokemium/Worldwide/pkg/gbc/apu"
-	"github.com/pokemium/Worldwide/pkg/gbc/cart"
-	"github.com/pokemium/Worldwide/pkg/gbc/joypad"
-	"github.com/pokemium/Worldwide/pkg/gbc/rtc"
-	"github.com/pokemium/Worldwide/pkg/gbc/scheduler"
-	"github.com/pokemium/Worldwide/pkg/gbc/video"
-	"github.com/pokemium/Worldwide/pkg/util"
+	"github.com/pokemium/worldwide/pkg/gbc/apu"
+	"github.com/pokemium/worldwide/pkg/gbc/cart"
+	"github.com/pokemium/worldwide/pkg/gbc/joypad"
+	"github.com/pokemium/worldwide/pkg/gbc/rtc"
+	"github.com/pokemium/worldwide/pkg/gbc/scheduler"
+	"github.com/pokemium/worldwide/pkg/gbc/video"
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 var irqVec = [5]uint16{0x0040, 0x0048, 0x0050, 0x0058, 0x0060}
@@ -84,10 +83,9 @@ type GBC struct {
 	Cartridge   *cart.Cartridge
 	joypad      *joypad.Joypad
 	halt        bool
-	Config      *config.Config
 	timer       *Timer
 	bankMode    uint
-	sound       *apu.APU
+	Sound       *apu.APU
 	Video       *video.Video
 	RTC         *rtc.RTC
 	DoubleSpeed bool
@@ -211,8 +209,7 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 		scheduler: scheduler.New(),
 		joypad:    joypad.New(j),
 		RTC:       rtc.New(c.HasRTC()),
-		sound:     apu.New(true, setAudioStream),
-		Config:    config.New(),
+		Sound:     apu.New(true, setAudioStream),
 	}
 
 	// init graphics
@@ -268,7 +265,7 @@ func (g *GBC) Update() error {
 		g.step()
 	}
 
-	g.sound.Update()
+	g.Sound.Update()
 	return nil
 }
 

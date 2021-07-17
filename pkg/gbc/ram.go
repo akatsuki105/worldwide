@@ -1,7 +1,7 @@
 package gbc
 
 import (
-	"github.com/pokemium/Worldwide/pkg/gbc/cart"
+	"github.com/pokemium/worldwide/pkg/gbc/cart"
 )
 
 // Load8 fetch value from ram

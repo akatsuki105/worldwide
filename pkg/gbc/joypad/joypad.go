@@ -1,6 +1,6 @@
 package joypad
 
-import "github.com/pokemium/Worldwide/pkg/util"
+import "github.com/pokemium/worldwide/pkg/util"
 
 const (
 	A      = 0
