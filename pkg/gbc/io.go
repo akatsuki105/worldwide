@@ -27,8 +27,10 @@ const (
 	OBP1IO    byte = 0x49
 	WYIO      byte = 0x4a
 	WXIO      byte = 0x4b
+	KEY0IO    byte = 0x4c
 	KEY1IO    byte = 0x4d
 	VBKIO     byte = 0x4f
+	BANKIO    byte = 0x50
 	HDMA1IO   byte = 0x51
 	HDMA2IO   byte = 0x52
 	HDMA3IO   byte = 0x53
@@ -42,31 +44,55 @@ const (
 	IEIO      byte = 0xff
 )
 
+// GBIOReset
 func (g *GBC) resetIO() {
 	model := g.Video.Renderer.Model
 
-	g.storeIO(DIVIO, 0x1e)
-	g.IO[TIMAIO] = 0x00
+	g.storeIO(TIMAIO, 0x00)
 	g.storeIO(TMAIO, 0x00)
-	g.storeIO(TACIO, 0xf8)
-	g.storeIO(IFIO, 0xe1)
+	g.storeIO(TACIO, 0x00)
+	g.storeIO(IFIO, 0x01)
+
+	// sound
 	g.IO[0x10], g.IO[0x11], g.IO[0x12], g.IO[0x14] = 0x80, 0xbf, 0xf3, 0xbf // sound1
 	g.IO[0x16], g.IO[0x19] = 0x3f, 0xbf                                     // sound2
 	g.IO[0x1a], g.IO[0x1b], g.IO[0x1c], g.IO[0x1e] = 0x7f, 0xff, 0x9f, 0xbf // sound3
 	g.IO[0x20], g.IO[0x23] = 0xff, 0xbf                                     // sound4
 	g.IO[0x24], g.IO[0x25], g.IO[0x26] = 0x77, 0xf3, 0xf1                   // sound control
-	g.storeIO(LCDSTATIO, 0x85)
+
+	g.storeIO(LCDCIO, 0x91)
+	g.IO[BANKIO] = 0x01
+
+	g.storeIO(SCYIO, 0x00)
+	g.storeIO(SCXIO, 0x00)
+	g.storeIO(LYCIO, 0x00)
+
+	g.IO[DMAIO] = 0xff
+
 	g.storeIO(BGPIO, 0xfc)
 	if model < util.GB_MODEL_CGB {
 		g.storeIO(OBP0IO, 0xff)
 		g.storeIO(OBP1IO, 0xff)
 	}
+
+	g.storeIO(WYIO, 0x00)
+	g.storeIO(WXIO, 0x00)
+
 	if model&util.GB_MODEL_CGB != 0 {
-		g.storeIO(VBKIO, 0)
+		g.storeIO(KEY0IO, 0x00)
+		g.storeIO(JOYPIO, 0xff)
+		g.storeIO(VBKIO, 0x00)
 		g.storeIO(BCPSIO, 0x80)
-		g.storeIO(OCPSIO, 0)
-		g.storeIO(SVBKIO, 1)
+		g.storeIO(OCPSIO, 0x00)
+		g.storeIO(SVBKIO, 0x01)
+		g.storeIO(HDMA1IO, 0xff)
+		g.storeIO(HDMA2IO, 0xff)
+		g.storeIO(HDMA3IO, 0xff)
+		g.storeIO(HDMA4IO, 0xff)
+		g.IO[HDMA5IO] = 0xff
 	}
+
+	g.storeIO(IEIO, 0x00)
 }
 
 func (g *GBC) loadIO(offset byte) (value byte) {
@@ -88,15 +114,17 @@ func (g *GBC) loadIO(offset byte) (value byte) {
 }
 
 func (g *GBC) storeIO(offset byte, value byte) {
-	switch {
-	case offset == JOYPIO:
-		g.joypad.P1 = value
+	switch offset {
+	case JOYPIO:
+		g.IO[JOYPIO] = value | 0x0f
+		g.joypad.P1 = g.IO[JOYPIO]
+		return
 
-	case offset == DIVIO:
+	case DIVIO:
 		g.timer.divReset()
 		return
 
-	case offset == TIMAIO:
+	case TIMAIO:
 		if value > 0 && g.scheduler.Until(scheduler.TimerIRQ) > (2-util.Bool2U64(g.DoubleSpeed)) {
 			g.scheduler.DescheduleEvent(scheduler.TimerIRQ)
 		}
@@ -104,82 +132,89 @@ func (g *GBC) storeIO(offset byte, value byte) {
 			return
 		}
 
-	case offset == TACIO:
+	case TACIO:
 		value = g.timer.updateTAC(value)
 
-	case offset == IFIO:
+	case IFIO:
 		g.IO[IFIO] = value | 0xe0 // IF[4-7] always set
 		g.updateIRQs()
 		return
 
-	case offset == DMAIO: // dma transfer
+	case DMAIO: // dma transfer
 		base := uint16(value) << 8
 		if base >= 0xe000 {
 			base &= 0xdfff
 		}
 		g.scheduler.DescheduleEvent(scheduler.OAMDMA)
-		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, 8*(2-util.Bool2U64(g.DoubleSpeed)))
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, 4>>util.Bool2Int(g.DoubleSpeed)) // 4 * 40 = 160cycle
 		g.dma.src = base
 		g.dma.dest = 0xFE00
 		g.dma.remaining = 0xa0
 
-	case offset >= 0x10 && offset <= 0x26: // sound io
-		g.Sound.Write(offset, value)
-	case offset >= 0x30 && offset <= 0x3f: // sound io
-		g.Sound.WriteWaveform(offset, value)
-
-	case offset == LCDCIO:
+	case LCDCIO:
 		g.Video.ProcessDots(0)
 		old := g.Video.LCDC
 		g.Video.Renderer.WriteVideoRegister(offset, value)
 		g.Video.WriteLCDC(old, value)
 
-	case offset == LCDSTATIO:
+	case LCDSTATIO:
 		g.Video.WriteSTAT(value)
 
-	case offset == LYCIO:
+	case LYCIO:
 		g.Video.WriteLYC(value)
 
-	case offset == SCYIO || offset == SCXIO || offset == WYIO || offset == WXIO:
+	case SCYIO, SCXIO, WYIO, WXIO:
 		g.Video.ProcessDots(0)
 		value = g.Video.Renderer.WriteVideoRegister(offset, value)
 
-	case offset == BGPIO || offset == OBP0IO || offset == OBP1IO:
+	case BGPIO, OBP0IO, OBP1IO:
 		g.Video.ProcessDots(0)
 		g.Video.WritePalette(offset, value)
 
 	// below case statements, gbc only
-	case offset == VBKIO: // switch vram bank
+	case KEY1IO:
+		value &= 0x1
+		value |= g.IO[KEY1IO] & 0x80
+
+	case VBKIO: // switch vram bank
 		g.Video.SwitchBank(value)
 
-	case offset == HDMA5IO:
+	case HDMA5IO:
 		value = g.writeHDMA5(value)
 
-	case offset == BCPSIO:
+	case BCPSIO:
 		g.Video.BcpIndex = int(value & 0x3f)
 		g.Video.BcpIncrement = int(value & 0x80)
 		g.IO[BCPDIO] = byte(g.Video.Palette[g.Video.BcpIndex>>1] >> (8 * (g.Video.BcpIndex & 1)))
 
-	case offset == OCPSIO:
+	case OCPSIO:
 		g.Video.OcpIndex = int(value & 0x3f)
 		g.Video.OcpIncrement = int(value & 0x80)
 		g.IO[OCPDIO] = byte(g.Video.Palette[8*4+(g.Video.OcpIndex>>1)] >> (8 * (g.Video.OcpIndex & 1)))
 
-	case offset == BCPDIO || offset == OCPDIO:
+	case BCPDIO, OCPDIO:
 		g.Video.ProcessDots(0)
 		g.Video.WritePalette(offset, value)
 
-	case offset == SVBKIO: // switch wram bank
+	case SVBKIO: // switch wram bank
 		bank := value & 0x07
 		if bank == 0 {
 			bank = 1
 		}
 		g.WRAM.bank = bank
 
-	case offset == IEIO:
+	case IEIO:
 		g.IO[IEIO] = value
 		g.updateIRQs()
 		return
+
+	default:
+		if offset >= 0x10 && offset <= 0x26 {
+			g.Sound.Write(offset, value)
+		}
+		if offset >= 0x30 && offset <= 0x3f {
+			g.Sound.WriteWaveform(offset, value)
+		}
 	}
 
 	g.IO[offset] = value

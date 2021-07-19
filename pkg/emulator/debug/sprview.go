@@ -85,7 +85,7 @@ func (d *Debugger) SprView(ws *websocket.Conn) {
 		return
 	}
 
-	for range time.NewTicker(time.Second).C {
+	for range time.NewTicker(time.Millisecond * 100).C {
 		err := websocket.Message.Send(ws, d.getSprView())
 		if err != nil {
 			log.Printf("error sending data: %v\n", err)

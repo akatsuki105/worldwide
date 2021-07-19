@@ -38,25 +38,63 @@ curl localhost:8888/mute
 
 ## Debug commands
 
-**debug/status**
+**debug/register(GET)**
 
-Get general status
+Get value from CPU-registers and other important registers
 
 ```sh
-curl localhost:8888/debug/status
+curl localhost:8888/debug/register
 ```
 
-```json
+```jsonc
+// application/json
 {
     "A":"0x00", "F":"0xa0",
     "B":"0x00", "C":"0x00",
     "D":"0x00", "E":"0x04",
     "H":"0xff", "L":"0xfe",
     "PC":"0x4a10","SP":"0xc0f8",
-    "IE":"0x000f","IF":"0x00e1","IME":"0x01",
-    "LCDC":"0xcf","STAT":"0x40","LY":"0x90","LYC":"0xc7",
-    "DoubleSpeed":"true"
+    "IE":"0x0f", "IF":"0xe1", "IME":"0x01",
+    "Halt":"true", "DoubleSpeed":"true"
 }
+```
+
+**debug/register(POST)**
+
+Set a value into register
+
+```sh
+# target: register's name (a, b, c, d, e, h, l, f, sp, pc, ime)
+# value: hex value (e.g. 0x0486)
+curl -X POST -d '{"target":"ime", "value":"0x1"}' -H "Content-Type: application/json" localhost:8888/debug/register
+```
+
+**debug/break(POST)**
+
+Set a breakpoint
+
+```sh
+curl -X POST -d '{"addr":"0x0486"}' -H "Content-Type: application/json" localhost:8888/debug/break
+```
+
+**debug/break(GET)**
+
+List breakpoints
+
+```sh
+curl localhost:8888/debug/break
+```
+
+```sh
+[0x0486, 0x0490] # text/plain
+```
+
+**debug/break(DELETE)**
+
+Delete a breakpoint
+
+```sh
+curl -X DELETE "localhost:8888/debug/break?addr=0x0486"
 ```
 
 **debug/read1**
@@ -90,7 +128,8 @@ Get cartridge info
 curl localhost:8888/debug/cartridge
 ```
 
-```json
+```jsonc
+// application/json
 {
     "title":"PM_PRISM",
     "cartridge_type":"MBC3+TIMER+RAM+BATTERY",
@@ -99,9 +138,25 @@ curl localhost:8888/debug/cartridge
 }
 ```
 
+**debug/disasm**
+
+Disassemble instructions
+
+```sh
+curl localhost:8888/debug/disasm
+```
+
+```jsonc
+// application/json
+{
+    "pc":"0x0486",
+    "mnemonic":"LD A (a16)"
+}
+```
+
 **debug/io**
 
-Get IO registers(`0xff00-0xffff`) at 1-second intervals using Websocket.
+Get IO registers(`0xff00-0xffff`) at 0.1-second intervals using Websocket.
 
 IO registers is sent in arraybuffer. Please refer to [io.html](./io.html) for how to display it.
 
@@ -111,7 +166,7 @@ wscat -c ws://localhost:8888/debug/io
 
 **debug/tileview/bank0**
 
-Get tile data at 1-second intervals using Websocket.
+Get tile data at 0.1-second intervals using Websocket.
 
 Tile data is sent in binary format. Please refer to [tileview.html](./tileview.html) for how to display it.
 
@@ -121,11 +176,10 @@ wscat -c ws://localhost:8888/debug/tileview/bank0 # or ws://localhost:8888/debug
 
 **debug/sprview**
 
-Get sprite data at 1-second intervals using Websocket.
+Get sprite data at 0.1-second intervals using Websocket.
 
 Sprite data is sent in binary format. Please refer to [sprview.html](./sprview.html) for how to display it.
 
 ```sh
 wscat -c ws://localhost:8888/debug/sprview
 ```
-

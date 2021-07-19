@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	GB_DMG_DIV_PERIOD = 16 // 16cycle = 1/16384 sec, 8cycle = 1/32768 sec
+	GB_DMG_DIV_PERIOD = 16 // this is INTERNAL div interval, 16cycle or 8cycles
 )
 
 type Timer struct {
 	p           *GBC
-	internalDiv uint32
-	nextDiv     uint32
+	internalDiv uint32 // INTERNAL div counter, real div is `internalDiv >> 4`
+	nextDiv     uint32 // next INTERNAL div
 	timaPeriod  uint32
 }
 
@@ -52,17 +52,20 @@ func (t *Timer) irq(cyclesLate uint64) {
 }
 
 // _GBTimerDivIncrement
-// 1/16384 sec or 1/32768 sec
-func (t *Timer) divIncrement() {
+// oneloop equals to every n cycles (n=16cycles or 8cycles, p.s. 16384Hz=256cycles or 128cycles)
+func (t *Timer) internalDivIncrement() {
 	tMultiplier := util.Bool2U32(t.p.DoubleSpeed)
-	for t.nextDiv >= GB_DMG_DIV_PERIOD>>tMultiplier {
-		t.nextDiv -= GB_DMG_DIV_PERIOD >> tMultiplier
+	interval := uint32(GB_DMG_DIV_PERIOD >> tMultiplier) // 16 or 8
+
+	// normally, t.nextDiv is greater than 256 or 128, so real div increment should occur.
+	for t.nextDiv >= interval {
+		t.nextDiv -= interval
 
 		if t.timaPeriod > 0 && (t.internalDiv&(t.timaPeriod-1)) == (t.timaPeriod-1) {
 			t.p.IO[TIMAIO]++
 			if t.p.IO[TIMAIO] == 0 {
 				// overflow(4 cycles delay https://github.com/Gekkio/mooneye-gb/blob/master/tests/acceptance/timer/tima_reload.s)
-				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 4)
+				t.p.scheduler.ScheduleEvent(scheduler.TimerIRQ, t.irq, 4<<util.Bool2U32(t.p.DoubleSpeed))
 			}
 		}
 
@@ -72,12 +75,12 @@ func (t *Timer) divIncrement() {
 }
 
 // _GBTimerUpdate (system count)
-// 1/16384 sec or 1/32768 sec
+// 1/16384sec(256cycles) or 1/32768sec(128cycles)
 func (t *Timer) update(cyclesLate uint64) {
-	t.divIncrement()
 	t.nextDiv += uint32(cyclesLate)
+	t.internalDivIncrement()
 
-	// Batch div increments
+	// Batch div increments into real div increment
 	divsToGo := 16 - (t.internalDiv & 15)
 	timaToGo := uint32(math.MaxUint32)
 	if t.timaPeriod > 0 {
@@ -86,7 +89,8 @@ func (t *Timer) update(cyclesLate uint64) {
 	if timaToGo < divsToGo {
 		divsToGo = timaToGo
 	}
-	t.nextDiv = (GB_DMG_DIV_PERIOD * divsToGo) >> util.Bool2U32(t.p.DoubleSpeed)
+	t.nextDiv = (GB_DMG_DIV_PERIOD * divsToGo) >> util.Bool2U32(t.p.DoubleSpeed) // 256 or 128
+
 	t.p.scheduler.ScheduleEvent(scheduler.TimerUpdate, t.update, uint64(t.nextDiv)-cyclesLate)
 }
 
@@ -95,7 +99,7 @@ func (t *Timer) update(cyclesLate uint64) {
 func (t *Timer) divReset() {
 	t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 	t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
-	t.divIncrement()
+	t.internalDivIncrement()
 
 	t.p.IO[DIVIO] = 0
 	t.internalDiv = 0
@@ -108,7 +112,7 @@ func (t *Timer) updateTAC(tac byte) byte {
 	if util.Bit(tac, 2) {
 		t.nextDiv -= uint32(t.p.scheduler.Until(scheduler.TimerUpdate))
 		t.p.scheduler.DescheduleEvent(scheduler.TimerUpdate)
-		t.divIncrement()
+		t.internalDivIncrement()
 
 		timaLt := [4]uint32{1024 >> 4, 16 >> 4, 64 >> 4, 256 >> 4}
 		t.timaPeriod = timaLt[tac&0x3]

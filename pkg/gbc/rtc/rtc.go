@@ -98,12 +98,28 @@ func (rtc *RTC) incrementDay() {
 
 func (rtc *RTC) isActive() bool { return !util.Bit(rtc.Ctr[DH], 6) }
 
-// Dump RTC on common format
+// Dump RTC on .sav format
+//
+// offset  size    desc
+// 0       4       time seconds
+// 4       4       time minutes
+// 8       4       time hours
+// 12      4       time days
+// 16      4       time days high
+// 20      4       latched time seconds
+// 24      4       latched time minutes
+// 28      4       latched time hours
+// 32      4       latched time days
+// 36      4       latched time days high
+// 40      4       unix timestamp when saving
+// 44      4       0   (probably the high dword of 64 bits time), absent in the 44 bytes version
 func (rtc *RTC) Dump() []byte {
 	result := make([]byte, 48)
 
 	result[0], result[4], result[8], result[12], result[16] = rtc.Ctr[S], rtc.Ctr[M], rtc.Ctr[H], rtc.Ctr[DL], rtc.Ctr[DH]
-	result[20], result[24], result[28], result[32], result[36] = rtc.LatchedRTC.Ctr[S], rtc.LatchedRTC.Ctr[M], rtc.LatchedRTC.Ctr[H], rtc.LatchedRTC.Ctr[DL], rtc.LatchedRTC.Ctr[DH]
+
+	latch := rtc.LatchedRTC
+	result[20], result[24], result[28], result[32], result[36] = latch.Ctr[S], latch.Ctr[M], latch.Ctr[H], latch.Ctr[DL], latch.Ctr[DH]
 
 	now := time.Now().Unix()
 	result[40], result[41], result[42], result[43] = byte(now), byte(now>>8), byte(now>>16), byte(now>>24)
@@ -118,14 +134,10 @@ func (rtc *RTC) Sync(value []byte) {
 	}
 	rtc.Ctr = [5]byte{value[0], value[4], value[8], value[12], value[16]}
 	rtc.LatchedRTC.Ctr = [5]byte{value[20], value[24], value[28], value[32], value[36]}
-	lastSaveTime := (int64(value[43]) << 24) | (int64(value[42]) << 16) | (int64(value[41]) << 8) | int64(value[40])
-	delta := int(time.Now().Unix()-lastSaveTime) / 60
-	rtc.advance(delta)
-}
 
-// Advance rtc clock
-func (rtc *RTC) advance(minutes int) {
-	for i := 0; i < minutes; i++ {
-		rtc.incrementMinute()
+	savTime := (uint32(value[43]) << 24) | (uint32(value[42]) << 16) | (uint32(value[41]) << 8) | uint32(value[40])
+	delta := uint32(time.Now().Unix()) - savTime
+	for i := uint32(0); i < delta; i++ {
+		rtc.incrementSecond()
 	}
 }

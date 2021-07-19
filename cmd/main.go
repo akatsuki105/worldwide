@@ -67,6 +67,7 @@ func Run() int {
 	if err := ebiten.RunGame(emu); err != nil {
 		return ExitCodeError
 	}
+	emu.Exit()
 	return ExitCodeOK
 }
 

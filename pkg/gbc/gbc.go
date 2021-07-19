@@ -82,7 +82,7 @@ type GBC struct {
 
 	Cartridge   *cart.Cartridge
 	joypad      *joypad.Joypad
-	halt        bool
+	Halt        bool
 	timer       *Timer
 	bankMode    uint
 	Sound       *apu.APU
@@ -234,14 +234,13 @@ func (g *GBC) step() {
 	inst := gbz80insts[opcode]
 	operand1, operand2, cycle, handler := inst.Operand1, inst.Operand2, inst.Cycle1, inst.Handler
 
-	if g.halt || g.cpuBlocked {
+	if g.Halt || g.cpuBlocked {
 		cycle = int(g.scheduler.Next() - g.scheduler.Cycle())
 	} else {
 		if g.irqPending > 0 {
 			oldIrqPending := g.irqPending
 			g.irqPending = 0
-			g.Reg.IME = false
-			g.updateIRQs()
+			g.setInterrupts(false)
 			g.triggerIRQ(int(oldIrqPending - 1))
 			return
 		}
@@ -255,18 +254,26 @@ func (g *GBC) step() {
 }
 
 // 1 frame
-func (g *GBC) Update() error {
+func (g *GBC) Update(breakpoints []uint16) bool {
 	frame := g.Frame()
 	if frame%3 == 0 {
 		g.handleJoypad()
 	}
 
+	stopped := false
 	for frame == g.Video.FrameCounter {
 		g.step()
+
+		for _, bk := range breakpoints {
+			if g.Reg.PC == bk {
+				stopped = true
+				break
+			}
+		}
 	}
 
 	g.Sound.Update()
-	return nil
+	return stopped
 }
 
 func (g *GBC) PanicHandler(place string, stack bool) {
@@ -288,6 +295,7 @@ func (g *GBC) setModel(m util.GBModel) {
 	g.Video.Renderer.Model = m
 }
 
+// GBUpdateIRQs
 func (g *GBC) updateIRQs() {
 	irqs := g.IO[IEIO] & g.IO[IFIO] & 0x1f
 	if irqs == 0 {
@@ -295,7 +303,7 @@ func (g *GBC) updateIRQs() {
 		return
 	}
 
-	g.halt = false
+	g.Halt = false
 	if !g.Reg.IME {
 		g.irqPending = 0
 		return
@@ -328,13 +336,15 @@ func (g *GBC) Frame() int { return g.Video.FrameCounter }
 func (g *GBC) dmaService(cyclesLate uint64) {
 	remaining := g.dma.remaining
 	g.dma.remaining = 0
+
 	b := g.Load8(g.dma.src)
 	g.Store8(g.dma.dest, b)
+
 	g.dma.src++
 	g.dma.dest++
 	g.dma.remaining = remaining - 1
 	if g.dma.remaining > 0 {
-		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, (4>>util.Bool2U64(g.DoubleSpeed))-cyclesLate)
+		g.scheduler.ScheduleEvent(scheduler.OAMDMA, g.dmaService, (4>>util.Bool2U64(g.DoubleSpeed))-cyclesLate) // 4 * 40 = 160cycle
 	}
 }
 
@@ -393,4 +403,19 @@ func (g *GBC) skipBIOS() {
 
 	g.storeIO(LCDCIO, 0x91)
 	g.Video.SkipBIOS()
+}
+
+// GBSetInterrupts
+func (g *GBC) setInterrupts(enable bool) {
+	g.scheduler.DescheduleEvent(scheduler.EiPending)
+	if enable {
+		g.scheduler.ScheduleEvent(scheduler.EiPending, func(_ uint64) {
+			g.Reg.IME = true
+			g.updateIRQs()
+		}, 8>>util.Bool2Int(g.DoubleSpeed))
+		return
+	}
+
+	g.Reg.IME = false
+	g.updateIRQs()
 }

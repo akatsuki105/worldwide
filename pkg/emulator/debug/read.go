@@ -3,20 +3,7 @@ package debug
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 )
-
-func getAddr(req *http.Request) uint16 {
-	q := req.URL.Query()
-	addr := uint16(0)
-	for key, val := range q {
-		if key == "addr" {
-			a, _ := strconv.ParseUint(val[0][2:], 16, 16)
-			addr = uint16(a)
-		}
-	}
-	return addr
-}
 
 func (d *Debugger) Read1(w http.ResponseWriter, req *http.Request) {
 	val := d.g.Load8(getAddr(req))

@@ -337,7 +337,7 @@ func (g *Video) EndMode2(cyclesLate uint64) {
 	oldStat := g.Stat
 	g.X = -(int(g.io[GB_REG_SCX]) & 7)
 	g.setMode(3)
-	g.scheduler.ScheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH-cyclesLate)
+	g.scheduler.ScheduleEvent(scheduler.EndMode3, g.EndMode3, MODE_3_LENGTH+uint64(g.Renderer.objMax*6)-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -351,7 +351,7 @@ func (g *Video) EndMode3(cyclesLate uint64) {
 	g.ProcessDots(cyclesLate)
 	g.hdma()
 	g.setMode(0)
-	g.scheduler.ScheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH-cyclesLate)
+	g.scheduler.ScheduleEvent(scheduler.EndMode0, g.EndMode0, MODE_0_LENGTH-uint64(g.Renderer.objMax*6)-cyclesLate)
 	if !statIRQAsserted(oldStat) && statIRQAsserted(g.Stat) {
 		g.io[GB_REG_IF] = util.SetBit8(g.io[GB_REG_IF], 1, true)
 		g.updateIRQs()
@@ -439,12 +439,8 @@ func statIRQAsserted(stat byte) bool {
 		return true
 	}
 	switch stat & 0x3 {
-	case 0:
-		return util.Bit(stat, 3)
-	case 1:
-		return util.Bit(stat, 4)
-	case 2:
-		return util.Bit(stat, 5)
+	case 0, 1, 2:
+		return util.Bit(stat, 3+int(stat&0x3))
 	}
 	return false
 }

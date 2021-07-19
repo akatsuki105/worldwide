@@ -2,6 +2,9 @@ package emulator
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -30,11 +33,15 @@ func New(romData []byte, j [8](func() bool), romDir string) *Emulator {
 	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowTitle("60fps")
 	ebiten.SetWindowSize(160*2, 144*2)
-	return &Emulator{
+
+	e := &Emulator{
 		GBC:      g,
 		Rom:      romDir,
 		debugger: debug.New(g),
 	}
+	e.setupCloseHandler()
+
+	return e
 }
 
 func (e *Emulator) Update() error {
@@ -43,7 +50,11 @@ func (e *Emulator) Update() error {
 	}
 
 	defer e.GBC.PanicHandler("update", true)
-	err := e.GBC.Update()
+	e.pause = e.GBC.Update(e.debugger.Breakpoints)
+	if e.pause {
+		return nil
+	}
+
 	audio.Play()
 
 	select {
@@ -56,7 +67,7 @@ func (e *Emulator) Update() error {
 	default:
 	}
 
-	return err
+	return nil
 }
 
 func (e *Emulator) Draw(screen *ebiten.Image) {
@@ -72,4 +83,18 @@ func (e *Emulator) Draw(screen *ebiten.Image) {
 
 func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return 160, 144
+}
+
+func (e *Emulator) Exit() {
+	e.WriteSav()
+}
+
+func (e *Emulator) setupCloseHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		e.Exit()
+		os.Exit(0)
+	}()
 }

@@ -208,7 +208,7 @@ func jrncc(g *GBC, cc, _ int) {
 
 func halt(g *GBC, _, _ int) {
 	if g.IO[IEIO]&g.IO[IFIO]&0x1f == 0 {
-		g.halt = true
+		g.Halt = true
 	}
 }
 
@@ -330,17 +330,12 @@ func callncc(g *GBC, cc, _ int) {
 
 // DI Disable Interrupt
 func di(g *GBC, _, _ int) {
-	g.Reg.IME = false
-	g.updateIRQs()
+	g.setInterrupts(false)
 }
 
 // EI Enable Interrupt
 func ei(g *GBC, _, _ int) {
-	g.scheduler.DescheduleEvent(scheduler.EiPending)
-	g.scheduler.ScheduleEvent(scheduler.EiPending, func(cyclesLate uint64) {
-		g.Reg.IME = true
-		g.updateIRQs()
-	}, 4>>util.Bool2U64(g.DoubleSpeed))
+	g.setInterrupts(true)
 }
 
 // CP Compare

@@ -83,7 +83,7 @@ func (d *Debugger) tileView(ws *websocket.Conn, bank int) {
 		return
 	}
 
-	for range time.NewTicker(time.Second).C {
+	for range time.NewTicker(time.Millisecond * 100).C {
 		err := websocket.Message.Send(ws, d.getTileView(bank))
 		if err != nil {
 			log.Printf("error sending data: %v\n", err)
