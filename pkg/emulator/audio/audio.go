@@ -10,7 +10,7 @@ var player *oto.Player
 var Stream []byte
 var enable *bool
 
-func Init(enablePtr *bool) {
+func Reset(enablePtr *bool) {
 	enable = enablePtr
 
 	var err error

@@ -10,6 +10,8 @@ Normal execution will not start the HTTP server. You can start the HTTP server b
 go run ./cmd -p 8888 ./PM_PRISM.gbc # start HTTP server on localhost:8888
 ```
 
+Note: On this API server, GET method changes emulator's state!
+
 ## Commands
 
 **pause**
@@ -26,6 +28,22 @@ Continue emulator from pause state
 
 ```sh
 curl localhost:8888/continue
+```
+
+**reset**
+
+Reset emulator. Debug information(e.g. breakpoints, history-mode) is not reset.
+
+```sh
+curl localhost:8888/reset
+```
+
+**quit**
+
+Quit emulator. Exitcode is 0 and savefile is written.
+
+```sh
+curl localhost:8888/quit
 ```
 
 **mute**
@@ -120,6 +138,37 @@ curl "localhost:8888/debug/read2?addr=0x0150"
 0x1411 # text/plain
 ```
 
+**debug/history(POST)**
+
+Start recording the history of the executed instructions.
+
+Specify how many past histories to record in the `history` parameter.(Max 100) 
+
+The larger the number, the greater the load on the emulator CPU.
+
+```sh
+curl -X POST -d '{"history":"0x20"}' -H "Content-Type: application/json" localhost:8888/debug/history
+```
+
+**debug/history(GET)**
+
+Displays the history of records started by POST requests.
+
+```sh
+curl localhost:8888/debug/history
+```
+
+```sh
+# text/plain
+0x0048: JP a16
+0xcda1: PUSH AF
+0xcda2: PUSH HL
+...
+0x048a: JR NZ r8
+0x0485: HALT
+0x0486: LD A (a16)
+```
+
 **debug/cartridge**
 
 Get cartridge info
@@ -152,6 +201,30 @@ curl localhost:8888/debug/disasm
     "pc":"0x0486",
     "mnemonic":"LD A (a16)"
 }
+```
+
+**debug/trace**
+
+Trace a number of instructions
+
+```sh
+curl "localhost:8888/debug/trace?step=20" # trace 20 instructions
+```
+
+```sh
+# text/plain
+0x16cf: INC L
+0x16d0: LD (HL) D
+0x16d1: INC L
+0x16d2: POP DE
+0x16d3: LD (HL) E
+...
+0x16dd: LD (HL) E
+0x16de: INC L
+0x16df: LD (HL) D
+0x16e0: INC L
+0x16e1: POP DE
+0x16e2: LD (HL) E
 ```
 
 **debug/io**

@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -10,6 +11,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/pokemium/worldwide/pkg/emulator/audio"
 	"github.com/pokemium/worldwide/pkg/emulator/debug"
+	"github.com/pokemium/worldwide/pkg/emulator/joypad"
 	"github.com/pokemium/worldwide/pkg/gbc"
 )
 
@@ -20,37 +22,61 @@ var (
 
 type Emulator struct {
 	GBC      *gbc.GBC
-	Rom      string
+	Rom      []byte
+	RomDir   string
 	debugger *debug.Debugger
-	frame    int
 	pause    bool
+	reset    bool
+	quit     bool
 }
 
-func New(romData []byte, j [8](func() bool), romDir string) *Emulator {
-	g := gbc.New(romData, j, audio.SetStream)
-	audio.Init(&g.Sound.Enable)
+func New(romData []byte, romDir string) *Emulator {
+	g := gbc.New(romData, joypad.Handler, audio.SetStream)
+	audio.Reset(&g.Sound.Enable)
 
 	ebiten.SetWindowResizable(true)
 	ebiten.SetWindowTitle("60fps")
 	ebiten.SetWindowSize(160*2, 144*2)
 
 	e := &Emulator{
-		GBC:      g,
-		Rom:      romDir,
-		debugger: debug.New(g),
+		GBC:    g,
+		Rom:    romData,
+		RomDir: romDir,
 	}
+	e.debugger = debug.New(g, &e.pause)
 	e.setupCloseHandler()
 
+	e.loadSav()
 	return e
 }
 
+func (e *Emulator) ResetGBC() {
+	e.writeSav()
+
+	oldCallbacks := e.GBC.Callbacks
+	e.GBC = gbc.New(e.Rom, joypad.Handler, audio.SetStream)
+	e.GBC.Callbacks = oldCallbacks
+
+	e.debugger.Reset(e.GBC)
+	e.loadSav()
+
+	e.reset = false
+}
+
 func (e *Emulator) Update() error {
+	if e.quit {
+		return errors.New("quit")
+	}
+	if e.reset {
+		e.ResetGBC()
+		return nil
+	}
 	if e.pause {
 		return nil
 	}
 
 	defer e.GBC.PanicHandler("update", true)
-	e.pause = e.GBC.Update(e.debugger.Breakpoints)
+	e.GBC.Update()
 	if e.pause {
 		return nil
 	}
@@ -60,10 +86,7 @@ func (e *Emulator) Update() error {
 	select {
 	case <-second.C:
 		e.GBC.RTC.IncrementSecond()
-		oldFrame := e.frame
-		e.frame = e.GBC.Frame()
-		fps := e.frame - oldFrame
-		ebiten.SetWindowTitle(fmt.Sprintf("%dfps", fps))
+		ebiten.SetWindowTitle(fmt.Sprintf("%dfps", int(ebiten.CurrentTPS())))
 	default:
 	}
 
@@ -86,7 +109,7 @@ func (e *Emulator) Layout(outsideWidth, outsideHeight int) (screenWidth, screenH
 }
 
 func (e *Emulator) Exit() {
-	e.WriteSav()
+	e.writeSav()
 }
 
 func (e *Emulator) setupCloseHandler() {

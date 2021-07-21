@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/pokemium/worldwide/pkg/emulator"
-	"github.com/pokemium/worldwide/pkg/emulator/joypad"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -49,7 +48,7 @@ func Run() int {
 		return ExitCodeError
 	}
 
-	emu := emulator.New(romData, joypad.Handler, romDir)
+	emu := emulator.New(romData, romDir)
 	if *port > 0 {
 		if *port < 1024 {
 			fmt.Fprintf(os.Stderr, "Server Error: cannot use well-known port for server")
@@ -63,8 +62,11 @@ func Run() int {
 		os.Chdir(cur)
 	}()
 
-	emu.LoadSav()
 	if err := ebiten.RunGame(emu); err != nil {
+		if err.Error() == "quit" {
+			emu.Exit()
+			return ExitCodeOK
+		}
 		return ExitCodeError
 	}
 	emu.Exit()

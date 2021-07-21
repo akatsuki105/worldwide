@@ -95,6 +95,9 @@ type GBC struct {
 	dma         Dma
 	hdma        Hdma
 	cpuBlocked  bool
+
+	// plugins
+	Callbacks []*util.Callback
 }
 
 // TransferROM Transfer ROM from cartridge to Memory
@@ -226,7 +229,7 @@ func New(romData []byte, j [8](func() bool), setAudioStream func([]byte)) *GBC {
 }
 
 // Exec 1cycle
-func (g *GBC) step() {
+func (g *GBC) Step() {
 	pc := g.Reg.PC
 	opcode := g.Load8(pc)
 	g.Inst.Opcode, g.Inst.PC = opcode, pc
@@ -254,26 +257,24 @@ func (g *GBC) step() {
 }
 
 // 1 frame
-func (g *GBC) Update(breakpoints []uint16) bool {
+func (g *GBC) Update() {
 	frame := g.Frame()
 	if frame%3 == 0 {
 		g.handleJoypad()
 	}
 
-	stopped := false
 	for frame == g.Video.FrameCounter {
-		g.step()
+		g.Step()
 
-		for _, bk := range breakpoints {
-			if g.Reg.PC == bk {
-				stopped = true
+		// trigger callbacks
+		for _, callback := range g.Callbacks {
+			if callback.Func() {
 				break
 			}
 		}
 	}
 
 	g.Sound.Update()
-	return stopped
 }
 
 func (g *GBC) PanicHandler(place string, stack bool) {

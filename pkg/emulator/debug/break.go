@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/pokemium/worldwide/pkg/util"
 )
 
 func (d *Debugger) Break(w http.ResponseWriter, req *http.Request) {
@@ -30,7 +32,7 @@ func (d *Debugger) getBreakpoints(w http.ResponseWriter, req *http.Request) {
 }
 
 func (d *Debugger) postBreakpoint(w http.ResponseWriter, req *http.Request) {
-	addr := getAddr(req)
+	addr := getAddr(w, req)
 
 	alreadyExists := false
 	for _, bk := range d.Breakpoints {
@@ -42,11 +44,13 @@ func (d *Debugger) postBreakpoint(w http.ResponseWriter, req *http.Request) {
 
 	if !alreadyExists {
 		d.Breakpoints = append(d.Breakpoints, addr)
+		d.g.Callbacks = util.RemoveCallback(d.g.Callbacks, "break")
+		d.g.Callbacks, _ = util.SetCallback(d.g.Callbacks, "break", util.PRIO_BREAKPOINT, d.checkBreakpoint)
 	}
 }
 
 func (d *Debugger) deleteBreakpoint(w http.ResponseWriter, req *http.Request) {
-	addr := getAddr(req)
+	addr := getAddr(w, req)
 
 	newBreakpoints := make([]uint16, 0)
 	for _, bk := range d.Breakpoints {
@@ -56,4 +60,17 @@ func (d *Debugger) deleteBreakpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	d.Breakpoints = newBreakpoints
+
+	d.g.Callbacks = util.RemoveCallback(d.g.Callbacks, "break")
+	d.g.Callbacks, _ = util.SetCallback(d.g.Callbacks, "break", util.PRIO_BREAKPOINT, d.checkBreakpoint)
+}
+
+func (d *Debugger) checkBreakpoint() bool {
+	for _, bk := range d.Breakpoints {
+		if d.g.Reg.PC == bk {
+			*d.pause = true
+			return true
+		}
+	}
+	return false
 }

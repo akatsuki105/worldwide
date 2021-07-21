@@ -78,6 +78,7 @@ func (d *Debugger) Register(w http.ResponseWriter, req *http.Request) {
 		val := strings.ToLower(keyVal["value"])
 		if !strings.HasPrefix(val, "0x") {
 			http.Error(w, "value must be hexadecimal (e.g. 0x04)", http.StatusBadRequest)
+			return
 		}
 
 		switch target {

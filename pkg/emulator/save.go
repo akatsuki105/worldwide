@@ -8,8 +8,8 @@ import (
 )
 
 // GameBoy save data is SRAM core dump
-func (e *Emulator) WriteSav() {
-	savname := filepath.Join(e.Rom, e.GBC.Cartridge.Title+".sav")
+func (e *Emulator) writeSav() {
+	savname := filepath.Join(e.RomDir, e.GBC.Cartridge.Title+".sav")
 
 	savfile, err := os.Create(savname)
 	if err != nil {
@@ -60,8 +60,8 @@ func (e *Emulator) WriteSav() {
 	}
 }
 
-func (e *Emulator) LoadSav() {
-	savname := filepath.Join(e.Rom, e.GBC.Cartridge.Title+".sav")
+func (e *Emulator) loadSav() {
+	savname := filepath.Join(e.RomDir, e.GBC.Cartridge.Title+".sav")
 
 	savdata, err := os.ReadFile(savname)
 	if err != nil {
