@@ -10,12 +10,10 @@
 
 GameBoyColor emulator written in golang.  
 
-This emulator can play almost all ROMs work without problems and has many features.
+This emulator can play a lot of ROMs work without problems and has many features.
 
-
-<img src="https://imgur.com/RrOKzJB.png" width="320px"> <img src="https://imgur.com/yIIlkKq.png" width="320px"><br/>
-<img src="https://imgur.com/02YAzow.png" width="320px"> <img src="https://imgur.com/QCXeV3B.png" width="320px">
-
+<img src="https://imgur.com/ZlrXAW9.png" width="320px"> <img src="https://imgur.com/xVqjkrk.png" width="320px"><br/>
+<img src="https://imgur.com/E7oob9c.png" width="320px"> <img src="https://imgur.com/nYpkH95.png" width="320px">
 
 ## 🚩 Features & TODO list
 - [x] 60fps
@@ -28,21 +26,25 @@ This emulator can play almost all ROMs work without problems and has many featur
 - [x] RTC
 - [x] SRAM save
 - [x] Resizable window
-- [ ] Serial CGB communication in local network
-- [ ] Serial communication with global network
-- [ ] SuperGameBoy support
+- [x] HTTP server API
+- [ ] Plugins support
+- [ ] [Libretro](https://docs.libretro.com/) support
+- [ ] Netplay in local network
+- [ ] Netplay in global network
+- [ ] SGB support
+- [ ] Shader support
 
 ## 🎮 Usage
 
-Download worldwide.exe from [here](https://github.com/pokemium/worldwide/releases).
+Download binary from [here](https://github.com/pokemium/worldwide/releases).
 
 ```sh
-./worldwide.exe "***.gb" # or ***.gbc
+./worldwide "***.gb" # or ***.gbc
 ```
 
 ## 🐛 HTTP Server
 
-worldwide contains an HTTP server, and the user can give various instructions to it through HTTP requests.
+`worldwide` contains an HTTP server, and the user can give various instructions to it through HTTP requests.
 
 Please read [Server Document](./server/README.md).
 
@@ -55,16 +57,9 @@ Requirements
 - make
 
 ```sh
-make
-./worldwide "***.gb" # ./worldwide.exe on Windows
-
-# or
-make run ROM="***.gb"
+make build                              # If you use Windows, `make build-windows`
+./build/darwin-amd64/worldwide "***.gb" # If you use Windows, `./build/windows-amd64/worldwide.exe "***.gb"`
 ```
-
-## 📥 Download
-
-Please download [here](https://github.com/pokemium/worldwide/releases).
 
 ## 📄 Command 
 

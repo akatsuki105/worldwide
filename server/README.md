@@ -227,9 +227,9 @@ curl "localhost:8888/debug/trace?step=20" # trace 20 instructions
 0x16e2: LD (HL) E
 ```
 
-**debug/io**
+**debug/io(Websocket)**
 
-Get IO registers(`0xff00-0xffff`) at 0.1-second intervals using Websocket.
+Get IO registers(`0xff00-0xffff`) at 100-milisecond intervals using Websocket.
 
 IO registers is sent in arraybuffer. Please refer to [io.html](./io.html) for how to display it.
 
@@ -237,9 +237,9 @@ IO registers is sent in arraybuffer. Please refer to [io.html](./io.html) for ho
 wscat -c ws://localhost:8888/debug/io
 ```
 
-**debug/tileview/bank0**
+**debug/tileview/bank0(Websocket)**
 
-Get tile data at 0.1-second intervals using Websocket.
+Get tile data at 100-milisecond intervals using Websocket.
 
 Tile data is sent in binary format. Please refer to [tileview.html](./tileview.html) for how to display it.
 
@@ -247,9 +247,9 @@ Tile data is sent in binary format. Please refer to [tileview.html](./tileview.h
 wscat -c ws://localhost:8888/debug/tileview/bank0 # or ws://localhost:8888/debug/tileview/bank1
 ```
 
-**debug/sprview**
+**debug/sprview(Websocket)**
 
-Get sprite data at 0.1-second intervals using Websocket.
+Get sprite data at 100-milisecond intervals using Websocket.
 
 Sprite data is sent in binary format. Please refer to [sprview.html](./sprview.html) for how to display it.
 

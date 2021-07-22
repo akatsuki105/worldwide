@@ -8,17 +8,38 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pokemium/worldwide/pkg/emulator"
-
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/pokemium/worldwide/pkg/emulator"
 )
 
 var version string
 
 const (
+	title = "worldwide"
+)
+
+const (
 	ExitCodeOK int = iota
 	ExitCodeError
 )
+
+func init() {
+	if version == "" {
+		version = "Develop"
+	}
+
+	flag.Usage = func() {
+		usage := fmt.Sprintf(`Usage:
+    %s [arg] [input]
+    e.g. %s -p 8888 ./PM_PRISM.gbc
+Input: ROM filepath, ***.gb or ***.gbc
+Arguments: 
+`, title, title)
+		fmt.Println(Version())
+		fmt.Fprint(os.Stderr, usage)
+		flag.PrintDefaults()
+	}
+}
 
 func main() {
 	os.Exit(Run())
@@ -28,13 +49,13 @@ func main() {
 func Run() int {
 	var (
 		showVersion = flag.Bool("v", false, "show version")
-		port        = flag.Int("p", -1, "server port (>1023)")
+		port        = flag.Int("p", 0, "HTTP server port (>1023)")
 	)
 
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println("worldwide:", getVersion())
+		fmt.Println(Version())
 		return ExitCodeOK
 	}
 
@@ -73,11 +94,8 @@ func Run() int {
 	return ExitCodeOK
 }
 
-func getVersion() string {
-	if version == "" {
-		return "Develop"
-	}
-	return version
+func Version() string {
+	return fmt.Sprintf("%s: %s", title, version)
 }
 
 func readROM(path string) ([]byte, error) {

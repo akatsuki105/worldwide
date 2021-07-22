@@ -8,10 +8,10 @@
 
 Go言語で書かれたゲームボーイカラーエミュレータです。  
 
-ほぼ全てのROMが問題なく動作し、サウンド機能やセーブ機能、一部通信機能など幅広い機能を備えたエミュレータです。
+多くのROMが問題なく動作し、サウンド機能やセーブ機能など幅広い機能を備えたエミュレータです。
 
-<img src="https://imgur.com/RrOKzJB.png" width="320px"> <img src="https://imgur.com/yIIlkKq.png" width="320px"><br/>
-<img src="https://imgur.com/02YAzow.png" width="320px"> <img src="https://imgur.com/QCXeV3B.png" width="320px">
+<img src="https://imgur.com/ZlrXAW9.png" width="320px"> <img src="https://imgur.com/xVqjkrk.png" width="320px"><br/>
+<img src="https://imgur.com/E7oob9c.png" width="320px"> <img src="https://imgur.com/nYpkH95.png" width="320px">
 
 ## 🚩 このエミュレータの特徴 & 今後実装予定の機能
 - [x] 60fpsで動作
@@ -23,27 +23,26 @@ Go言語で書かれたゲームボーイカラーエミュレータです。
 - [x] MBC1, MBC2, MBC3, MBC5に対応
 - [x] RTCの実装
 - [x] セーブ機能をサポート(得られたsavファイルは実機やBGBなどの一般的なエミュレータで利用できます)
-- [x] クイックセーブのサポート
 - [x] ウィンドウの縮小拡大が可能
-- [x] ゲームボーイモードでパレットカラーの変更をサポート
-- [x] ローカルネットワーク内のゲームボーイの通信機能をサポート(未対応のROMもあります テトリス、ポケモン赤などが動作します)
-- [x] ラズパイ対応
-- [x] デバッガ
-- [ ] ローカルネットワーク内のゲームボーイカラーの通信機能をサポート
-- [ ] ネットワークをまたいだ通信機能のサポート
-- [ ] スーパーゲームボーイのエミュレーション機能
+- [x] HTTPサーバーAPI
+- [ ] プラグイン機能
+- [ ] [Libretro](https://docs.libretro.com/) APIのサポート
+- [ ] ローカルネットワーク内での通信プレイ
+- [ ] グローバルネットワーク内での通信プレイ
+- [ ] SGBのサポート
+- [ ] シェーダのサポート
 
 ## 🎮 使い方
 
-[ここ](https://github.com/pokemium/worldwide/releases)からダウンロードした後次のように起動します。
+[ここ](https://github.com/pokemium/worldwide/releases)から実行ファイルをダウンロードした後、次のように起動します。
 
 ```sh
-./worldwide.exe "***.gb" # or ***.gbc
+./worldwide "***.gb" # もしくは `***.gbc`
 ```
 
 ## 🐛 HTTPサーバー
 
-worldwideはHTTPサーバーを内包しており、ユーザーはHTTPリクエストを通じて worldwideにさまざまな指示を出すことが可能です。
+`worldwide`はHTTPサーバーを内包しており、ユーザーはHTTPリクエストを通じて `worldwide`にさまざまな指示を出すことが可能です。
 
 [サーバードキュメント](./server/README.md)を参照してください。
 
@@ -56,16 +55,9 @@ requirements
 - make
 
 ```sh
-make
-./worldwide "***.gb" # ./worldwide.exe on Windows
-
-# or
-make run ROM="***.gb"
+make build                              # Windowsなら `make build-windows`
+./build/darwin-amd64/worldwide "***.gb" # Windowsなら `./build/windows-amd64/worldwide.exe "***.gb"`
 ```
-
-## 📥 ダウンロード
-
-[ここ](https://github.com/pokemium/worldwide/releases)からダウンロードできます。最新版をダウンロードすることをお勧めします。
 
 ## 📄 コマンド
 
