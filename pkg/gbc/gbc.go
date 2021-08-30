@@ -285,9 +285,9 @@ func (g *GBC) PanicHandler(place string, stack bool) {
 			if !ok {
 				break
 			}
-			fmt.Printf("======> %d: %v:%d\n", depth, file, line)
+			fmt.Fprintf(os.Stderr, "======> %d: %v:%d\n", depth, file, line)
 		}
-		os.Exit(0)
+		os.Exit(1)
 	}
 }
 
