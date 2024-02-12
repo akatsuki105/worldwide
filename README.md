@@ -1,3 +1,12 @@
+> [!CAUTION]
+> This GameBoy emulator project is old and NOT MAINTAINED, please see [DawnGB](https://github.com/akatsuki105/dawngb), my new GameBoy emulator project!
+
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+
 ![logo](./logo.png)
 
 # 🌏 worldwide
